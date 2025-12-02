@@ -14,6 +14,7 @@ interface UserProfile {
 
 const Dashboard: React.FC = () => {
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -28,6 +29,15 @@ const Dashboard: React.FC = () => {
       const response = await profileAPI.getProfile();
       setUser(response.data.user);
       setError('');
+
+      // Отдельно проверяем, является ли пользователь админом,
+      // используя существующий эндпоинт /profile/admin
+      try {
+        await profileAPI.getAdminProfile();
+        setIsAdmin(true);
+      } catch {
+        setIsAdmin(false);
+      }
     } catch (err: any) {
       console.error('Failed to fetch profile:', err);
       setError('Не удалось загрузить профиль');
@@ -118,6 +128,14 @@ const Dashboard: React.FC = () => {
                     {user.status}
                   </span>
                 </div>
+                {isAdmin && (
+                  <div className="info-item">
+                    <span className="info-label">Роль:</span>
+                    <span className="status-badge status-active">
+                      Администратор
+                    </span>
+                  </div>
+                )}
               </div>
               
               <div className="dashboard-message">
@@ -135,6 +153,17 @@ const Dashboard: React.FC = () => {
                   <li>👥 Управление участниками</li>
                 </ul>
               </div>
+
+              {isAdmin && (
+                <div style={{ marginTop: 24 }}>
+                  <button
+                    className="cta-button primary"
+                    onClick={() => navigate('/admin')}
+                  >
+                    Перейти в админ-панель
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
