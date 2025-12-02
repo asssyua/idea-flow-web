@@ -78,6 +78,9 @@ export const adminAPI = {
   getUserById: (id: string) => api.get(`/admin/users/${id}`),
   blockUser: (id: string, data: any) => api.patch(`/admin/users/${id}/block`, data),
   unblockUser: (id: string) => api.patch(`/admin/users/${id}/unblock`),
+  getAllSupportMessages: () => api.get('/admin/support-messages'),
+  markSupportMessageAsRead: (id: string) => api.patch(`/admin/support-messages/${id}/read`),
+  sendSupportMessage: (data: any) => api.post('/admin/support-message', data),
 };
 
 // Topic API (заглушки - реализуем позже)
