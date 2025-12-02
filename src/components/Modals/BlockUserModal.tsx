@@ -4,13 +4,12 @@ import './Modal.css';
 interface BlockUserModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (reason: string, reasonForUser: string) => void;
+  onConfirm: (reason: string) => void;
   userName: string;
 }
 
 const BlockUserModal: React.FC<BlockUserModalProps> = ({ isOpen, onClose, onConfirm, userName }) => {
   const [reason, setReason] = useState('');
-  const [reasonForUser, setReasonForUser] = useState('');
   const [error, setError] = useState('');
 
   if (!isOpen) return null;
@@ -23,14 +22,8 @@ const BlockUserModal: React.FC<BlockUserModalProps> = ({ isOpen, onClose, onConf
       return;
     }
 
-    if (!reasonForUser.trim()) {
-      setError('Укажите сообщение для пользователя');
-      return;
-    }
-
-    onConfirm(reason.trim(), reasonForUser.trim());
+    onConfirm(reason.trim());
     setReason('');
-    setReasonForUser('');
     setError('');
   };
 
@@ -60,7 +53,7 @@ const BlockUserModal: React.FC<BlockUserModalProps> = ({ isOpen, onClose, onConf
           )}
 
           <div className="form-group">
-            <label htmlFor="reason">Причина блокировки (для администратора)</label>
+            <label htmlFor="reason">Причина блокировки</label>
             <textarea
               id="reason"
               value={reason}
@@ -68,23 +61,8 @@ const BlockUserModal: React.FC<BlockUserModalProps> = ({ isOpen, onClose, onConf
                 setReason(e.target.value);
                 if (error) setError('');
               }}
-              placeholder="Опишите причину блокировки..."
-              rows={3}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="reasonForUser">Сообщение для пользователя</label>
-            <textarea
-              id="reasonForUser"
-              value={reasonForUser}
-              onChange={(e) => {
-                setReasonForUser(e.target.value);
-                if (error) setError('');
-              }}
-              placeholder="Это сообщение увидит пользователь..."
-              rows={3}
+              placeholder="Опишите причину блокировки. Это сообщение будет видно администратору и пользователю..."
+              rows={4}
               required
             />
           </div>
@@ -111,4 +89,5 @@ const BlockUserModal: React.FC<BlockUserModalProps> = ({ isOpen, onClose, onConf
 };
 
 export default BlockUserModal;
+
 

@@ -20,9 +20,24 @@ interface AdminUser {
   firstName: string;
   lastName: string;
   status: string;
+  role: string;
+  blockInfo?: {
+    blockedAt: string;
+    blockReason: string;
+  };
 }
 
-type AdminTab = 'users' | 'topics' | 'ideas';
+interface SupportMessage {
+  id: string;
+  userEmail: string;
+  userName: string;
+  message: string;
+  blockReason: string | null;
+  isRead: boolean;
+  createdAt: string;
+}
+
+type AdminTab = 'users' | 'topics' | 'ideas' | 'support';
 
 const Dashboard: React.FC = () => {
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -32,6 +47,8 @@ const Dashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<AdminTab>('users');
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
+  const [supportMessages, setSupportMessages] = useState<SupportMessage[]>([]);
+  const [supportLoading, setSupportLoading] = useState(false);
   const [blockModalOpen, setBlockModalOpen] = useState(false);
   const [unblockModalOpen, setUnblockModalOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
@@ -45,6 +62,8 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     if (isAdmin && activeTab === 'users') {
       loadUsers();
+    } else if (isAdmin && activeTab === 'support') {
+      loadSupportMessages();
     }
   }, [isAdmin, activeTab]);
 
@@ -90,24 +109,49 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const loadSupportMessages = async () => {
+    setSupportLoading(true);
+    try {
+      const response = await adminAPI.getAllSupportMessages();
+      setSupportMessages(response.data);
+      setError('');
+    } catch (err: any) {
+      console.error('Failed to load support messages', err);
+      setError('Не удалось загрузить сообщения поддержки');
+    } finally {
+      setSupportLoading(false);
+    }
+  };
+
+  const handleMarkAsRead = async (id: string) => {
+    try {
+      await adminAPI.markSupportMessageAsRead(id);
+      await loadSupportMessages();
+    } catch (err) {
+      console.error('Failed to mark message as read', err);
+    }
+  };
+
   const handleBlockClick = (id: string, userName: string) => {
     setSelectedUserId(id);
     setSelectedUserName(userName);
     setBlockModalOpen(true);
   };
 
-  const handleBlockConfirm = async (reason: string, reasonForUser: string) => {
+  const handleBlockConfirm = async (reason: string) => {
     if (!selectedUserId) return;
 
     try {
-      await adminAPI.blockUser(selectedUserId, { reason, reasonForUser });
-      await loadUsers();
+      await adminAPI.blockUser(selectedUserId, { reason });
       setBlockModalOpen(false);
       setSelectedUserId(null);
       setSelectedUserName('');
-    } catch (err) {
+      // Обновляем список пользователей после блокировки
+      await loadUsers();
+    } catch (err: any) {
       console.error('Failed to block user', err);
-      alert('Не удалось заблокировать пользователя');
+      const errorMessage = err.response?.data?.message || 'Не удалось заблокировать пользователя';
+      alert(errorMessage);
     }
   };
 
@@ -168,6 +212,7 @@ const Dashboard: React.FC = () => {
               <th>Email</th>
               <th>Имя</th>
               <th>Статус</th>
+              <th>Причина блокировки</th>
               <th>Действия</th>
             </tr>
           </thead>
@@ -181,14 +226,23 @@ const Dashboard: React.FC = () => {
                     {u.status}
                   </span>
                 </td>
+                <td>
+                  {u.blockInfo?.blockReason ? (
+                    <span className="block-reason-text">{u.blockInfo.blockReason}</span>
+                  ) : (
+                    <span className="text-muted">—</span>
+                  )}
+                </td>
                 <td className="users-table__actions">
-                  {u.status === 'BLOCKED' ? (
+                  {u.status === 'blocked' || u.status === 'BLOCKED' ? (
                     <button
                       className="cta-button secondary"
                       onClick={() => handleUnblockClick(u.id, `${u.firstName} ${u.lastName}`)}
                     >
                       Разблокировать
                     </button>
+                  ) : u.role === 'admin' || u.role === 'ADMIN' ? (
+                    <span className="admin-protected-badge">Администратор</span>
                   ) : (
                     <button
                       className="cta-button danger"
@@ -202,6 +256,65 @@ const Dashboard: React.FC = () => {
             ))}
           </tbody>
         </table>
+      )}
+    </div>
+  );
+
+  const renderSupportTab = () => (
+    <div className="admin-section">
+      <div className="admin-section__header">
+        <h2>Сообщения поддержки</h2>
+        <p>Просматривайте обращения от заблокированных пользователей.</p>
+      </div>
+
+      {supportLoading ? (
+        <div className="loading-container" style={{ minHeight: '200px' }}>
+          <div className="loading-spinner"></div>
+          <p>Загружаем сообщения...</p>
+        </div>
+      ) : supportMessages.length === 0 ? (
+        <p>Сообщений пока нет.</p>
+      ) : (
+        <div className="support-messages-list">
+          {supportMessages.map((msg) => (
+            <div key={msg.id} className={`support-message-card ${msg.isRead ? 'read' : 'unread'}`}>
+              <div className="support-message-header">
+                <div>
+                  <strong>{msg.userName}</strong>
+                  <span className="support-message-email">{msg.userEmail}</span>
+                </div>
+                <div className="support-message-meta">
+                  <span className="support-message-date">
+                    {new Date(msg.createdAt).toLocaleString('ru-RU')}
+                  </span>
+                  {!msg.isRead && (
+                    <span className="unread-badge">Новое</span>
+                  )}
+                </div>
+              </div>
+              
+              {msg.blockReason && (
+                <div className="support-block-reason">
+                  <strong>Причина блокировки:</strong> {msg.blockReason}
+                </div>
+              )}
+              
+              <div className="support-message-content">
+                {msg.message}
+              </div>
+              
+              {!msg.isRead && (
+                <button
+                  className="cta-button secondary"
+                  onClick={() => handleMarkAsRead(msg.id)}
+                  style={{ marginTop: '1rem' }}
+                >
+                  Отметить как прочитанное
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
@@ -263,6 +376,7 @@ const Dashboard: React.FC = () => {
             <div className="admin-tabs">
               {[
                 { key: 'users', label: 'Пользователи' },
+                { key: 'support', label: 'Поддержка' },
                 { key: 'topics', label: 'Топики' },
                 { key: 'ideas', label: 'Идеи' },
               ].map((tab) => (
@@ -272,6 +386,9 @@ const Dashboard: React.FC = () => {
                   onClick={() => setActiveTab(tab.key as AdminTab)}
                 >
                   {tab.label}
+                  {tab.key === 'support' && supportMessages.filter(m => !m.isRead).length > 0 && (
+                    <span className="tab-badge">{supportMessages.filter(m => !m.isRead).length}</span>
+                  )}
                 </button>
               ))}
             </div>
@@ -286,6 +403,7 @@ const Dashboard: React.FC = () => {
               {isAdmin ? (
                 <>
                   {activeTab === 'users' && renderUsersTab()}
+                  {activeTab === 'support' && renderSupportTab()}
                   {activeTab === 'topics' && renderPlaceholder('Топики', 'Создавайте, публикуйте и модерируйте топики.')}
                   {activeTab === 'ideas' && renderPlaceholder('Идеи', 'Просматривайте, модерируйте и продвигайте идеи участников.')}
                 </>

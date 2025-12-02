@@ -5,6 +5,7 @@ import * as yup from 'yup';
 import { authAPI } from '../../api';
 import RegisterModal from './RegisterModal';
 import ForgotPasswordModal from './ForgotPasswordModal';
+import ContactSupportModal from './ContactSupportModal';
 import '../../styles/globals.css';
 import '../../styles/animations.css';
 import './Modal.css';
@@ -30,6 +31,9 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLoginSuccess
   const [error, setError] = useState('');
   const [showRegister, setShowRegister] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [showSupport, setShowSupport] = useState(false);
+  const [blockedUserEmail, setBlockedUserEmail] = useState('');
+  const [blockReason, setBlockReason] = useState('');
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
     resolver: yupResolver(loginSchema),
@@ -45,7 +49,17 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLoginSuccess
       onLoginSuccess();
       onClose();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Ошибка при входе');
+      const errorMessage = err.response?.data?.message || 'Ошибка при входе';
+      setError(errorMessage);
+      
+      // Если пользователь заблокирован, извлекаем причину и показываем кнопку для связи с поддержкой
+      if (errorMessage.includes('blocked') || errorMessage.includes('заблокирован')) {
+        const reasonMatch = errorMessage.match(/Reason: (.+?)\./);
+        if (reasonMatch) {
+          setBlockReason(reasonMatch[1]);
+        }
+        setBlockedUserEmail(data.email);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -103,6 +117,18 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLoginSuccess
           {error && (
             <div className="error-message">
               {error}
+              {(error.includes('blocked') || error.includes('заблокирован')) && (
+                <div style={{ marginTop: '1rem' }}>
+                  <button
+                    type="button"
+                    className="cta-button secondary"
+                    onClick={() => setShowSupport(true)}
+                    style={{ width: '100%' }}
+                  >
+                    Связаться с поддержкой
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -166,6 +192,19 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLoginSuccess
           </div>
         </form>
       </div>
+
+      {showSupport && (
+        <ContactSupportModal
+          isOpen={showSupport}
+          onClose={() => {
+            setShowSupport(false);
+            setBlockedUserEmail('');
+            setBlockReason('');
+          }}
+          userEmail={blockedUserEmail}
+          blockReason={blockReason}
+        />
+      )}
     </div>
   );
 };
