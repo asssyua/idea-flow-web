@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { profileAPI, authAPI, adminAPI } from '../../api';
+import { profileAPI, authAPI, adminAPI, topicAPI } from '../../api';
 import BlockUserModal from '../../components/Modals/BlockUserModal';
 import ConfirmModal from '../../components/Modals/ConfirmModal';
+import TopicModal from '../../components/Modals/TopicModal';
 import '../../styles/globals.css';
 import '../../styles/animations.css';
 import './Dashboard.css';
@@ -37,6 +38,21 @@ interface SupportMessage {
   createdAt: string;
 }
 
+interface Topic {
+  id: string;
+  title: string;
+  description: string;
+  status: string;
+  privacy: string;
+  deadline: string | null;
+  ideaCount: number;
+  author: {
+    firstName: string;
+    lastName: string;
+  };
+  createdAt?: string;
+}
+
 type AdminTab = 'users' | 'topics' | 'ideas' | 'support';
 
 const Dashboard: React.FC = () => {
@@ -49,10 +65,16 @@ const Dashboard: React.FC = () => {
   const [usersLoading, setUsersLoading] = useState(false);
   const [supportMessages, setSupportMessages] = useState<SupportMessage[]>([]);
   const [supportLoading, setSupportLoading] = useState(false);
+  const [topics, setTopics] = useState<Topic[]>([]);
+  const [topicsLoading, setTopicsLoading] = useState(false);
   const [blockModalOpen, setBlockModalOpen] = useState(false);
   const [unblockModalOpen, setUnblockModalOpen] = useState(false);
+  const [topicModalOpen, setTopicModalOpen] = useState(false);
+  const [deleteTopicModalOpen, setDeleteTopicModalOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [selectedUserName, setSelectedUserName] = useState('');
+  const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
+  const [topicToDelete, setTopicToDelete] = useState<Topic | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -64,6 +86,8 @@ const Dashboard: React.FC = () => {
       loadUsers();
     } else if (isAdmin && activeTab === 'support') {
       loadSupportMessages();
+    } else if (isAdmin && activeTab === 'topics') {
+      loadTopics();
     }
   }, [isAdmin, activeTab]);
 
@@ -129,6 +153,69 @@ const Dashboard: React.FC = () => {
       await loadSupportMessages();
     } catch (err) {
       console.error('Failed to mark message as read', err);
+    }
+  };
+
+  const loadTopics = async () => {
+    setTopicsLoading(true);
+    try {
+      const response = await topicAPI.getAllTopics();
+      setTopics(response.data);
+      setError('');
+    } catch (err: any) {
+      console.error('Failed to load topics', err);
+      setError('Не удалось загрузить список топиков');
+    } finally {
+      setTopicsLoading(false);
+    }
+  };
+
+  const handleCreateTopic = () => {
+    setSelectedTopic(null);
+    setTopicModalOpen(true);
+  };
+
+  const handleEditTopic = (topic: Topic) => {
+    setSelectedTopic(topic);
+    setTopicModalOpen(true);
+  };
+
+  const handleDeleteTopic = (topic: Topic) => {
+    setTopicToDelete(topic);
+    setDeleteTopicModalOpen(true);
+  };
+
+  const handleDeleteTopicConfirm = async () => {
+    if (!topicToDelete) return;
+
+    try {
+      await topicAPI.deleteTopic(topicToDelete.id);
+      await loadTopics();
+      setDeleteTopicModalOpen(false);
+      setTopicToDelete(null);
+    } catch (err: any) {
+      console.error('Failed to delete topic', err);
+      const errorMessage = err.response?.data?.message || 'Не удалось удалить топик';
+      alert(errorMessage);
+    }
+  };
+
+  const handleTopicSave = async (topicData: any) => {
+    try {
+      if (selectedTopic) {
+        // Редактирование
+        await topicAPI.updateTopic(selectedTopic.id, topicData);
+      } else {
+        // Создание
+        await topicAPI.createTopic(topicData);
+      }
+      await loadTopics();
+      setTopicModalOpen(false);
+      setSelectedTopic(null);
+    } catch (err: any) {
+      console.error('Failed to save topic', err);
+      const errorMessage = err.response?.data?.message || 'Не удалось сохранить топик';
+      alert(errorMessage);
     }
   };
 
@@ -206,56 +293,58 @@ const Dashboard: React.FC = () => {
       ) : users.length === 0 ? (
         <p>Пользователи пока не найдены.</p>
       ) : (
-        <table className="users-table">
-          <thead>
-            <tr>
-              <th>Email</th>
-              <th>Имя</th>
-              <th>Статус</th>
-              <th>Причина блокировки</th>
-              <th>Действия</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((u) => (
-              <tr key={u.id}>
-                <td>{u.email}</td>
-                <td>{u.firstName} {u.lastName}</td>
-                <td>
-                  <span className={`status-badge status-${u.status.toLowerCase()}`}>
-                    {u.status}
-                  </span>
-                </td>
-                <td>
-                  {u.blockInfo?.blockReason ? (
-                    <span className="block-reason-text">{u.blockInfo.blockReason}</span>
-                  ) : (
-                    <span className="text-muted">—</span>
-                  )}
-                </td>
-                <td className="users-table__actions">
-                  {u.status === 'blocked' || u.status === 'BLOCKED' ? (
-                    <button
-                      className="cta-button secondary"
-                      onClick={() => handleUnblockClick(u.id, `${u.firstName} ${u.lastName}`)}
-                    >
-                      Разблокировать
-                    </button>
-                  ) : u.role === 'admin' || u.role === 'ADMIN' ? (
-                    <span className="admin-protected-badge">Администратор</span>
-                  ) : (
-                    <button
-                      className="cta-button danger"
-                      onClick={() => handleBlockClick(u.id, `${u.firstName} ${u.lastName}`)}
-                    >
-                      Заблокировать
-                    </button>
-                  )}
-                </td>
+        <div className="table-wrapper">
+          <table className="users-table">
+            <thead>
+              <tr>
+                <th>Email</th>
+                <th>Имя</th>
+                <th>Статус</th>
+                <th>Причина блокировки</th>
+                <th>Действия</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {users.map((u) => (
+                <tr key={u.id}>
+                  <td>{u.email}</td>
+                  <td>{u.firstName} {u.lastName}</td>
+                  <td>
+                    <span className={`status-badge status-${u.status.toLowerCase()}`}>
+                      {u.status}
+                    </span>
+                  </td>
+                  <td>
+                    {u.blockInfo?.blockReason ? (
+                      <span className="block-reason-text">{u.blockInfo.blockReason}</span>
+                    ) : (
+                      <span className="text-muted">—</span>
+                    )}
+                  </td>
+                  <td className="users-table__actions">
+                    {u.status === 'blocked' || u.status === 'BLOCKED' ? (
+                      <button
+                        className="cta-button secondary"
+                        onClick={() => handleUnblockClick(u.id, `${u.firstName} ${u.lastName}`)}
+                      >
+                        Разблокировать
+                      </button>
+                    ) : u.role === 'admin' || u.role === 'ADMIN' ? (
+                      <span className="admin-protected-badge">Администратор</span>
+                    ) : (
+                      <button
+                        className="cta-button danger"
+                        onClick={() => handleBlockClick(u.id, `${u.firstName} ${u.lastName}`)}
+                      >
+                        Заблокировать
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );
@@ -314,6 +403,105 @@ const Dashboard: React.FC = () => {
               )}
             </div>
           ))}
+        </div>
+      )}
+    </div>
+  );
+
+  const renderTopicsTab = () => (
+    <div className="admin-section">
+      <div className="admin-section__header">
+        <h2>Топики</h2>
+        <p>Управляйте темами для обсуждения: создавайте, редактируйте, удаляйте и устанавливайте дедлайны.</p>
+        <button
+          className="cta-button"
+          onClick={handleCreateTopic}
+          style={{ marginTop: '1rem' }}
+        >
+          + Создать топик
+        </button>
+      </div>
+
+      {topicsLoading ? (
+        <div className="loading-container" style={{ minHeight: '200px' }}>
+          <div className="loading-spinner"></div>
+          <p>Загружаем топики...</p>
+        </div>
+      ) : topics.length === 0 ? (
+        <p>Топиков пока нет.</p>
+      ) : (
+        <div className="table-wrapper topics-table-wrapper">
+          <table className="users-table">
+            <thead>
+              <tr>
+                <th>Название</th>
+                <th>Описание</th>
+                <th>Статус</th>
+                <th>Приватность</th>
+                <th>Дедлайн</th>
+                <th>Идей</th>
+                <th>Автор</th>
+                <th>Действия</th>
+              </tr>
+            </thead>
+            <tbody>
+              {topics.map((topic) => (
+                <tr key={topic.id}>
+                  <td>
+                    <strong>{topic.title}</strong>
+                  </td>
+                  <td>
+                    <div className="topic-description">
+                      {topic.description.length > 100
+                        ? `${topic.description.substring(0, 100)}...`
+                        : topic.description}
+                    </div>
+                  </td>
+                  <td>
+                    <span className={`status-badge status-${topic.status.toLowerCase()}`}>
+                      {topic.status}
+                    </span>
+                  </td>
+                  <td>
+                    <span className={`status-badge status-${topic.privacy.toLowerCase()}`}>
+                      {topic.privacy}
+                    </span>
+                  </td>
+                  <td>
+                    {topic.deadline ? (
+                      <span className={new Date(topic.deadline) < new Date() ? 'deadline-expired' : ''}>
+                        {new Date(topic.deadline).toLocaleDateString('ru-RU')}
+                      </span>
+                    ) : (
+                      <span className="text-muted">—</span>
+                    )}
+                  </td>
+                  <td>{topic.ideaCount}</td>
+                  <td>
+                    {topic.author.firstName} {topic.author.lastName}
+                  </td>
+                  <td className="users-table__actions">
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      <button
+                        className="cta-button secondary"
+                        onClick={() => handleEditTopic(topic)}
+                        style={{ fontSize: '0.85rem', padding: '0.4rem 0.8rem' }}
+                      >
+                        Редактировать
+                      </button>
+                      <button
+                        className="cta-button danger"
+                        onClick={() => handleDeleteTopic(topic)}
+                        style={{ fontSize: '0.85rem', padding: '0.4rem 0.8rem' }}
+                      >
+                        Удалить
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
@@ -397,14 +585,14 @@ const Dashboard: React.FC = () => {
       </header>
       
       <main className="dashboard-content">
-        <div className="container">
+        <div className={`container ${isAdmin ? 'admin-container' : ''}`}>
           <div className="dashboard-welcome fade-in">
             <div className="welcome-card">
               {isAdmin ? (
                 <>
                   {activeTab === 'users' && renderUsersTab()}
                   {activeTab === 'support' && renderSupportTab()}
-                  {activeTab === 'topics' && renderPlaceholder('Топики', 'Создавайте, публикуйте и модерируйте топики.')}
+                  {activeTab === 'topics' && renderTopicsTab()}
                   {activeTab === 'ideas' && renderPlaceholder('Идеи', 'Просматривайте, модерируйте и продвигайте идеи участников.')}
                 </>
               ) : (
@@ -468,6 +656,34 @@ const Dashboard: React.FC = () => {
           confirmText="Разблокировать"
           cancelText="Отмена"
           confirmButtonClass="secondary"
+        />
+      )}
+
+      {topicModalOpen && (
+        <TopicModal
+          isOpen={topicModalOpen}
+          onClose={() => {
+            setTopicModalOpen(false);
+            setSelectedTopic(null);
+          }}
+          onSave={handleTopicSave}
+          topic={selectedTopic}
+        />
+      )}
+
+      {deleteTopicModalOpen && topicToDelete && (
+        <ConfirmModal
+          isOpen={deleteTopicModalOpen}
+          onClose={() => {
+            setDeleteTopicModalOpen(false);
+            setTopicToDelete(null);
+          }}
+          onConfirm={handleDeleteTopicConfirm}
+          title="Удаление топика"
+          message={`Вы уверены, что хотите удалить топик "${topicToDelete.title}"? Это действие нельзя отменить.`}
+          confirmText="Удалить"
+          cancelText="Отмена"
+          confirmButtonClass="danger"
         />
       )}
     </div>

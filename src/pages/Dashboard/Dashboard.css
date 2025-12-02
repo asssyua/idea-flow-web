@@ -64,6 +64,41 @@
 .dashboard-content {
   flex: 1;
   padding: 3rem 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: visible;
+}
+
+.dashboard-content .container {
+  width: 100%;
+  max-width: 100%;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Расширенный контейнер для админ-секций */
+.dashboard-content .container.admin-container {
+  max-width: 100%;
+  padding-left: 2rem;
+  padding-right: 2rem;
+  width: 100%;
+}
+
+.dashboard-content .container.admin-container .dashboard-welcome {
+  max-width: 100%;
+  width: 100%;
+  margin: 0;
+}
+
+.dashboard-content .container.admin-container .welcome-card {
+  max-width: 100%;
+  width: 100%;
+  padding: 2.5rem;
+}
+
+.dashboard-content .container.admin-container .admin-section {
+  width: 100%;
+  max-width: 100%;
 }
 
 .dashboard-welcome {
@@ -378,6 +413,12 @@
 /* Admin Section */
 .admin-section {
   width: 100%;
+  max-width: 100%;
+  overflow-x: visible;
+  min-width: fit-content;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 .admin-section__header {
@@ -395,14 +436,42 @@
   font-size: 1rem;
 }
 
+/* Table Wrapper */
+.table-wrapper {
+  width: 100%;
+  overflow-x: visible;
+  overflow-y: visible;
+  margin: 1rem 0;
+  min-width: fit-content;
+  display: block;
+}
+
 /* Users Table */
 .users-table {
   width: 100%;
+  min-width: 100%;
   border-collapse: collapse;
   background: var(--bg-primary);
   border-radius: var(--border-radius);
   overflow: hidden;
   box-shadow: var(--shadow-md);
+  table-layout: auto;
+  display: table;
+}
+
+/* Topics Table - больше колонок */
+.topics-table-wrapper .users-table {
+  width: 100%;
+  min-width: 100%;
+}
+
+/* Убеждаемся, что таблица занимает всю ширину контейнера */
+.table-wrapper {
+  width: 100%;
+}
+
+.admin-section .table-wrapper {
+  width: 100%;
 }
 
 .users-table thead {
@@ -410,17 +479,37 @@
 }
 
 .users-table th {
-  padding: 1rem;
+  padding: 0.75rem 1rem;
   text-align: left;
   font-weight: 600;
   color: var(--text-primary);
   border-bottom: 2px solid var(--border-color);
+  white-space: nowrap;
 }
 
 .users-table td {
-  padding: 1rem;
+  padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--border-color);
   color: var(--text-primary);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  vertical-align: top;
+}
+
+.users-table td:last-child {
+  white-space: nowrap;
+}
+
+/* Специфичные стили для колонок таблицы топиков */
+.users-table th:nth-child(2),
+.users-table td:nth-child(2) {
+  max-width: 300px;
+}
+
+.users-table th:nth-child(6),
+.users-table td:nth-child(6) {
+  text-align: center;
+  width: 80px;
 }
 
 .users-table tbody tr:hover {
@@ -470,6 +559,7 @@
   max-width: 300px;
   display: block;
   word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .text-muted {
@@ -569,6 +659,56 @@
   margin-left: 0.5rem;
 }
 
+.topic-description {
+  max-width: 300px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.deadline-expired {
+  color: var(--accent-color);
+  font-weight: 600;
+}
+
+.status-badge.status-pending {
+  background: rgba(255, 193, 7, 0.2);
+  color: #ffc107;
+  border: 1px solid #ffc107;
+}
+
+.status-badge.status-approved {
+  background: rgba(40, 167, 69, 0.2);
+  color: #28a745;
+  border: 1px solid #28a745;
+}
+
+.status-badge.status-rejected {
+  background: rgba(220, 53, 69, 0.2);
+  color: #dc3545;
+  border: 1px solid #dc3545;
+}
+
+.status-badge.status-closed {
+  background: rgba(108, 117, 125, 0.2);
+  color: #6c757d;
+  border: 1px solid #6c757d;
+}
+
+.status-badge.status-public {
+  background: rgba(0, 123, 255, 0.2);
+  color: #007bff;
+  border: 1px solid #007bff;
+}
+
+.status-badge.status-private {
+  background: rgba(108, 117, 125, 0.2);
+  color: #6c757d;
+  border: 1px solid #6c757d;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .header-content {
@@ -597,6 +737,20 @@
   
   .info-label {
     min-width: auto;
+  }
+
+  .dashboard-content .container.admin-container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .users-table {
+    font-size: 0.9rem;
+  }
+
+  .users-table th,
+  .users-table td {
+    padding: 0.5rem 0.75rem;
   }
 }
 

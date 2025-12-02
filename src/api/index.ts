@@ -83,13 +83,19 @@ export const adminAPI = {
   sendSupportMessage: (data: any) => api.post('/admin/support-message', data),
 };
 
-// Topic API (заглушки - реализуем позже)
+// Topic API
 export const topicAPI = {
-  getAllTopics: () => api.get('/topics'),
+  getAllTopics: (status?: string) => {
+    const params = status ? `?status=${status}` : '';
+    return api.get(`/topics${params}`);
+  },
   getTopicById: (id: string) => api.get(`/topics/${id}`),
   createTopic: (data: any) => api.post('/topics', data),
-  updateTopic: (id: string, data: any) => api.patch(`/topics/${id}`, data),
+  updateTopic: (id: string, data: any) => api.patch(`/topics/admin/${id}`, data),
   deleteTopic: (id: string) => api.delete(`/topics/${id}`),
+  approveTopic: (id: string) => api.patch(`/topics/${id}/approve`),
+  rejectTopic: (id: string) => api.patch(`/topics/${id}/reject`),
+  getPendingTopics: () => api.get('/topics/admin/pending'),
 };
 
 // Idea API (заглушки - реализуем позже)
