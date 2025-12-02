@@ -5,24 +5,22 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.4);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  animation: fadeIn var(--transition-normal);
-  backdrop-filter: blur(2px);
+  animation: fadeIn 0.2s ease;
 }
 
 .modal-content {
   background: var(--bg-primary);
-  padding: 2rem;
-  border-radius: var(--border-radius-lg);
+  padding: 1.5rem;
+  border-radius: var(--border-radius);
   width: 90%;
   max-width: 450px;
-  box-shadow: var(--shadow-lg);
-  animation: slideInDown var(--transition-normal);
   border: 1px solid var(--border-color);
+  animation: fadeIn 0.2s ease;
 }
 
 /* Modal Header */
@@ -104,7 +102,6 @@
 .form-group select:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(110, 142, 251, 0.2);
 }
 
 .form-group input.error {
