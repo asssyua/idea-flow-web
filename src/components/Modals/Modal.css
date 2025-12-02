@@ -71,7 +71,7 @@
 
 .form-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 1rem;
 }
 
@@ -184,6 +184,15 @@
 
 .modal-actions .cta-button {
   flex: 1;
+}
+
+.modal-actions.modal-actions--single {
+  justify-content: center;
+}
+
+.modal-actions.modal-actions--single .cta-button {
+  flex: 0 0 auto;
+  min-width: 180px;
 }
 
 .modal-footer {

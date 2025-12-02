@@ -142,15 +142,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLoginSuccess
             Забыли пароль?
           </button>
 
-          <div className="modal-actions">
-            <button
-              type="button"
-              className="cta-button secondary"
-              onClick={onClose}
-              disabled={isLoading}
-            >
-              Отмена
-            </button>
+          <div className="modal-actions modal-actions--single">
             <button
               type="submit"
               className="cta-button primary"

@@ -9,7 +9,7 @@
 .header {
   background: var(--gradient-primary);
   color: white;
-  padding-bottom: 2rem;
+  padding-bottom: 4rem;
 }
 
 nav {
@@ -72,7 +72,11 @@ nav {
 /* Hero Section */
 .hero {
   text-align: center;
-  padding: 4rem 0;
+  padding: 6rem 0 5rem;
+  min-height: calc(100vh - 140px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   animation: fadeIn 1s ease-out;
 }
 
@@ -154,12 +158,14 @@ nav {
 .features-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
+  column-gap: 2rem;
+  row-gap: 3rem;
+  margin-bottom: 3rem;
 }
 
 .feature-card {
   background: var(--bg-primary);
-  padding: 2.5rem 2rem;
+  padding: 3rem 2.25rem 3.5rem;
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow-md);
   text-align: center;
