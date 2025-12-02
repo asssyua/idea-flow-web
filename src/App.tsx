@@ -5,7 +5,6 @@ import PrivateRoute from './components/Auth/PrivateRoute';
 import LoginPage from './pages/Auth/LoginPage';
 import RegisterPage from './pages/Auth/RegisterPage';
 import ForgotPasswordPage from './pages/Auth/ForgotPasswordPage';
-import AdminDashboard from './pages/Admin/AdminDashboard';
 import './App.css';
 
 function App() {
@@ -21,12 +20,6 @@ function App() {
           <Route path="/dashboard" element={
             <PrivateRoute>
               <Dashboard />
-            </PrivateRoute>
-          } />
-
-          <Route path="/admin" element={
-            <PrivateRoute>
-              <AdminDashboard />
             </PrivateRoute>
           } />
           

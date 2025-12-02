@@ -23,6 +23,18 @@
   align-items: center;
 }
 
+.header-user-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.user-name {
+  color: white;
+  font-weight: 500;
+  font-size: 1rem;
+}
+
 .dashboard-title {
   margin: 0;
   font-size: 1.5rem;
@@ -198,6 +210,99 @@
   font-size: 0.9rem;
 }
 
+/* Admin */
+.admin-header {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.admin-subtitle {
+  margin: 0;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.admin-tabs {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  overflow-x: auto;
+}
+
+.admin-tab {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid transparent;
+  color: white;
+  padding: 0.6rem 1.4rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-weight: 500;
+}
+
+.admin-tab.active {
+  background: white;
+  color: var(--primary-color);
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: var(--shadow-sm);
+}
+
+.admin-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.admin-section__header h2 {
+  margin: 0 0 0.5rem;
+}
+
+.admin-section__header p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.users-table th,
+.users-table td {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.users-table th {
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+}
+
+.users-table tr:hover td {
+  background: rgba(0, 0, 0, 0.015);
+}
+
+.users-table__actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.cta-button {
+  border: none;
+}
+
+.cta-button.danger {
+  background: #dc3545;
+}
+
+.cta-button.danger:hover {
+  background: #c82333;
+}
+
 /* Loading State */
 .loading-container {
   display: flex;
@@ -238,6 +343,115 @@
   color: var(--text-secondary);
   font-size: 1.1rem;
   max-width: 400px;
+}
+
+/* Admin Tabs */
+.admin-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.admin-tab {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all var(--transition-fast);
+  font-weight: 500;
+  border-radius: var(--border-radius) var(--border-radius) 0 0;
+}
+
+.admin-tab:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.admin-tab.active {
+  background: rgba(255, 255, 255, 0.2);
+  border-bottom-color: white;
+}
+
+/* Admin Section */
+.admin-section {
+  width: 100%;
+}
+
+.admin-section__header {
+  margin-bottom: 2rem;
+}
+
+.admin-section__header h2 {
+  color: var(--primary-color);
+  margin-bottom: 0.5rem;
+  font-size: 1.8rem;
+}
+
+.admin-section__header p {
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+/* Users Table */
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--bg-primary);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+
+.users-table thead {
+  background: var(--bg-secondary);
+}
+
+.users-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--border-color);
+}
+
+.users-table td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.users-table tbody tr:hover {
+  background: var(--bg-secondary);
+}
+
+.users-table__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.cta-button.danger {
+  background-color: var(--accent-color);
+  color: white;
+  border: none;
+}
+
+.cta-button.danger:hover {
+  background-color: #c82333;
+  transform: translateY(-1px);
+}
+
+.cta-button.secondary {
+  background-color: var(--secondary-color);
+  color: white;
+  border: none;
+}
+
+.cta-button.secondary:hover {
+  background-color: #5a6268;
+  transform: translateY(-1px);
 }
 
 /* Responsive */

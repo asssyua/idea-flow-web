@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { profileAPI, authAPI } from '../../api';
+import { profileAPI, authAPI, adminAPI } from '../../api';
+import BlockUserModal from '../../components/Modals/BlockUserModal';
+import ConfirmModal from '../../components/Modals/ConfirmModal';
 import '../../styles/globals.css';
 import '../../styles/animations.css';
 import './Dashboard.css';
@@ -12,16 +14,39 @@ interface UserProfile {
   email?: string;
 }
 
+interface AdminUser {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  status: string;
+}
+
+type AdminTab = 'users' | 'topics' | 'ideas';
+
 const Dashboard: React.FC = () => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState<AdminTab>('users');
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [blockModalOpen, setBlockModalOpen] = useState(false);
+  const [unblockModalOpen, setUnblockModalOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [selectedUserName, setSelectedUserName] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchProfile();
   }, []);
+
+  useEffect(() => {
+    if (isAdmin && activeTab === 'users') {
+      loadUsers();
+    }
+  }, [isAdmin, activeTab]);
 
   const fetchProfile = async () => {
     try {
@@ -51,6 +76,62 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const loadUsers = async () => {
+    setUsersLoading(true);
+    try {
+      const response = await adminAPI.getAllUsers();
+      setUsers(response.data);
+      setError('');
+    } catch (err: any) {
+      console.error('Failed to load users', err);
+      setError('Не удалось загрузить список пользователей');
+    } finally {
+      setUsersLoading(false);
+    }
+  };
+
+  const handleBlockClick = (id: string, userName: string) => {
+    setSelectedUserId(id);
+    setSelectedUserName(userName);
+    setBlockModalOpen(true);
+  };
+
+  const handleBlockConfirm = async (reason: string, reasonForUser: string) => {
+    if (!selectedUserId) return;
+
+    try {
+      await adminAPI.blockUser(selectedUserId, { reason, reasonForUser });
+      await loadUsers();
+      setBlockModalOpen(false);
+      setSelectedUserId(null);
+      setSelectedUserName('');
+    } catch (err) {
+      console.error('Failed to block user', err);
+      alert('Не удалось заблокировать пользователя');
+    }
+  };
+
+  const handleUnblockClick = (id: string, userName: string) => {
+    setSelectedUserId(id);
+    setSelectedUserName(userName);
+    setUnblockModalOpen(true);
+  };
+
+  const handleUnblockConfirm = async () => {
+    if (!selectedUserId) return;
+
+    try {
+      await adminAPI.unblockUser(selectedUserId);
+      await loadUsers();
+      setUnblockModalOpen(false);
+      setSelectedUserId(null);
+      setSelectedUserName('');
+    } catch (err) {
+      console.error('Failed to unblock user', err);
+      alert('Не удалось разблокировать пользователя');
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await authAPI.logout();
@@ -65,6 +146,77 @@ const Dashboard: React.FC = () => {
       navigate('/');
     }
   };
+
+  const renderUsersTab = () => (
+    <div className="admin-section">
+      <div className="admin-section__header">
+        <h2>Пользователи</h2>
+        <p>Управляйте статусами, блокировками и доступом пользователей.</p>
+      </div>
+
+      {usersLoading ? (
+        <div className="loading-container" style={{ minHeight: '200px' }}>
+          <div className="loading-spinner"></div>
+          <p>Загружаем пользователей...</p>
+        </div>
+      ) : users.length === 0 ? (
+        <p>Пользователи пока не найдены.</p>
+      ) : (
+        <table className="users-table">
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Имя</th>
+              <th>Статус</th>
+              <th>Действия</th>
+            </tr>
+          </thead>
+          <tbody>
+            {users.map((u) => (
+              <tr key={u.id}>
+                <td>{u.email}</td>
+                <td>{u.firstName} {u.lastName}</td>
+                <td>
+                  <span className={`status-badge status-${u.status.toLowerCase()}`}>
+                    {u.status}
+                  </span>
+                </td>
+                <td className="users-table__actions">
+                  {u.status === 'BLOCKED' ? (
+                    <button
+                      className="cta-button secondary"
+                      onClick={() => handleUnblockClick(u.id, `${u.firstName} ${u.lastName}`)}
+                    >
+                      Разблокировать
+                    </button>
+                  ) : (
+                    <button
+                      className="cta-button danger"
+                      onClick={() => handleBlockClick(u.id, `${u.firstName} ${u.lastName}`)}
+                    >
+                      Заблокировать
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+
+  const renderPlaceholder = (title: string, description: string) => (
+    <div className="admin-section">
+      <div className="admin-section__header">
+        <h2>{title}</h2>
+        <p>{description}</p>
+      </div>
+      <div className="dashboard-message">
+        <p>Функциональность находится в разработке. Здесь появятся инструменты управления {title.toLowerCase()}.</p>
+      </div>
+    </div>
+  );
 
   if (loading) {
     return (
@@ -95,14 +247,35 @@ const Dashboard: React.FC = () => {
     <div className="dashboard">
       <header className="dashboard-header">
         <div className="container">
-          <div className="header-content">
+          <div className={`header-content ${isAdmin ? 'admin-header' : ''}`}>
             <h1 className="dashboard-title">
               Добро пожаловать в IdeaFlow, {user.firstName}!
             </h1>
-            <button onClick={handleLogout} className="logout-btn">
-              Выйти
-            </button>
+            <div className="header-user-info">
+              <span className="user-name">{user.firstName} {user.lastName}</span>
+              <button onClick={handleLogout} className="logout-btn">
+                Выйти
+              </button>
+            </div>
           </div>
+          
+          {isAdmin && (
+            <div className="admin-tabs">
+              {[
+                { key: 'users', label: 'Пользователи' },
+                { key: 'topics', label: 'Топики' },
+                { key: 'ideas', label: 'Идеи' },
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  className={`admin-tab ${activeTab === tab.key ? 'active' : ''}`}
+                  onClick={() => setActiveTab(tab.key as AdminTab)}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </header>
       
@@ -110,59 +283,34 @@ const Dashboard: React.FC = () => {
         <div className="container">
           <div className="dashboard-welcome fade-in">
             <div className="welcome-card">
-              <h2>Ваш профиль</h2>
-              <div className="profile-info">
-                <div className="info-item">
-                  <span className="info-label">Имя:</span>
-                  <span className="info-value">{user.firstName} {user.lastName}</span>
-                </div>
-                {user.email && (
-                  <div className="info-item">
-                    <span className="info-label">Email:</span>
-                    <span className="info-value">{user.email}</span>
+              {isAdmin ? (
+                <>
+                  {activeTab === 'users' && renderUsersTab()}
+                  {activeTab === 'topics' && renderPlaceholder('Топики', 'Создавайте, публикуйте и модерируйте топики.')}
+                  {activeTab === 'ideas' && renderPlaceholder('Идеи', 'Просматривайте, модерируйте и продвигайте идеи участников.')}
+                </>
+              ) : (
+                <>
+                  <h2>Ваш профиль</h2>
+                  <div className="profile-info">
+                    <div className="info-item">
+                      <span className="info-label">Имя:</span>
+                      <span className="info-value">{user.firstName} {user.lastName}</span>
+                    </div>
+                    {user.email && (
+                      <div className="info-item">
+                        <span className="info-label">Email:</span>
+                        <span className="info-value">{user.email}</span>
+                      </div>
+                    )}
+                    <div className="info-item">
+                      <span className="info-label">Статус аккаунта:</span>
+                      <span className={`status-badge status-${user.status.toLowerCase()}`}>
+                        {user.status}
+                      </span>
+                    </div>
                   </div>
-                )}
-                <div className="info-item">
-                  <span className="info-label">Статус аккаунта:</span>
-                  <span className={`status-badge status-${user.status.toLowerCase()}`}>
-                    {user.status}
-                  </span>
-                </div>
-                {isAdmin && (
-                  <div className="info-item">
-                    <span className="info-label">Роль:</span>
-                    <span className="status-badge status-active">
-                      Администратор
-                    </span>
-                  </div>
-                )}
-              </div>
-              
-              <div className="dashboard-message">
-                <p>Здесь будет ваша рабочая область с топиками и идеями.</p>
-                <p>Скоро вы сможете создавать топики, предлагать идеи и голосовать за лучшие предложения!</p>
-              </div>
-              
-              <div className="coming-soon">
-                <h3>Скоро доступно:</h3>
-                <ul className="features-list">
-                  <li>📋 Создание топиков для обсуждения</li>
-                  <li>💡 Предложение идей по топикам</li>
-                  <li>👍 Голосование за лучшие идеи</li>
-                  <li>📊 Статистика и аналитика</li>
-                  <li>👥 Управление участниками</li>
-                </ul>
-              </div>
-
-              {isAdmin && (
-                <div style={{ marginTop: 24 }}>
-                  <button
-                    className="cta-button primary"
-                    onClick={() => navigate('/admin')}
-                  >
-                    Перейти в админ-панель
-                  </button>
-                </div>
+                </>
               )}
             </div>
           </div>
@@ -174,6 +322,36 @@ const Dashboard: React.FC = () => {
           <p>© 2025 IdeaFlow Dashboard. Версия 1.0</p>
         </div>
       </footer>
+
+      {blockModalOpen && (
+        <BlockUserModal
+          isOpen={blockModalOpen}
+          onClose={() => {
+            setBlockModalOpen(false);
+            setSelectedUserId(null);
+            setSelectedUserName('');
+          }}
+          onConfirm={handleBlockConfirm}
+          userName={selectedUserName}
+        />
+      )}
+
+      {unblockModalOpen && (
+        <ConfirmModal
+          isOpen={unblockModalOpen}
+          onClose={() => {
+            setUnblockModalOpen(false);
+            setSelectedUserId(null);
+            setSelectedUserName('');
+          }}
+          onConfirm={handleUnblockConfirm}
+          title="Разблокировка пользователя"
+          message={`Вы уверены, что хотите разблокировать пользователя ${selectedUserName}?`}
+          confirmText="Разблокировать"
+          cancelText="Отмена"
+          confirmButtonClass="secondary"
+        />
+      )}
     </div>
   );
 };
