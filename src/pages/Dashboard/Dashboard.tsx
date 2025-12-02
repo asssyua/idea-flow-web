@@ -554,10 +554,10 @@ const Dashboard: React.FC = () => {
             </h1>
             <div className="header-user-info">
               <span className="user-name">{user.firstName} {user.lastName}</span>
-              <button onClick={handleLogout} className="logout-btn">
-                Выйти
-              </button>
-            </div>
+            <button onClick={handleLogout} className="logout-btn">
+              Выйти
+            </button>
+          </div>
           </div>
           
           {isAdmin && (
@@ -597,25 +597,25 @@ const Dashboard: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <h2>Ваш профиль</h2>
-                  <div className="profile-info">
-                    <div className="info-item">
-                      <span className="info-label">Имя:</span>
-                      <span className="info-value">{user.firstName} {user.lastName}</span>
-                    </div>
-                    {user.email && (
-                      <div className="info-item">
-                        <span className="info-label">Email:</span>
-                        <span className="info-value">{user.email}</span>
-                      </div>
-                    )}
-                    <div className="info-item">
-                      <span className="info-label">Статус аккаунта:</span>
-                      <span className={`status-badge status-${user.status.toLowerCase()}`}>
-                        {user.status}
-                      </span>
-                    </div>
+              <h2>Ваш профиль</h2>
+              <div className="profile-info">
+                <div className="info-item">
+                  <span className="info-label">Имя:</span>
+                  <span className="info-value">{user.firstName} {user.lastName}</span>
+                </div>
+                {user.email && (
+                  <div className="info-item">
+                    <span className="info-label">Email:</span>
+                    <span className="info-value">{user.email}</span>
                   </div>
+                )}
+                <div className="info-item">
+                  <span className="info-label">Статус аккаунта:</span>
+                  <span className={`status-badge status-${user.status.toLowerCase()}`}>
+                    {user.status}
+                  </span>
+                </div>
+              </div>
                 </>
               )}
             </div>

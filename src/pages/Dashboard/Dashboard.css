@@ -11,7 +11,7 @@
   background: var(--primary-color);
   color: white;
   padding: 1.5rem 0;
-  border-bottom: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -42,13 +42,13 @@
 }
 
 .logout-btn {
-  background-color: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   color: white;
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1.5rem;
   border-radius: var(--border-radius);
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 1rem;
   transition: background-color var(--transition-fast);
   display: flex;
   align-items: center;
@@ -56,7 +56,7 @@
 }
 
 .logout-btn:hover {
-  background-color: rgba(255, 255, 255, 0.25);
+  background-color: rgba(255, 255, 255, 0.3);
 }
 
 /* Main Content */
@@ -107,8 +107,9 @@
 
 .welcome-card {
   background: var(--bg-primary);
-  padding: 2rem;
+  padding: 2.5rem;
   border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
   border: 1px solid var(--border-color);
 }
 
@@ -181,9 +182,9 @@
 .dashboard-message {
   margin: 2rem 0;
   padding: 1.5rem;
-  background: var(--bg-secondary);
+  background: rgba(167, 119, 227, 0.1);
   border-radius: var(--border-radius);
-  border-left: 3px solid var(--primary-color);
+  border-left: 4px solid var(--primary-color);
 }
 
 .dashboard-message p {
@@ -258,30 +259,27 @@
 
 .admin-tabs {
   display: flex;
-  gap: 0.5rem;
-  margin-top: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  gap: 1rem;
+  margin-top: 1.5rem;
+  overflow-x: auto;
 }
 
 .admin-tab {
-  background: transparent;
-  border: none;
-  border-bottom: 2px solid transparent;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid transparent;
   color: white;
-  padding: 0.75rem 1rem;
+  padding: 0.6rem 1.4rem;
+  border-radius: 999px;
   cursor: pointer;
-  transition: border-color var(--transition-fast);
+  transition: all var(--transition-fast);
   font-weight: 500;
-  font-size: 0.95rem;
-}
-
-.admin-tab:hover {
-  border-bottom-color: rgba(255, 255, 255, 0.3);
 }
 
 .admin-tab.active {
-  border-bottom-color: white;
-  color: white;
+  background: white;
+  color: var(--primary-color);
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: var(--shadow-sm);
 }
 
 .admin-section {
@@ -397,7 +395,7 @@
   font-size: 1rem;
   cursor: pointer;
   border-bottom: 3px solid transparent;
-  transition: all var(--transition-fast);
+  transition: background-color var(--transition-fast);
   font-weight: 500;
   border-radius: var(--border-radius) var(--border-radius) 0 0;
 }
@@ -453,9 +451,10 @@
   min-width: 100%;
   border-collapse: collapse;
   background: var(--bg-primary);
-  border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
   overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
   table-layout: auto;
   display: table;
 }
@@ -529,7 +528,7 @@
 }
 
 .cta-button.danger:hover {
-  background-color: var(--accent-dark);
+  background-color: #c82333;
 }
 
 .cta-button.secondary {
@@ -578,11 +577,12 @@
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
   padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
 }
 
 .support-message-card.unread {
-  border-left: 3px solid var(--primary-color);
-  background: var(--bg-secondary);
+  border-left: 4px solid var(--primary-color);
+  background: rgba(167, 119, 227, 0.05);
 }
 
 .support-message-header {
@@ -672,39 +672,39 @@
 }
 
 .status-badge.status-pending {
-  background: #fef3c7;
-  color: #92400e;
-  border: 1px solid #fbbf24;
+  background: rgba(255, 193, 7, 0.2);
+  color: #ffc107;
+  border: 1px solid #ffc107;
 }
 
 .status-badge.status-approved {
-  background: #d1fae5;
-  color: #065f46;
-  border: 1px solid #10b981;
+  background: rgba(40, 167, 69, 0.2);
+  color: #28a745;
+  border: 1px solid #28a745;
 }
 
 .status-badge.status-rejected {
-  background: #fee2e2;
-  color: #991b1b;
-  border: 1px solid #ef4444;
+  background: rgba(220, 53, 69, 0.2);
+  color: #dc3545;
+  border: 1px solid #dc3545;
 }
 
 .status-badge.status-closed {
-  background: #f3f4f6;
-  color: #374151;
-  border: 1px solid #9ca3af;
+  background: rgba(108, 117, 125, 0.2);
+  color: #6c757d;
+  border: 1px solid #6c757d;
 }
 
 .status-badge.status-public {
-  background: #dbeafe;
-  color: #1e40af;
-  border: 1px solid #3b82f6;
+  background: rgba(0, 123, 255, 0.2);
+  color: #007bff;
+  border: 1px solid #007bff;
 }
 
 .status-badge.status-private {
-  background: #f3f4f6;
-  color: #374151;
-  border: 1px solid #9ca3af;
+  background: rgba(108, 117, 125, 0.2);
+  color: #6c757d;
+  border: 1px solid #6c757d;
 }
 
 /* Responsive */

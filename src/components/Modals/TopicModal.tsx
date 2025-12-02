@@ -102,7 +102,7 @@ const TopicModal: React.FC<TopicModalProps> = ({ isOpen, onClose, onSave, topic 
 
   return (
     <div className="modal-overlay" onClick={handleOverlayClick}>
-      <div className="modal-content">
+      <div className="modal-content topic-modal-content">
         <div className="modal-header">
           <h2>{topic ? 'Редактировать топик' : 'Создать топик'}</h2>
           <button className="modal-close" onClick={onClose}>×</button>
@@ -135,7 +135,7 @@ const TopicModal: React.FC<TopicModalProps> = ({ isOpen, onClose, onSave, topic 
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Введите описание топика"
-              rows={5}
+              rows={3}
               required
               disabled={isLoading}
             />
