@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LoginModal from '../../components/Modals/LoginModal';
+import lightImage from '../../assets/light.jpg';
 import '../../styles/globals.css';
 import '../../styles/animations.css';
 import './HomePage.css';
@@ -36,7 +37,10 @@ const HomePage: React.FC = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="hero-section">
+      <section 
+        className="hero-section"
+        style={{ backgroundImage: `url(${lightImage})` }}
+      >
         <div className="container">
           <h1 className="hero-title">IdeaFlow</h1>
           <p className="hero-subtitle">

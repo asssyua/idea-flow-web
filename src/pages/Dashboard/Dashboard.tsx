@@ -282,7 +282,6 @@ const Dashboard: React.FC = () => {
     <div className="admin-section">
       <div className="admin-section__header">
         <h2>Пользователи</h2>
-        <p>Управляйте статусами, блокировками и доступом пользователей.</p>
       </div>
 
       {usersLoading ? (
@@ -353,7 +352,6 @@ const Dashboard: React.FC = () => {
     <div className="admin-section">
       <div className="admin-section__header">
         <h2>Сообщения поддержки</h2>
-        <p>Просматривайте обращения от заблокированных пользователей.</p>
       </div>
 
       {supportLoading ? (
@@ -412,7 +410,6 @@ const Dashboard: React.FC = () => {
     <div className="admin-section">
       <div className="admin-section__header">
         <h2>Топики</h2>
-        <p>Управляйте темами для обсуждения: создавайте, редактируйте, удаляйте и устанавливайте дедлайны.</p>
         <button
           className="cta-button"
           onClick={handleCreateTopic}
@@ -514,7 +511,6 @@ const Dashboard: React.FC = () => {
         <p>{description}</p>
       </div>
       <div className="dashboard-message">
-        <p>Функциональность находится в разработке. Здесь появятся инструменты управления {title.toLowerCase()}.</p>
       </div>
     </div>
   );
@@ -548,37 +544,47 @@ const Dashboard: React.FC = () => {
     <div className="dashboard">
       <header className="dashboard-header">
         <div className="container">
-          <div className={`header-content ${isAdmin ? 'admin-header' : ''}`}>
-            <h1 className="dashboard-title">
-              Добро пожаловать в IdeaFlow, {user.firstName}!
-            </h1>
-            <div className="header-user-info">
-              <span className="user-name">{user.firstName} {user.lastName}</span>
-            <button onClick={handleLogout} className="logout-btn">
-              Выйти
-            </button>
-          </div>
-          </div>
-          
-          {isAdmin && (
-            <div className="admin-tabs">
-              {[
-                { key: 'users', label: 'Пользователи' },
-                { key: 'support', label: 'Поддержка' },
-                { key: 'topics', label: 'Топики' },
-                { key: 'ideas', label: 'Идеи' },
-              ].map((tab) => (
-                <button
-                  key={tab.key}
-                  className={`admin-tab ${activeTab === tab.key ? 'active' : ''}`}
-                  onClick={() => setActiveTab(tab.key as AdminTab)}
-                >
-                  {tab.label}
-                  {tab.key === 'support' && supportMessages.filter(m => !m.isRead).length > 0 && (
-                    <span className="tab-badge">{supportMessages.filter(m => !m.isRead).length}</span>
-                  )}
+          {isAdmin ? (
+            <>
+              <div className="header-content admin-header">
+                <h1 className="dashboard-title">System Administrator</h1>
+              </div>
+              <div className="admin-tabs-wrapper">
+                <div className="admin-tabs">
+                  {[
+                    { key: 'users', label: 'Пользователи' },
+                    { key: 'support', label: 'Поддержка' },
+                    { key: 'topics', label: 'Топики' },
+                    { key: 'ideas', label: 'Идеи' },
+                  ].map((tab) => (
+                    <button
+                      key={tab.key}
+                      className={`admin-tab ${activeTab === tab.key ? 'active' : ''}`}
+                      onClick={() => setActiveTab(tab.key as AdminTab)}
+                    >
+                      {tab.label}
+                      {tab.key === 'support' && supportMessages.filter(m => !m.isRead).length > 0 && (
+                        <span className="tab-badge">{supportMessages.filter(m => !m.isRead).length}</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+                <button onClick={handleLogout} className="logout-btn">
+                  Выйти
                 </button>
-              ))}
+              </div>
+            </>
+          ) : (
+            <div className="header-content">
+              <h1 className="dashboard-title">
+                Добро пожаловать в IdeaFlow, {user.firstName}!
+              </h1>
+              <div className="header-user-info">
+                <span className="user-name">{user.firstName} {user.lastName}</span>
+                <button onClick={handleLogout} className="logout-btn">
+                  Выйти
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -593,7 +599,6 @@ const Dashboard: React.FC = () => {
                   {activeTab === 'users' && renderUsersTab()}
                   {activeTab === 'support' && renderSupportTab()}
                   {activeTab === 'topics' && renderTopicsTab()}
-                  {activeTab === 'ideas' && renderPlaceholder('Идеи', 'Просматривайте, модерируйте и продвигайте идеи участников.')}
                 </>
               ) : (
                 <>
