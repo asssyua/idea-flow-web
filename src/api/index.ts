@@ -100,11 +100,13 @@ export const topicAPI = {
   getPendingTopics: () => api.get('/topics/admin/pending'),
 };
 
-// Idea API (заглушки - реализуем позже)
+// Idea API
 export const ideaAPI = {
-  getIdeasByTopic: (topicId: string) => api.get(`/topics/${topicId}/ideas`),
-  createIdea: (topicId: string, data: any) => api.post(`/topics/${topicId}/ideas`, data),
-  voteIdea: (ideaId: string, vote: number) => api.post(`/ideas/${ideaId}/vote`, { vote }),
+  getIdeasByTopic: (topicId: string) => api.get(`/ideas?topicId=${topicId}`),
+  createIdea: (data: any) => api.post('/ideas', data),
+  likeIdea: (ideaId: string) => api.post(`/ideas/${ideaId}/like`),
+  dislikeIdea: (ideaId: string) => api.post(`/ideas/${ideaId}/dislike`),
+  getIdeaById: (ideaId: string) => api.get(`/ideas/${ideaId}`),
 };
 
 export default api;

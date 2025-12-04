@@ -236,6 +236,7 @@ const UserDashboard: React.FC = () => {
                         <div 
                           key={topic.id} 
                           className="topic-card"
+                          onClick={() => navigate(`/topic/${topic.id}`)}
                         >
                           <div className="topic-header">
                             <h3 className="topic-title">{topic.title || 'Без названия'}</h3>
@@ -291,7 +292,7 @@ const UserDashboard: React.FC = () => {
                   className="sidebar-button secondary"
                   onClick={handleStatisticsClick}
                 >
-                  <span className="button-icon">📊</span>
+                  <span className="button-icon"></span>
                   Статистика
                 </button>
               </div>
