@@ -13,6 +13,7 @@ interface UserProfile {
   lastName: string;
   status: string;
   email?: string;
+  role?: string;
 }
 
 interface AdminUser {
@@ -46,14 +47,18 @@ interface Topic {
   privacy: string;
   deadline: string | null;
   ideaCount: number;
-  author: {
+  createdBy?: {
     firstName: string;
     lastName: string;
-  };
+  } | null;
+  author?: {
+    firstName: string;
+    lastName: string;
+  }; // Для обратной совместимости
   createdAt?: string;
 }
 
-type AdminTab = 'users' | 'topics' | 'ideas' | 'support';
+type AdminTab = 'users' | 'topics' | 'ideas' | 'support' | 'ideaflow';
 
 const Dashboard: React.FC = () => {
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -82,12 +87,16 @@ const Dashboard: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (isAdmin && activeTab === 'users') {
-      loadUsers();
-    } else if (isAdmin && activeTab === 'support') {
-      loadSupportMessages();
-    } else if (isAdmin && activeTab === 'topics') {
-      loadTopics();
+    if (isAdmin) {
+      if (activeTab === 'users') {
+        loadUsers();
+      } else if (activeTab === 'support') {
+        loadSupportMessages();
+      } else if (activeTab === 'topics') {
+        loadTopics();
+      } else if (activeTab === 'ideaflow') {
+        loadTopics(); 
+      }
     }
   }, [isAdmin, activeTab]);
 
@@ -95,22 +104,59 @@ const Dashboard: React.FC = () => {
     try {
       setLoading(true);
       const response = await profileAPI.getProfile();
-      setUser(response.data.user);
+      console.log('=== PROFILE API RESPONSE ===');
+      console.log('Full response:', response);
+      console.log('Response data:', response.data);
+      console.log('User data:', response.data.user);
+      
+      const userData = response.data.user;
+      setUser(userData);
       setError('');
 
-      // Отдельно проверяем, является ли пользователь админом,
-      // используя существующий эндпоинт /profile/admin
-      try {
-        await profileAPI.getAdminProfile();
-        setIsAdmin(true);
-      } catch {
-        setIsAdmin(false);
+      let userRole = userData?.role;
+      
+      if (!userRole) {
+        try {
+          const token = localStorage.getItem('access_token');
+          if (token) {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            userRole = payload.role;
+            console.log('Role from JWT token:', userRole);
+          }
+        } catch (e) {
+          console.error('Failed to decode token:', e);
+        }
       }
+      
+      let isUserAdmin = false;
+      
+      console.log('Raw userRole:', userRole, 'Type:', typeof userRole);
+      
+      if (userRole) {
+        if (typeof userRole === 'string') {
+          isUserAdmin = userRole.toLowerCase() === 'admin';
+        } else if (typeof userRole === 'object') {
+          const roleValue = userRole.toString ? userRole.toString() : String(userRole);
+          isUserAdmin = roleValue.toLowerCase() === 'admin';
+        }
+      }
+      
+      console.log('User role:', userRole, 'Type:', typeof userRole, 'Is admin:', isUserAdmin);
+      console.log('Full userData keys:', userData ? Object.keys(userData) : 'null');
+      
+      setIsAdmin(isUserAdmin);
+      
+      if (!isUserAdmin) {
+        console.log('User is not admin, redirecting to user-dashboard');
+        navigate('/user-dashboard');
+        return;
+      }
+      
+      console.log('User is admin, showing admin dashboard');
     } catch (err: any) {
       console.error('Failed to fetch profile:', err);
       setError('Не удалось загрузить профиль');
       
-      // Если ошибка 401, перенаправляем на главную
       if (err.response?.status === 401) {
         navigate('/');
       }
@@ -164,7 +210,7 @@ const Dashboard: React.FC = () => {
       setError('');
     } catch (err: any) {
       console.error('Failed to load topics', err);
-      setError('Не удалось загрузить список топиков');
+      setError('Не удалось загрузить список тем для обсуждения');
     } finally {
       setTopicsLoading(false);
     }
@@ -195,7 +241,7 @@ const Dashboard: React.FC = () => {
       setTopicToDelete(null);
     } catch (err: any) {
       console.error('Failed to delete topic', err);
-      const errorMessage = err.response?.data?.message || 'Не удалось удалить топик';
+      const errorMessage = err.response?.data?.message || 'Не удалось удалить тему для обсуждения';
       alert(errorMessage);
     }
   };
@@ -203,10 +249,8 @@ const Dashboard: React.FC = () => {
   const handleTopicSave = async (topicData: any) => {
     try {
       if (selectedTopic) {
-        // Редактирование
         await topicAPI.updateTopic(selectedTopic.id, topicData);
       } else {
-        // Создание
         await topicAPI.createTopic(topicData);
       }
       await loadTopics();
@@ -214,7 +258,7 @@ const Dashboard: React.FC = () => {
       setSelectedTopic(null);
     } catch (err: any) {
       console.error('Failed to save topic', err);
-      const errorMessage = err.response?.data?.message || 'Не удалось сохранить топик';
+      const errorMessage = err.response?.data?.message || 'Не удалось сохранить тему для обсуждения';
       alert(errorMessage);
     }
   };
@@ -233,7 +277,6 @@ const Dashboard: React.FC = () => {
       setBlockModalOpen(false);
       setSelectedUserId(null);
       setSelectedUserName('');
-      // Обновляем список пользователей после блокировки
       await loadUsers();
     } catch (err: any) {
       console.error('Failed to block user', err);
@@ -271,7 +314,6 @@ const Dashboard: React.FC = () => {
       navigate('/');
     } catch (error) {
       console.error('Logout failed:', error);
-      // Все равно удаляем токен и делаем редирект
       localStorage.removeItem('access_token');
       localStorage.removeItem('user');
       navigate('/');
@@ -282,7 +324,6 @@ const Dashboard: React.FC = () => {
     <div className="admin-section">
       <div className="admin-section__header">
         <h2>Пользователи</h2>
-        <p>Управляйте статусами, блокировками и доступом пользователей.</p>
       </div>
 
       {usersLoading ? (
@@ -353,7 +394,6 @@ const Dashboard: React.FC = () => {
     <div className="admin-section">
       <div className="admin-section__header">
         <h2>Сообщения поддержки</h2>
-        <p>Просматривайте обращения от заблокированных пользователей.</p>
       </div>
 
       {supportLoading ? (
@@ -411,24 +451,24 @@ const Dashboard: React.FC = () => {
   const renderTopicsTab = () => (
     <div className="admin-section">
       <div className="admin-section__header">
-        <h2>Топики</h2>
-        <p>Управляйте темами для обсуждения: создавайте, редактируйте, удаляйте и устанавливайте дедлайны.</p>
+        <h2>Темы для обсуждения</h2>
+       
         <button
           className="cta-button"
           onClick={handleCreateTopic}
           style={{ marginTop: '1rem' }}
         >
-          + Создать топик
+          + Создать тему для обсуждения
         </button>
       </div>
 
       {topicsLoading ? (
         <div className="loading-container" style={{ minHeight: '200px' }}>
           <div className="loading-spinner"></div>
-          <p>Загружаем топики...</p>
+          <p>Загружаем темы...</p>
         </div>
       ) : topics.length === 0 ? (
-        <p>Топиков пока нет.</p>
+        <p>Тем для обсуждения пока нет.</p>
       ) : (
         <div className="table-wrapper topics-table-wrapper">
           <table className="users-table">
@@ -464,7 +504,7 @@ const Dashboard: React.FC = () => {
                   </td>
                   <td>
                     <span className={`status-badge status-${topic.privacy.toLowerCase()}`}>
-                      {topic.privacy}
+                      {topic.privacy === 'public' ? 'Публичный' : topic.privacy === 'private' ? 'Приватный' : topic.privacy}
                     </span>
                   </td>
                   <td>
@@ -478,7 +518,11 @@ const Dashboard: React.FC = () => {
                   </td>
                   <td>{topic.ideaCount}</td>
                   <td>
-                    {topic.author.firstName} {topic.author.lastName}
+                    {topic.createdBy 
+                      ? `${topic.createdBy.firstName} ${topic.createdBy.lastName}`
+                      : topic.author 
+                        ? `${topic.author.firstName} ${topic.author.lastName}`
+                        : 'Неизвестен'}
                   </td>
                   <td className="users-table__actions">
                     <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -507,6 +551,186 @@ const Dashboard: React.FC = () => {
     </div>
   );
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ru-RU', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
+  const formatDeadline = (deadline: string | null) => {
+    if (!deadline) return null;
+    const deadlineDate = new Date(deadline);
+    const now = new Date();
+    
+    if (deadlineDate < now) {
+      return 'Истек';
+    }
+    
+    return formatDate(deadline);
+  };
+
+  const renderIdeaFlowTab = () => (
+    <div className="admin-section">
+      <div className="admin-section__header">
+        <h2>Idea Flow</h2>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.5rem', marginBottom: '1rem' }}>
+          Просмотр всех тем для обсуждения в виде карточек
+        </p>
+      </div>
+
+      {topicsLoading ? (
+        <div className="loading-container" style={{ minHeight: '200px' }}>
+          <div className="loading-spinner"></div>
+          <p>Загружаем темы...</p>
+        </div>
+      ) : topics.length === 0 ? (
+        <div className="empty-state">
+          <p>Тем для обсуждения пока нет.</p>
+        </div>
+      ) : (
+        <div className="topics-grid" style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', 
+          gap: '1.5rem',
+          marginTop: '1rem'
+        }}>
+          {topics.map((topic) => (
+            <div 
+              key={topic.id} 
+              className="topic-card"
+              style={{
+                background: 'var(--bg-primary)',
+                border: '1px solid var(--border-color)',
+                borderRadius: 'var(--border-radius)',
+                padding: '1.5rem',
+                transition: 'all var(--transition-fast)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1rem',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+                minHeight: '220px',
+                position: 'relative',
+                cursor: 'pointer'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+                e.currentTarget.style.borderColor = 'var(--primary-color)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.08)';
+                e.currentTarget.style.borderColor = 'var(--border-color)';
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
+                <h3 style={{ 
+                  fontSize: '1.25rem', 
+                  fontWeight: 600, 
+                  color: 'var(--text-primary)', 
+                  margin: 0, 
+                  flex: 1,
+                  lineHeight: 1.4,
+                  wordWrap: 'break-word'
+                }}>
+                  {topic.title}
+                </h3>
+                {topic.deadline && (
+                  <span style={{
+                    fontSize: '0.85rem',
+                    padding: '0.25rem 0.75rem',
+                    borderRadius: 'var(--border-radius-sm)',
+                    backgroundColor: new Date(topic.deadline) < new Date() ? '#f8d7da' : '#fff3cd',
+                    color: new Date(topic.deadline) < new Date() ? '#721c24' : '#856404',
+                    whiteSpace: 'nowrap',
+                    fontWeight: 500
+                  }}>
+                    {formatDeadline(topic.deadline) || 'Истек'}
+                  </span>
+                )}
+              </div>
+              <p style={{ 
+                color: 'var(--text-secondary)', 
+                lineHeight: 1.6, 
+                margin: 0,
+                display: '-webkit-box',
+                WebkitLineClamp: 4,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+                flex: 1,
+                minHeight: '80px'
+              }}>
+                {topic.description}
+              </p>
+              <div style={{ 
+                marginTop: 'auto', 
+                paddingTop: '1rem', 
+                borderTop: '1px solid var(--border-color)'
+              }}>
+                <div style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  gap: '0.5rem', 
+                  fontSize: '0.9rem',
+                  marginTop: '0.5rem'
+                }}>
+                  <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>
+                    Автор: {topic.createdBy 
+                      ? `${topic.createdBy.firstName} ${topic.createdBy.lastName}`
+                      : topic.author 
+                        ? `${topic.author.firstName} ${topic.author.lastName}`
+                        : 'Неизвестен'}
+                  </span>
+                  {topic.createdAt && (
+                    <span style={{ color: 'var(--text-secondary)' }}>
+                      Создан: {formatDate(topic.createdAt)}
+                    </span>
+                  )}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <span style={{ fontWeight: 600, color: 'var(--primary-color)' }}>
+                      Идей: {topic.ideaCount || 0}
+                    </span>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      <span style={{
+                        padding: '0.25rem 0.75rem',
+                        borderRadius: 'var(--border-radius-sm)',
+                        fontSize: '0.85rem',
+                        fontWeight: 500,
+                        backgroundColor: topic.status === 'approved' ? '#d4edda' : 
+                                       topic.status === 'pending' ? '#fff3cd' : 
+                                       topic.status === 'rejected' ? '#f8d7da' : '#e2e3e5',
+                        color: topic.status === 'approved' ? '#155724' : 
+                               topic.status === 'pending' ? '#856404' : 
+                               topic.status === 'rejected' ? '#721c24' : '#383d41'
+                      }}>
+                        {topic.status === 'approved' ? 'Одобрена' : 
+                         topic.status === 'pending' ? 'Ожидает' : 
+                         topic.status === 'rejected' ? 'Отклонена' : topic.status}
+                      </span>
+                      <span style={{
+                        padding: '0.25rem 0.75rem',
+                        borderRadius: 'var(--border-radius-sm)',
+                        fontSize: '0.85rem',
+                        fontWeight: 500,
+                        backgroundColor: topic.privacy === 'public' ? '#d1ecf1' : '#f8d7da',
+                        color: topic.privacy === 'public' ? '#0c5460' : '#721c24'
+                      }}>
+                        {topic.privacy === 'public' ? 'Публичная' : 'Приватная'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
   const renderPlaceholder = (title: string, description: string) => (
     <div className="admin-section">
       <div className="admin-section__header">
@@ -514,7 +738,6 @@ const Dashboard: React.FC = () => {
         <p>{description}</p>
       </div>
       <div className="dashboard-message">
-        <p>Функциональность находится в разработке. Здесь появятся инструменты управления {title.toLowerCase()}.</p>
       </div>
     </div>
   );
@@ -544,41 +767,53 @@ const Dashboard: React.FC = () => {
     return null;
   }
 
+
   return (
     <div className="dashboard">
       <header className="dashboard-header">
         <div className="container">
-          <div className={`header-content ${isAdmin ? 'admin-header' : ''}`}>
-            <h1 className="dashboard-title">
-              Добро пожаловать в IdeaFlow, {user.firstName}!
-            </h1>
-            <div className="header-user-info">
-              <span className="user-name">{user.firstName} {user.lastName}</span>
-              <button onClick={handleLogout} className="logout-btn">
-                Выйти
-              </button>
-            </div>
-          </div>
-          
-          {isAdmin && (
-            <div className="admin-tabs">
-              {[
-                { key: 'users', label: 'Пользователи' },
-                { key: 'support', label: 'Поддержка' },
-                { key: 'topics', label: 'Топики' },
-                { key: 'ideas', label: 'Идеи' },
-              ].map((tab) => (
-                <button
-                  key={tab.key}
-                  className={`admin-tab ${activeTab === tab.key ? 'active' : ''}`}
-                  onClick={() => setActiveTab(tab.key as AdminTab)}
-                >
-                  {tab.label}
-                  {tab.key === 'support' && supportMessages.filter(m => !m.isRead).length > 0 && (
-                    <span className="tab-badge">{supportMessages.filter(m => !m.isRead).length}</span>
-                  )}
+          {isAdmin ? (
+            <>
+              <div className="header-content admin-header">
+                <h1 className="dashboard-title">System Administrator</h1>
+              </div>
+              <div className="admin-tabs-wrapper">
+                <div className="admin-tabs">
+                  {[
+                    { key: 'users', label: 'Пользователи' },
+                    { key: 'support', label: 'Поддержка' },
+                    { key: 'topics', label: 'Темы' },
+                    { key: 'ideas', label: 'Идеи' },
+                    { key: 'ideaflow', label: 'Idea flow' },
+                  ].map((tab) => (
+                    <button
+                      key={tab.key}
+                      className={`admin-tab ${activeTab === tab.key ? 'active' : ''}`}
+                      onClick={() => setActiveTab(tab.key as AdminTab)}
+                    >
+                      {tab.label}
+                      {tab.key === 'support' && supportMessages.filter(m => !m.isRead).length > 0 && (
+                        <span className="tab-badge">{supportMessages.filter(m => !m.isRead).length}</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+                <button onClick={handleLogout} className="logout-btn">
+                  Выйти
                 </button>
-              ))}
+              </div>
+            </>
+          ) : (
+            <div className="header-content">
+              <h1 className="dashboard-title">
+                Добро пожаловать в IdeaFlow, {user.firstName}!
+              </h1>
+              <div className="header-user-info">
+                <span className="user-name">{user.firstName} {user.lastName}</span>
+                <button onClick={handleLogout} className="logout-btn">
+                  Выйти
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -593,29 +828,30 @@ const Dashboard: React.FC = () => {
                   {activeTab === 'users' && renderUsersTab()}
                   {activeTab === 'support' && renderSupportTab()}
                   {activeTab === 'topics' && renderTopicsTab()}
-                  {activeTab === 'ideas' && renderPlaceholder('Идеи', 'Просматривайте, модерируйте и продвигайте идеи участников.')}
+                  {activeTab === 'ideas' && renderPlaceholder('Идеи', 'Управление идеями пользователей')}
+                  {activeTab === 'ideaflow' && renderIdeaFlowTab()}
                 </>
               ) : (
                 <>
-                  <h2>Ваш профиль</h2>
-                  <div className="profile-info">
-                    <div className="info-item">
-                      <span className="info-label">Имя:</span>
-                      <span className="info-value">{user.firstName} {user.lastName}</span>
-                    </div>
-                    {user.email && (
-                      <div className="info-item">
-                        <span className="info-label">Email:</span>
-                        <span className="info-value">{user.email}</span>
-                      </div>
-                    )}
-                    <div className="info-item">
-                      <span className="info-label">Статус аккаунта:</span>
-                      <span className={`status-badge status-${user.status.toLowerCase()}`}>
-                        {user.status}
-                      </span>
-                    </div>
+              <h2>Ваш профиль</h2>
+              <div className="profile-info">
+                <div className="info-item">
+                  <span className="info-label">Имя:</span>
+                  <span className="info-value">{user.firstName} {user.lastName}</span>
+                </div>
+                {user.email && (
+                  <div className="info-item">
+                    <span className="info-label">Email:</span>
+                    <span className="info-value">{user.email}</span>
                   </div>
+                )}
+                <div className="info-item">
+                  <span className="info-label">Статус аккаунта:</span>
+                  <span className={`status-badge status-${user.status.toLowerCase()}`}>
+                    {user.status}
+                  </span>
+                </div>
+              </div>
                 </>
               )}
             </div>
@@ -679,8 +915,8 @@ const Dashboard: React.FC = () => {
             setTopicToDelete(null);
           }}
           onConfirm={handleDeleteTopicConfirm}
-          title="Удаление топика"
-          message={`Вы уверены, что хотите удалить топик "${topicToDelete.title}"? Это действие нельзя отменить.`}
+          title="Удаление темы для обсуждения"
+          message={`Вы уверены, что хотите удалить тему "${topicToDelete.title}"? Это действие нельзя отменить.`}
           confirmText="Удалить"
           cancelText="Отмена"
           confirmButtonClass="danger"

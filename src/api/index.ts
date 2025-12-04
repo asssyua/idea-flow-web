@@ -89,8 +89,10 @@ export const topicAPI = {
     const params = status ? `?status=${status}` : '';
     return api.get(`/topics${params}`);
   },
+  getPublicTopics: () => api.get('/topics/public'),
   getTopicById: (id: string) => api.get(`/topics/${id}`),
   createTopic: (data: any) => api.post('/topics', data),
+  suggestTopic: (data: any) => api.post('/topics/suggest', data),
   updateTopic: (id: string, data: any) => api.patch(`/topics/admin/${id}`, data),
   deleteTopic: (id: string) => api.delete(`/topics/${id}`),
   approveTopic: (id: string) => api.patch(`/topics/${id}/approve`),
@@ -98,11 +100,16 @@ export const topicAPI = {
   getPendingTopics: () => api.get('/topics/admin/pending'),
 };
 
-// Idea API (заглушки - реализуем позже)
+// Idea API
 export const ideaAPI = {
-  getIdeasByTopic: (topicId: string) => api.get(`/topics/${topicId}/ideas`),
-  createIdea: (topicId: string, data: any) => api.post(`/topics/${topicId}/ideas`, data),
-  voteIdea: (ideaId: string, vote: number) => api.post(`/ideas/${ideaId}/vote`, { vote }),
+  getIdeasByTopic: (topicId: string) => api.get(`/ideas?topicId=${topicId}`),
+  createIdea: (data: any) => api.post('/ideas', data),
+  likeIdea: (ideaId: string) => api.post(`/ideas/${ideaId}/like`),
+  dislikeIdea: (ideaId: string) => api.post(`/ideas/${ideaId}/dislike`),
+  getIdeaById: (ideaId: string) => api.get(`/ideas/${ideaId}`),
+  getComments: (ideaId: string) => api.get(`/ideas/${ideaId}/comments`),
+  addComment: (ideaId: string, data: { content: string; parentId?: string }) => api.post(`/ideas/${ideaId}/comments`, data),
+  deleteComment: (commentId: string) => api.delete(`/ideas/comments/${commentId}`),
 };
 
 export default api;
