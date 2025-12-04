@@ -26,6 +26,7 @@ interface Idea {
   likes: number;
   dislikes: number;
   createdAt: string;
+  images?: string[];
   author: {
     firstName: string;
     lastName: string;
@@ -42,7 +43,10 @@ const TopicDetail: React.FC = () => {
   const [ideasLoading, setIdeasLoading] = useState(true);
   const [error, setError] = useState('');
   const [newIdeaTitle, setNewIdeaTitle] = useState('');
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [viewingImage, setViewingImage] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -82,6 +86,132 @@ const TopicDetail: React.FC = () => {
     }
   };
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const imageFiles = files.filter(file => file.type.startsWith('image/'));
+    
+    if (imageFiles.length === 0) {
+      alert('Пожалуйста, выберите файлы изображений');
+      return;
+    }
+
+    // Проверяем размер файлов (максимум 5MB на файл)
+    const maxFileSize = 5 * 1024 * 1024; // 5MB
+    const validFiles = imageFiles.filter(file => {
+      if (file.size > maxFileSize) {
+        alert(`Файл "${file.name}" слишком большой (максимум 5MB). Он будет пропущен.`);
+        return false;
+      }
+      return true;
+    });
+
+    if (validFiles.length === 0) {
+      return;
+    }
+
+    // Ограничиваем количество изображений
+    const maxImages = 5;
+    const filesToAdd = validFiles.slice(0, maxImages - selectedImages.length);
+    
+    if (validFiles.length > filesToAdd.length) {
+      alert(`Можно загрузить максимум ${maxImages} изображений`);
+    }
+
+    setSelectedImages(prev => [...prev, ...filesToAdd]);
+
+    // Создаем превью для новых изображений
+    filesToAdd.forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreviews(prev => [...prev, reader.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeImage = (index: number) => {
+    setSelectedImages(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const compressImage = (file: File, maxWidth: number = 1920, maxHeight: number = 1920, quality: number = 0.8): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          // Вычисляем новые размеры с сохранением пропорций
+          if (width > maxWidth || height > maxHeight) {
+            if (width > height) {
+              height = (height * maxWidth) / width;
+              width = maxWidth;
+            } else {
+              width = (width * maxHeight) / height;
+              height = maxHeight;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error('Не удалось создать контекст canvas'));
+            return;
+          }
+
+          ctx.drawImage(img, 0, 0, width, height);
+
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) {
+                reject(new Error('Не удалось сжать изображение'));
+                return;
+              }
+              // Создаем новый File объект с тем же именем
+              const compressedFile = new File([blob], file.name, {
+                type: file.type,
+                lastModified: Date.now(),
+              });
+              resolve(compressedFile);
+            },
+            file.type,
+            quality
+          );
+        };
+        img.onerror = reject;
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const convertImagesToBase64 = async (files: File[]): Promise<string[]> => {
+    // Сначала сжимаем все изображения
+    const compressedFiles = await Promise.all(
+      files.map(file => compressImage(file))
+    );
+
+    // Затем конвертируем в base64
+    const base64Promises = compressedFiles.map(file => {
+      return new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const result = reader.result as string;
+          resolve(result);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    });
+    return Promise.all(base64Promises);
+  };
+
   const handleCreateIdea = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newIdeaTitle.trim() || !topic) {
@@ -90,13 +220,26 @@ const TopicDetail: React.FC = () => {
 
     setIsSubmitting(true);
     try {
+      // Конвертируем изображения в base64
+      const imageBase64 = selectedImages.length > 0 
+        ? await convertImagesToBase64(selectedImages)
+        : undefined;
+
       // Используем title как и description, так как бэкенд требует description
       await ideaAPI.createIdea({
         title: newIdeaTitle.trim(),
         description: newIdeaTitle.trim(), // Используем title как description
         topicId: topic.id,
+        images: imageBase64,
       });
       setNewIdeaTitle('');
+      setSelectedImages([]);
+      setImagePreviews([]);
+      // Сбрасываем input для файлов
+      const fileInput = document.getElementById('idea-images') as HTMLInputElement;
+      if (fileInput) {
+        fileInput.value = '';
+      }
       await fetchIdeas();
       await fetchTopic(); // Обновляем счетчик идей
     } catch (err: any) {
@@ -259,6 +402,43 @@ const TopicDetail: React.FC = () => {
                 className="idea-input"
                 disabled={isSubmitting}
               />
+              
+              {/* Загрузка изображений */}
+              <div className="image-upload-section">
+                <label htmlFor="idea-images" className="image-upload-label">
+                  <span className="upload-icon">📷</span>
+                  <span>Добавить изображения (макс. 5)</span>
+                  <input
+                    id="idea-images"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleImageSelect}
+                    disabled={isSubmitting || selectedImages.length >= 5}
+                    style={{ display: 'none' }}
+                  />
+                </label>
+                
+                {/* Превью изображений */}
+                {imagePreviews.length > 0 && (
+                  <div className="image-previews">
+                    {imagePreviews.map((preview, index) => (
+                      <div key={index} className="image-preview-item">
+                        <img src={preview} alt={`Preview ${index + 1}`} className="image-preview" />
+                        <button
+                          type="button"
+                          className="remove-image-btn"
+                          onClick={() => removeImage(index)}
+                          disabled={isSubmitting}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <button
                 type="submit"
                 className="cta-button primary"
@@ -288,6 +468,23 @@ const TopicDetail: React.FC = () => {
                     <div className="idea-card">
                       <div className="idea-content">
                         <h3 className="idea-title">{idea.title}</h3>
+                        
+                        {/* Изображения идеи */}
+                        {idea.images && idea.images.length > 0 && (
+                          <div className="idea-images">
+                            {idea.images.map((image, index) => (
+                              <div key={index} className="idea-image-wrapper">
+                                <img 
+                                  src={image} 
+                                  alt={`${idea.title} - изображение ${index + 1}`}
+                                  className="idea-image"
+                                  onClick={() => setViewingImage(image)}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        
                         <div className="idea-meta">
                           <span className="idea-author">
                             {idea.author.firstName} {idea.author.lastName}
@@ -322,6 +519,18 @@ const TopicDetail: React.FC = () => {
           </div>
         </div>
       </main>
+
+      {/* Модальное окно для просмотра изображения */}
+      {viewingImage && (
+        <div className="image-viewer-overlay" onClick={() => setViewingImage(null)}>
+          <div className="image-viewer-content" onClick={(e) => e.stopPropagation()}>
+            <button className="image-viewer-close" onClick={() => setViewingImage(null)}>
+              ×
+            </button>
+            <img src={viewingImage} alt="Просмотр изображения" className="image-viewer-image" />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
