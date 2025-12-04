@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { profileAPI, authAPI, adminAPI, topicAPI } from '../../api';
+import { profileAPI, authAPI, adminAPI, topicAPI, ideaAPI } from '../../api';
 import BlockUserModal from '../../components/Modals/BlockUserModal';
 import ConfirmModal from '../../components/Modals/ConfirmModal';
 import TopicModal from '../../components/Modals/TopicModal';
@@ -58,6 +58,36 @@ interface Topic {
   createdAt?: string;
 }
 
+interface Idea {
+  id: string;
+  title: string;
+  description: string;
+  likes: number;
+  dislikes: number;
+  createdAt: string;
+  author: {
+    firstName: string;
+    lastName: string;
+  };
+  topic: {
+    title: string;
+    status: string;
+  };
+  commentCount?: number;
+}
+
+interface Comment {
+  id: string;
+  content: string;
+  author: {
+    firstName: string;
+    lastName: string;
+  };
+  parentId: string | null;
+  createdAt: string;
+  ideaId?: string;
+}
+
 type AdminTab = 'users' | 'topics' | 'ideas' | 'support' | 'ideaflow';
 
 const Dashboard: React.FC = () => {
@@ -72,14 +102,23 @@ const Dashboard: React.FC = () => {
   const [supportLoading, setSupportLoading] = useState(false);
   const [topics, setTopics] = useState<Topic[]>([]);
   const [topicsLoading, setTopicsLoading] = useState(false);
+  const [ideas, setIdeas] = useState<Idea[]>([]);
+  const [ideasLoading, setIdeasLoading] = useState(false);
+  const [expandedIdeas, setExpandedIdeas] = useState<Set<string>>(new Set());
+  const [ideaComments, setIdeaComments] = useState<Record<string, Comment[]>>({});
+  const [commentsLoading, setCommentsLoading] = useState<Record<string, boolean>>({});
   const [blockModalOpen, setBlockModalOpen] = useState(false);
   const [unblockModalOpen, setUnblockModalOpen] = useState(false);
   const [topicModalOpen, setTopicModalOpen] = useState(false);
   const [deleteTopicModalOpen, setDeleteTopicModalOpen] = useState(false);
+  const [deleteIdeaModalOpen, setDeleteIdeaModalOpen] = useState(false);
+  const [deleteCommentModalOpen, setDeleteCommentModalOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [selectedUserName, setSelectedUserName] = useState('');
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
   const [topicToDelete, setTopicToDelete] = useState<Topic | null>(null);
+  const [ideaToDelete, setIdeaToDelete] = useState<Idea | null>(null);
+  const [commentToDelete, setCommentToDelete] = useState<Comment | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -94,6 +133,8 @@ const Dashboard: React.FC = () => {
         loadSupportMessages();
       } else if (activeTab === 'topics') {
         loadTopics();
+      } else if (activeTab === 'ideas') {
+        loadIdeas();
       } else if (activeTab === 'ideaflow') {
         loadTopics(); 
       }
@@ -303,6 +344,94 @@ const Dashboard: React.FC = () => {
     } catch (err) {
       console.error('Failed to unblock user', err);
       alert('Не удалось разблокировать пользователя');
+    }
+  };
+
+  const loadIdeas = async () => {
+    setIdeasLoading(true);
+    try {
+      const response = await ideaAPI.getAllIdeas();
+      setIdeas(response.data);
+      setError('');
+    } catch (err: any) {
+      console.error('Failed to load ideas', err);
+      setError('Не удалось загрузить список идей');
+    } finally {
+      setIdeasLoading(false);
+    }
+  };
+
+  const loadCommentsForIdea = async (ideaId: string) => {
+    setCommentsLoading(prev => ({ ...prev, [ideaId]: true }));
+    try {
+      const response = await ideaAPI.getComments(ideaId);
+      const commentsData = Array.isArray(response.data) ? response.data : [];
+      // Добавляем ideaId к каждому комментарию для возможности удаления
+      const commentsWithIdeaId = commentsData.map((comment: Comment) => ({
+        ...comment,
+        ideaId,
+      }));
+      setIdeaComments(prev => ({ ...prev, [ideaId]: commentsWithIdeaId }));
+    } catch (err: any) {
+      console.error('Failed to load comments', err);
+      setIdeaComments(prev => ({ ...prev, [ideaId]: [] }));
+    } finally {
+      setCommentsLoading(prev => ({ ...prev, [ideaId]: false }));
+    }
+  };
+
+  const toggleIdeaExpansion = (ideaId: string) => {
+    const newExpanded = new Set(expandedIdeas);
+    if (newExpanded.has(ideaId)) {
+      newExpanded.delete(ideaId);
+    } else {
+      newExpanded.add(ideaId);
+      if (!ideaComments[ideaId]) {
+        loadCommentsForIdea(ideaId);
+      }
+    }
+    setExpandedIdeas(newExpanded);
+  };
+
+  const handleDeleteIdea = (idea: Idea) => {
+    setIdeaToDelete(idea);
+    setDeleteIdeaModalOpen(true);
+  };
+
+  const handleDeleteIdeaConfirm = async () => {
+    if (!ideaToDelete) return;
+
+    try {
+      await ideaAPI.adminDeleteIdea(ideaToDelete.id);
+      await loadIdeas();
+      setDeleteIdeaModalOpen(false);
+      setIdeaToDelete(null);
+    } catch (err: any) {
+      console.error('Failed to delete idea', err);
+      const errorMessage = err.response?.data?.message || 'Не удалось удалить идею';
+      alert(errorMessage);
+    }
+  };
+
+  const handleDeleteComment = (comment: Comment) => {
+    setCommentToDelete(comment);
+    setDeleteCommentModalOpen(true);
+  };
+
+  const handleDeleteCommentConfirm = async () => {
+    if (!commentToDelete) return;
+
+    try {
+      await ideaAPI.deleteComment(commentToDelete.id);
+      if (commentToDelete.ideaId) {
+        await loadCommentsForIdea(commentToDelete.ideaId);
+      }
+      setDeleteCommentModalOpen(false);
+      setCommentToDelete(null);
+    } catch (err: any) {
+      console.error('Failed to delete comment', err);
+      const errorMessage = err.response?.data?.message || 'Не удалось удалить комментарий';
+      alert(errorMessage);
     }
   };
 
@@ -731,6 +860,130 @@ const Dashboard: React.FC = () => {
     </div>
   );
 
+  const renderIdeasTab = () => (
+    <div className="admin-section">
+      <div className="admin-section__header">
+        <h2>Идеи пользователей</h2>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.5rem' }}>
+          Просмотр и управление идеями пользователей к опубликованным темам
+        </p>
+      </div>
+
+      {ideasLoading ? (
+        <div className="loading-container" style={{ minHeight: '200px' }}>
+          <div className="loading-spinner"></div>
+          <p>Загружаем идеи...</p>
+        </div>
+      ) : ideas.length === 0 ? (
+        <div className="empty-state">
+          <p>Идей пока нет.</p>
+        </div>
+      ) : (
+        <div className="ideas-admin-list">
+          {ideas.map((idea) => {
+            const isExpanded = expandedIdeas.has(idea.id);
+            const comments = ideaComments[idea.id] || [];
+            const isLoadingComments = commentsLoading[idea.id];
+
+            return (
+              <div key={idea.id} className="idea-admin-card">
+                <div className="idea-admin-header">
+                  <div className="idea-admin-main">
+                    <h3 className="idea-admin-title">{idea.title}</h3>
+                    <div className="idea-admin-meta">
+                      <span className="idea-admin-author">
+                        Автор: {idea.author.firstName} {idea.author.lastName}
+                      </span>
+                      <span className="idea-admin-topic">
+                        Тема: {idea.topic.title}
+                      </span>
+                      <span className="idea-admin-date">
+                        {new Date(idea.createdAt).toLocaleDateString('ru-RU', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                    </div>
+                    <div className="idea-admin-stats">
+                      <span>👍 {idea.likes}</span>
+                      <span>👎 {idea.dislikes}</span>
+                      <span>💬 {idea.commentCount || 0}</span>
+                    </div>
+                  </div>
+                  <div className="idea-admin-actions">
+                    <button
+                      className="cta-button secondary"
+                      onClick={() => toggleIdeaExpansion(idea.id)}
+                    >
+                      {isExpanded ? 'Скрыть комментарии' : 'Показать комментарии'}
+                    </button>
+                    <button
+                      className="cta-button danger"
+                      onClick={() => handleDeleteIdea(idea)}
+                    >
+                      Удалить идею
+                    </button>
+                  </div>
+                </div>
+
+                {isExpanded && (
+                  <div className="idea-admin-comments">
+                    {isLoadingComments ? (
+                      <div className="loading-container" style={{ padding: '1rem' }}>
+                        <div className="loading-spinner"></div>
+                        <p>Загружаем комментарии...</p>
+                      </div>
+                    ) : comments.length === 0 ? (
+                      <div className="empty-comments">
+                        <p>Комментариев пока нет.</p>
+                      </div>
+                    ) : (
+                      <div className="comments-admin-list">
+                        {comments.map((comment) => (
+                          <div key={comment.id} className="comment-admin-item">
+                            <div className="comment-admin-content">
+                              <div className="comment-admin-header">
+                                <span className="comment-admin-author">
+                                  {comment.author.firstName} {comment.author.lastName}
+                                </span>
+                                <span className="comment-admin-date">
+                                  {new Date(comment.createdAt).toLocaleDateString('ru-RU', {
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  })}
+                                </span>
+                              </div>
+                              <p className="comment-admin-text">{comment.content}</p>
+                              {comment.parentId && (
+                                <span className="comment-reply-badge">Ответ на комментарий</span>
+                              )}
+                            </div>
+                            <button
+                              className="cta-button danger small"
+                              onClick={() => handleDeleteComment(comment)}
+                            >
+                              Удалить
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+
   const renderPlaceholder = (title: string, description: string) => (
     <div className="admin-section">
       <div className="admin-section__header">
@@ -828,7 +1081,7 @@ const Dashboard: React.FC = () => {
                   {activeTab === 'users' && renderUsersTab()}
                   {activeTab === 'support' && renderSupportTab()}
                   {activeTab === 'topics' && renderTopicsTab()}
-                  {activeTab === 'ideas' && renderPlaceholder('Идеи', 'Управление идеями пользователей')}
+                  {activeTab === 'ideas' && renderIdeasTab()}
                   {activeTab === 'ideaflow' && renderIdeaFlowTab()}
                 </>
               ) : (
@@ -917,6 +1170,38 @@ const Dashboard: React.FC = () => {
           onConfirm={handleDeleteTopicConfirm}
           title="Удаление темы для обсуждения"
           message={`Вы уверены, что хотите удалить тему "${topicToDelete.title}"? Это действие нельзя отменить.`}
+          confirmText="Удалить"
+          cancelText="Отмена"
+          confirmButtonClass="danger"
+        />
+      )}
+
+      {deleteIdeaModalOpen && ideaToDelete && (
+        <ConfirmModal
+          isOpen={deleteIdeaModalOpen}
+          onClose={() => {
+            setDeleteIdeaModalOpen(false);
+            setIdeaToDelete(null);
+          }}
+          onConfirm={handleDeleteIdeaConfirm}
+          title="Удаление идеи"
+          message={`Вы уверены, что хотите удалить идею "${ideaToDelete.title}"? Это действие нельзя отменить.`}
+          confirmText="Удалить"
+          cancelText="Отмена"
+          confirmButtonClass="danger"
+        />
+      )}
+
+      {deleteCommentModalOpen && commentToDelete && (
+        <ConfirmModal
+          isOpen={deleteCommentModalOpen}
+          onClose={() => {
+            setDeleteCommentModalOpen(false);
+            setCommentToDelete(null);
+          }}
+          onConfirm={handleDeleteCommentConfirm}
+          title="Удаление комментария"
+          message={`Вы уверены, что хотите удалить комментарий от ${commentToDelete.author.firstName} ${commentToDelete.author.lastName}? Это действие нельзя отменить.`}
           confirmText="Удалить"
           cancelText="Отмена"
           confirmButtonClass="danger"
