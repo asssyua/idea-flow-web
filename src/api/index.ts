@@ -107,6 +107,9 @@ export const ideaAPI = {
   likeIdea: (ideaId: string) => api.post(`/ideas/${ideaId}/like`),
   dislikeIdea: (ideaId: string) => api.post(`/ideas/${ideaId}/dislike`),
   getIdeaById: (ideaId: string) => api.get(`/ideas/${ideaId}`),
+  getComments: (ideaId: string) => api.get(`/ideas/${ideaId}/comments`),
+  addComment: (ideaId: string, data: { content: string; parentId?: string }) => api.post(`/ideas/${ideaId}/comments`, data),
+  deleteComment: (commentId: string) => api.delete(`/ideas/comments/${commentId}`),
 };
 
 export default api;

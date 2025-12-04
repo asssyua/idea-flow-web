@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { topicAPI, ideaAPI } from '../../api';
+import CommentSection from '../../components/CommentSection/CommentSection';
 import '../../styles/globals.css';
 import '../../styles/animations.css';
 import './TopicDetail.css';
@@ -283,34 +284,37 @@ const TopicDetail: React.FC = () => {
             ) : (
               <div className="ideas-list">
                 {ideas.map((idea) => (
-                  <div key={idea.id} className="idea-card">
-                    <div className="idea-content">
-                      <h3 className="idea-title">{idea.title}</h3>
-                      <div className="idea-meta">
-                        <span className="idea-author">
-                          {idea.author.firstName} {idea.author.lastName}
-                        </span>
-                        <span className="idea-date">
-                          {formatDate(idea.createdAt)}
-                        </span>
+                  <div key={idea.id} className="idea-card-with-comments">
+                    <div className="idea-card">
+                      <div className="idea-content">
+                        <h3 className="idea-title">{idea.title}</h3>
+                        <div className="idea-meta">
+                          <span className="idea-author">
+                            {idea.author.firstName} {idea.author.lastName}
+                          </span>
+                          <span className="idea-date">
+                            {formatDate(idea.createdAt)}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="idea-actions">
+                        <button
+                          className={`action-button like-button ${userReactions[idea.id] === 'like' ? 'active' : ''}`}
+                          onClick={() => handleLike(idea.id)}
+                        >
+                          <span className="action-icon">👍</span>
+                          <span className="action-count">{idea.likes}</span>
+                        </button>
+                        <button
+                          className={`action-button dislike-button ${userReactions[idea.id] === 'dislike' ? 'active' : ''}`}
+                          onClick={() => handleDislike(idea.id)}
+                        >
+                          <span className="action-icon">👎</span>
+                          <span className="action-count">{idea.dislikes}</span>
+                        </button>
                       </div>
                     </div>
-                    <div className="idea-actions">
-                      <button
-                        className={`action-button like-button ${userReactions[idea.id] === 'like' ? 'active' : ''}`}
-                        onClick={() => handleLike(idea.id)}
-                      >
-                        <span className="action-icon">👍</span>
-                        <span className="action-count">{idea.likes}</span>
-                      </button>
-                      <button
-                        className={`action-button dislike-button ${userReactions[idea.id] === 'dislike' ? 'active' : ''}`}
-                        onClick={() => handleDislike(idea.id)}
-                      >
-                        <span className="action-icon">👎</span>
-                        <span className="action-count">{idea.dislikes}</span>
-                      </button>
-                    </div>
+                    <CommentSection ideaId={idea.id} />
                   </div>
                 ))}
               </div>

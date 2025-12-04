@@ -173,7 +173,32 @@
 .ideas-list {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 2rem;
+}
+
+.idea-card-with-comments {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+}
+
+.idea-card-with-comments .idea-card {
+  border: none;
+  border-bottom: 1px solid var(--border-color);
+  border-radius: 0;
+  margin: 0;
+}
+
+.idea-card-with-comments .comment-section {
+  border: none;
+  border-radius: 0;
+  margin: 0;
+  padding: 1.5rem 2rem;
+  background: var(--bg-secondary);
 }
 
 .idea-card {
