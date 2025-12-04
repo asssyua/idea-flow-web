@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import HomePage from './pages/Home/HomePage';
 import Dashboard from './pages/Dashboard/Dashboard';
+import UserDashboard from './pages/UserDashboard/UserDashboard';
 import PrivateRoute from './components/Auth/PrivateRoute';
 import LoginPage from './pages/Auth/LoginPage';
 import RegisterPage from './pages/Auth/RegisterPage';
@@ -20,6 +21,12 @@ function App() {
           <Route path="/dashboard" element={
             <PrivateRoute>
               <Dashboard />
+            </PrivateRoute>
+          } />
+          
+          <Route path="/user-dashboard" element={
+            <PrivateRoute>
+              <UserDashboard />
             </PrivateRoute>
           } />
           

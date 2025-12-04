@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { Link, useNavigate } from 'react-router-dom';
-import { authAPI } from '../../api';
+import { authAPI, profileAPI } from '../../api';
 import '../../styles/globals.css';
 import '../../styles/animations.css';
 import '../Home/HomePage.css';
@@ -33,10 +33,30 @@ const LoginPage: React.FC = () => {
 
     try {
       const response = await authAPI.login(data);
+      
+      if (!response.data?.access_token) {
+        throw new Error('Токен доступа не получен');
+      }
+      
       localStorage.setItem('access_token', response.data.access_token);
-      navigate('/dashboard');
+      
+      try {
+        const profileResponse = await profileAPI.getProfile();
+        const userRole = profileResponse.data?.user?.role;
+        
+        if (userRole === 'admin') {
+          navigate('/dashboard');
+        } else {
+          navigate('/user-dashboard');
+        }
+      } catch (profileErr: any) {
+        console.error('Profile fetch error:', profileErr);
+        navigate('/user-dashboard');
+      }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Ошибка при входе');
+      console.error('Login error:', err);
+      const errorMessage = err.response?.data?.message || err.message || 'Ошибка при входе. Проверьте правильность данных.';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -118,13 +138,3 @@ const LoginPage: React.FC = () => {
 };
 
 export default LoginPage;
-
-
-
-
-
-
-
-
-
-

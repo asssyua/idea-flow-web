@@ -89,8 +89,10 @@ export const topicAPI = {
     const params = status ? `?status=${status}` : '';
     return api.get(`/topics${params}`);
   },
+  getPublicTopics: () => api.get('/topics/public'),
   getTopicById: (id: string) => api.get(`/topics/${id}`),
   createTopic: (data: any) => api.post('/topics', data),
+  suggestTopic: (data: any) => api.post('/topics/suggest', data),
   updateTopic: (id: string, data: any) => api.patch(`/topics/admin/${id}`, data),
   deleteTopic: (id: string) => api.delete(`/topics/${id}`),
   approveTopic: (id: string) => api.patch(`/topics/${id}/approve`),
