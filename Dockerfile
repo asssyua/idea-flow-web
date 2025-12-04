@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 
 # Устанавливаем зависимости
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 # Копируем остальные файлы
 COPY . .
@@ -15,14 +15,14 @@ COPY . .
 # Открываем порт
 EXPOSE 3001
 
-# Запускаем приложение
-CMD ["npm", "start"]
+# Запускаем приложение с безопасными настройками
+CMD ["npm", "run", "start:safe"]
 
 # Production build stage
 FROM node:18-alpine AS builder
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm install
+RUN npm install --legacy-peer-deps
 COPY . .
 RUN npm run build
 

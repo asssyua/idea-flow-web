@@ -1,12 +1,12 @@
 :root {
-  /* Основные цвета */
-  --primary-color: #6e8efb;
-  --primary-dark: #5a7cfa;
-  --primary-light: #8fa3fc;
+  /* Основные цвета - сиреневый */
+  --primary-color: #a777e3;
+  --primary-dark: #955bd9;
+  --primary-light: #b993e9;
   
-  --secondary-color: #a777e3;
-  --secondary-dark: #955bd9;
-  --secondary-light: #b993e9;
+  --secondary-color: #8b6fc7;
+  --secondary-dark: #7a5ab3;
+  --secondary-light: #9d7fd1;
   
   --accent-color: #ff6b6b;
   --accent-dark: #ff5252;
@@ -44,7 +44,7 @@
   --container-max-width: 1200px;
   
   /* Градиенты */
-  --gradient-primary: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  --gradient-primary: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
   --gradient-accent: linear-gradient(135deg, var(--accent-color) 0%, #ffa726 100%);
 }
 
