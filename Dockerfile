@@ -15,8 +15,8 @@ COPY . .
 # Открываем порт
 EXPOSE 3001
 
-# Запускаем приложение
-CMD ["npm", "start"]
+# Запускаем приложение с безопасными настройками
+CMD ["npm", "run", "start:safe"]
 
 # Production build stage
 FROM node:18-alpine AS builder

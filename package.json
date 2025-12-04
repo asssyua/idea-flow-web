@@ -20,6 +20,7 @@
   },
   "scripts": {
     "start": "cross-env PORT=3001 react-scripts start",
+    "start:safe": "cross-env PORT=3001 NODE_OPTIONS='--max-old-space-size=3072' WATCHPACK_WATCHER_LIMIT=20 react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"

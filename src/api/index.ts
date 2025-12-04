@@ -78,22 +78,41 @@ export const adminAPI = {
   getUserById: (id: string) => api.get(`/admin/users/${id}`),
   blockUser: (id: string, data: any) => api.patch(`/admin/users/${id}/block`, data),
   unblockUser: (id: string) => api.patch(`/admin/users/${id}/unblock`),
+  getAllSupportMessages: () => api.get('/admin/support-messages'),
+  markSupportMessageAsRead: (id: string) => api.patch(`/admin/support-messages/${id}/read`),
+  sendSupportMessage: (data: any) => api.post('/admin/support-message', data),
 };
 
-// Topic API (заглушки - реализуем позже)
+// Topic API
 export const topicAPI = {
-  getAllTopics: () => api.get('/topics'),
+  getAllTopics: (status?: string) => {
+    const params = status ? `?status=${status}` : '';
+    return api.get(`/topics${params}`);
+  },
+  getPublicTopics: () => api.get('/topics/public'),
   getTopicById: (id: string) => api.get(`/topics/${id}`),
   createTopic: (data: any) => api.post('/topics', data),
-  updateTopic: (id: string, data: any) => api.patch(`/topics/${id}`, data),
+  suggestTopic: (data: any) => api.post('/topics/suggest', data),
+  updateTopic: (id: string, data: any) => api.patch(`/topics/admin/${id}`, data),
   deleteTopic: (id: string) => api.delete(`/topics/${id}`),
+  approveTopic: (id: string) => api.patch(`/topics/${id}/approve`),
+  rejectTopic: (id: string) => api.patch(`/topics/${id}/reject`),
+  getPendingTopics: () => api.get('/topics/admin/pending'),
 };
 
-// Idea API (заглушки - реализуем позже)
+// Idea API
 export const ideaAPI = {
-  getIdeasByTopic: (topicId: string) => api.get(`/topics/${topicId}/ideas`),
-  createIdea: (topicId: string, data: any) => api.post(`/topics/${topicId}/ideas`, data),
-  voteIdea: (ideaId: string, vote: number) => api.post(`/ideas/${ideaId}/vote`, { vote }),
+  getIdeasByTopic: (topicId: string) => api.get(`/ideas?topicId=${topicId}`),
+  createIdea: (data: any) => api.post('/ideas', data),
+  likeIdea: (ideaId: string) => api.post(`/ideas/${ideaId}/like`),
+  dislikeIdea: (ideaId: string) => api.post(`/ideas/${ideaId}/dislike`),
+  getIdeaById: (ideaId: string) => api.get(`/ideas/${ideaId}`),
+  getComments: (ideaId: string) => api.get(`/ideas/${ideaId}/comments`),
+  addComment: (ideaId: string, data: { content: string; parentId?: string }) => api.post(`/ideas/${ideaId}/comments`, data),
+  deleteComment: (commentId: string) => api.delete(`/ideas/comments/${commentId}`),
+  // Admin methods
+  getAllIdeas: () => api.get('/ideas/admin/all'),
+  adminDeleteIdea: (ideaId: string) => api.delete(`/ideas/admin/${ideaId}`),
 };
 
 export default api;

@@ -69,7 +69,6 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen, onClo
         setPasswordError('');
 
         await authAPI.resetPassword({
-          email: data.email,
           token: resetToken.trim(),
           password: newPassword,
         });
@@ -89,7 +88,9 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen, onClo
   if (!isOpen) return null;
 
   const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
+    // На шаге с токеном не закрываем модалку кликом по фону,
+    // чтобы форма не закрывалась «сама» во время ввода токена
+    if (!isTokenStep && e.target === e.currentTarget) {
       onClose();
     }
   };
