@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { profileAPI, authAPI, topicAPI } from '../../api';
 import TopicModal from '../../components/Modals/TopicModal';
+import StatisticsModal from '../../components/Modals/StatisticsModal';
 import '../../styles/globals.css';
 import '../../styles/animations.css';
 import './UserDashboard.css';
@@ -34,6 +35,7 @@ const UserDashboard: React.FC = () => {
   const [topicsLoading, setTopicsLoading] = useState(true);
   const [error, setError] = useState('');
   const [topicModalOpen, setTopicModalOpen] = useState(false);
+  const [statisticsModalOpen, setStatisticsModalOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -161,7 +163,7 @@ const UserDashboard: React.FC = () => {
   };
 
   const handleStatisticsClick = () => {
-    alert('Страница статистики находится в разработке');
+    setStatisticsModalOpen(true);
   };
 
   if (loading) {
@@ -315,6 +317,13 @@ const UserDashboard: React.FC = () => {
           onSave={handleCreateTopic}
           topic={null}
           isUserMode={true}
+        />
+      )}
+
+      {statisticsModalOpen && (
+        <StatisticsModal
+          isOpen={statisticsModalOpen}
+          onClose={() => setStatisticsModalOpen(false)}
         />
       )}
     </div>
