@@ -764,4 +764,25 @@
   .features-list li {
     font-size: 0.95rem;
   }
+
+  .idea-admin-header {
+    flex-direction: column;
+  }
+
+  .idea-admin-actions {
+    width: 100%;
+    flex-direction: row;
+  }
+
+  .idea-admin-actions .cta-button {
+    flex: 1;
+  }
+
+  .comment-admin-item {
+    flex-direction: column;
+  }
+
+  .comment-admin-item .cta-button {
+    align-self: flex-end;
+  }
 }
