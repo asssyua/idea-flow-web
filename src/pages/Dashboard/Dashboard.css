@@ -329,10 +329,12 @@
 
 .cta-button.danger {
   background: #dc3545;
+  color: white;
 }
 
 .cta-button.danger:hover {
   background: #c82333;
+  color: white;
 }
 
 /* Loading State */
@@ -533,7 +535,8 @@
 }
 
 .cta-button.danger:hover {
-  color: #c82333;
+  background-color: #dc3545;
+  color: white;
 }
 
 .cta-button.secondary {
