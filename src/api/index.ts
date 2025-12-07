@@ -7,10 +7,9 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000, // 10 секунд таймаут
+  timeout: 10000,
 });
 
-// Интерцептор для добавления токена
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('access_token');
@@ -24,27 +23,22 @@ api.interceptors.request.use(
   }
 );
 
-// Интерцептор для обработки ошибок
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
     
-    // Если ошибка 401 и это не запрос обновления токена
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       
-      // Удаляем токен и перенаправляем на главную
       localStorage.removeItem('access_token');
       localStorage.removeItem('user');
       
-      // Если это не главная страница, делаем редирект
       if (window.location.pathname !== '/') {
         window.location.href = '/';
       }
     }
     
-    // Обработка сетевых ошибок
     if (!error.response) {
       console.error('Network error:', error);
       return Promise.reject(new Error('Network error. Please check your internet connection.'));
@@ -54,7 +48,6 @@ api.interceptors.response.use(
   }
 );
 
-// Auth API
 export const authAPI = {
   register: (data: any) => api.post('/auth/register', data),
   login: (data: any) => api.post('/auth/login', data),
@@ -65,14 +58,12 @@ export const authAPI = {
   changePassword: (data: any) => api.post('/auth/change-password', data),
 };
 
-// Profile API
 export const profileAPI = {
   getProfile: () => api.get('/profile'),
   getBlockInfo: () => api.get('/profile/block-info'),
   getAdminProfile: () => api.get('/profile/admin'),
 };
 
-// Admin API
 export const adminAPI = {
   getAllUsers: () => api.get('/admin/users'),
   getUserById: (id: string) => api.get(`/admin/users/${id}`),
@@ -83,7 +74,6 @@ export const adminAPI = {
   sendSupportMessage: (data: any) => api.post('/admin/support-message', data),
 };
 
-// Topic API
 export const topicAPI = {
   getAllTopics: (status?: string) => {
     const params = status ? `?status=${status}` : '';
@@ -100,7 +90,6 @@ export const topicAPI = {
   getPendingTopics: () => api.get('/topics/admin/pending'),
 };
 
-// Idea API
 export const ideaAPI = {
   getIdeasByTopic: (topicId: string) => api.get(`/ideas?topicId=${topicId}`),
   createIdea: (data: any) => api.post('/ideas', data),
@@ -110,9 +99,12 @@ export const ideaAPI = {
   getComments: (ideaId: string) => api.get(`/ideas/${ideaId}/comments`),
   addComment: (ideaId: string, data: { content: string; parentId?: string }) => api.post(`/ideas/${ideaId}/comments`, data),
   deleteComment: (commentId: string) => api.delete(`/ideas/comments/${commentId}`),
-  // Admin methods
+  getUserReaction: (ideaId: string) => api.get(`/ideas/${ideaId}/my-reaction`),
+  getUserStatistics: () => api.get('/ideas/profile/statistics'),
   getAllIdeas: () => api.get('/ideas/admin/all'),
-  adminDeleteIdea: (ideaId: string) => api.delete(`/ideas/admin/${ideaId}`),
+  deleteIdea: (ideaId: string) => api.delete(`/ideas/admin/${ideaId}`),
+  getAllComments: () => api.get('/ideas/admin/comments/all'),
+  deleteCommentAsAdmin: (commentId: string) => api.delete(`/ideas/admin/comments/${commentId}`),
 };
 
 export default api;
