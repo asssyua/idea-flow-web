@@ -284,6 +284,17 @@
   font-size: 0.9rem;
 }
 
+.topic-modal-content .modal-actions .cta-button:not(.primary):not(.secondary):not(.danger) {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.topic-modal-content .modal-actions .cta-button:not(.primary):not(.secondary):not(.danger):hover {
+  background-color: var(--bg-secondary);
+  border-color: var(--primary-color);
+}
+
 .topic-modal-content .form-group textarea {
   resize: vertical;
   min-height: 60px;
