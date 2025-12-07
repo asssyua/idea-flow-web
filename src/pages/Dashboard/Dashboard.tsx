@@ -940,12 +940,16 @@ const Dashboard: React.FC = () => {
                         </div>
                       </td>
                       <td>
-                        {idea.author.firstName} {idea.author.lastName}
+                        {idea.author?.firstName} {idea.author?.lastName}
                       </td>
                       <td>
-                        <span className={`status-badge status-${idea.topic.status.toLowerCase()}`}>
-                          {idea.topic.title}
-                        </span>
+                        {idea.topic ? (
+                          <span className={`status-badge status-${idea.topic.status?.toLowerCase() || 'unknown'}`}>
+                            {idea.topic.title || 'Без темы'}
+                          </span>
+                        ) : (
+                          <span className="text-muted">—</span>
+                        )}
                       </td>
                       <td>{idea.likes}</td>
                       <td>{idea.dislikes}</td>
@@ -1044,7 +1048,7 @@ const Dashboard: React.FC = () => {
                                         fontSize: '0.85rem',
                                         color: 'var(--text-secondary)'
                                       }}>
-                                        Тема: {comment.idea.topic.title}
+                                        Тема: {comment.idea?.topic?.title || 'Без темы'}
                                       </div>
                                     </div>
                                     <button
