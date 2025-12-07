@@ -83,9 +83,10 @@ const TopicDetail: React.FC = () => {
         if (idea.images && idea.images.length > 0) {
           console.log(`Idea ${idea.id} images:`, idea.images.map((img, idx) => ({
             index: idx,
-            length: img.length,
-            startsWithData: img.startsWith('data:image'),
-            preview: img.substring(0, 50) + '...'
+            length: img?.length || 0,
+            startsWithData: img?.startsWith('data:image') || false,
+            preview: img ? img.substring(0, 100) + '...' : 'null/undefined',
+            isValid: img && typeof img === 'string' && img.length > 100
           })));
         }
       });
@@ -494,18 +495,99 @@ const TopicDetail: React.FC = () => {
                         {idea.images && idea.images.length > 0 && (
                           <div className="idea-images">
                             {idea.images
-                              .filter((image) => image && typeof image === 'string' && image.length > 0)
-                              .map((image, index) => {
-                              // Убеждаемся, что base64 строка имеет правильный формат
-                              let imageSrc = image;
-                              if (!image.startsWith('data:image')) {
-                                // Определяем тип изображения по началу base64 строки
-                                if (image.startsWith('/9j/') || image.startsWith('iVBORw0KGgo')) {
-                                  const mimeType = image.startsWith('/9j/') ? 'image/jpeg' : 'image/png';
-                                  imageSrc = `data:${mimeType};base64,${image}`;
-                                } else {
-                                  imageSrc = `data:image/jpeg;base64,${image}`;
+                              .filter((image) => {
+                                // Фильтруем валидные изображения
+                                if (!image || typeof image !== 'string' || image.length < 100) {
+                                  return false;
                                 }
+                                // Проверяем, что это либо полная data URL, либо валидная base64 строка
+                                return image.startsWith('data:image') || 
+                                       /^[A-Za-z0-9+/=]+$/.test(image.substring(0, 100)) ||
+                                       image.startsWith('/9j/') || 
+                                       image.startsWith('iVBORw0KGgo');
+                              })
+                              .map((image, index) => {
+                              // Нормализуем формат изображения
+                              let imageSrc = image.trim();
+                              
+                              try {
+                                // Если уже полная data URL
+                                if (imageSrc.startsWith('data:image')) {
+                                  // Проверяем правильный формат: data:image/type;base64,data
+                                  const correctFormat = /^data:image\/([a-zA-Z]+);base64,([A-Za-z0-9+/=\s]+)$/;
+                                  const match = imageSrc.match(correctFormat);
+                                  
+                                  if (match && match[2] && match[2].trim().length > 100) {
+                                    // Формат правильный, очищаем пробелы в base64
+                                    imageSrc = `data:image/${match[1]};base64,${match[2].replace(/\s/g, '')}`;
+                                  } else {
+                                    // Пытаемся исправить поврежденный формат
+                                    // Ищем base64 данные после различных вариантов разделителей
+                                    const patterns = [
+                                      /base64[,:]\s*([A-Za-z0-9+/=\s]+)$/,
+                                      /base64\s*([A-Za-z0-9+/=\s]+)$/,
+                                      /:\s*([A-Za-z0-9+/=\s]+)$/,
+                                    ];
+                                    
+                                    let base64Data = null;
+                                    for (const pattern of patterns) {
+                                      const m = imageSrc.match(pattern);
+                                      if (m && m[1] && m[1].trim().length > 100) {
+                                        base64Data = m[1].trim().replace(/\s/g, '');
+                                        break;
+                                      }
+                                    }
+                                    
+                                    if (base64Data) {
+                                      // Определяем MIME тип из строки или по содержимому
+                                      let mimeType = 'jpeg';
+                                      const lowerSrc = imageSrc.toLowerCase();
+                                      if (lowerSrc.includes('png') || base64Data.startsWith('iVBOR')) {
+                                        mimeType = 'png';
+                                      } else if (lowerSrc.includes('jpeg') || lowerSrc.includes('jpg') || base64Data.startsWith('/9j/') || base64Data.startsWith('FFD8')) {
+                                        mimeType = 'jpeg';
+                                      } else if (lowerSrc.includes('gif') || base64Data.startsWith('R0lGOD')) {
+                                        mimeType = 'gif';
+                                      } else if (lowerSrc.includes('webp') || base64Data.startsWith('UklGR')) {
+                                        mimeType = 'webp';
+                                      }
+                                      imageSrc = `data:image/${mimeType};base64,${base64Data}`;
+                                    } else {
+                                      // Если не удалось найти base64 данные, пропускаем
+                                      return null;
+                                    }
+                                  }
+                                } else {
+                                  // Это только base64 строка, нужно добавить префикс
+                                  const cleanBase64 = imageSrc.replace(/\s/g, '');
+                                  
+                                  // Определяем тип по началу base64
+                                  let mimeType = 'jpeg';
+                                  if (cleanBase64.startsWith('iVBORw0KGgo') || cleanBase64.startsWith('iVBOR')) {
+                                    mimeType = 'png';
+                                  } else if (cleanBase64.startsWith('/9j/') || cleanBase64.startsWith('FFD8')) {
+                                    mimeType = 'jpeg';
+                                  } else if (cleanBase64.startsWith('R0lGOD')) {
+                                    mimeType = 'gif';
+                                  } else if (cleanBase64.startsWith('UklGR')) {
+                                    mimeType = 'webp';
+                                  }
+                                  imageSrc = `data:image/${mimeType};base64,${cleanBase64}`;
+                                }
+                                
+                                // Финальная проверка валидности
+                                const base64Data = imageSrc.split(',')[1];
+                                if (!base64Data || base64Data.length < 100) {
+                                  return null;
+                                }
+                                
+                                // Проверяем, что base64 строка валидна
+                                if (!/^[A-Za-z0-9+/=]+$/.test(base64Data)) {
+                                  return null;
+                                }
+                              } catch (error) {
+                                console.error('Error processing image:', error);
+                                return null;
                               }
                               
                               return (
@@ -516,13 +598,16 @@ const TopicDetail: React.FC = () => {
                                     className="idea-image"
                                     onClick={() => setViewingImage(imageSrc)}
                                     onError={(e) => {
-                                      console.error('Failed to load image:', image.substring(0, 50));
+                                      console.error('Failed to load image at index', index, 'Length:', imageSrc.length);
+                                      console.error('Image preview (first 100 chars):', imageSrc.substring(0, 100));
                                       e.currentTarget.style.display = 'none';
                                     }}
                                   />
                                 </div>
                               );
-                            })}
+                            })
+                            .filter(Boolean) // Убираем null значения
+                          }
                           </div>
                         )}
                         
