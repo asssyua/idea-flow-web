@@ -4,6 +4,7 @@ import { profileAPI, authAPI, adminAPI, topicAPI, ideaAPI } from '../../api';
 import BlockUserModal from '../../components/Modals/BlockUserModal';
 import ConfirmModal from '../../components/Modals/ConfirmModal';
 import TopicModal from '../../components/Modals/TopicModal';
+import CommentSection from '../../components/CommentSection/CommentSection';
 import '../../styles/globals.css';
 import '../../styles/animations.css';
 import './Dashboard.css';
@@ -131,6 +132,14 @@ const Dashboard: React.FC = () => {
   const [topicToDelete, setTopicToDelete] = useState<Topic | null>(null);
   const [ideaToDelete, setIdeaToDelete] = useState<Idea | null>(null);
   const [commentToDelete, setCommentToDelete] = useState<Comment | null>(null);
+  const [selectedTopicForFlow, setSelectedTopicForFlow] = useState<Topic | null>(null);
+  const [flowIdeas, setFlowIdeas] = useState<Idea[]>([]);
+  const [flowIdeasLoading, setFlowIdeasLoading] = useState(false);
+  const [flowUserReactions, setFlowUserReactions] = useState<Record<string, 'like' | 'dislike' | null>>({});
+  const [newIdeaTitle, setNewIdeaTitle] = useState('');
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [isSubmittingIdea, setIsSubmittingIdea] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -146,7 +155,10 @@ const Dashboard: React.FC = () => {
       } else if (activeTab === 'topics') {
         loadTopics();
       } else if (activeTab === 'ideaflow') {
-        loadTopics(); 
+        loadTopics();
+        if (selectedTopicForFlow) {
+          fetchFlowIdeas(selectedTopicForFlow.id);
+        }
       } else if (activeTab === 'ideas') {
         loadIdeas();
         loadComments();
@@ -730,60 +742,512 @@ const Dashboard: React.FC = () => {
     return formatDate(deadline);
   };
 
-  const renderIdeaFlowTab = () => (
-    <div className="admin-section">
-      <div className="admin-section__header">
-        <h2>Idea Flow</h2>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.5rem', marginBottom: '1rem' }}>
-          Просмотр всех тем для обсуждения в виде карточек
-        </p>
-      </div>
+  // Функции для работы с идеями во вкладке Idea Flow
+  const fetchFlowIdeas = async (topicId: string) => {
+    try {
+      setFlowIdeasLoading(true);
+      const response = await ideaAPI.getIdeasByTopic(topicId);
+      const ideasData = Array.isArray(response.data) ? response.data : response.data?.ideas || [];
+      setFlowIdeas(ideasData);
+      
+      // Загружаем реакции пользователя для каждой идеи
+      const reactions: Record<string, 'like' | 'dislike' | null> = {};
+      await Promise.all(
+        ideasData
+          .filter((idea: Idea) => idea.id)
+          .map(async (idea: Idea) => {
+            try {
+              const reactionResponse = await ideaAPI.getUserReaction(idea.id);
+              reactions[idea.id] = reactionResponse.data?.type || null;
+            } catch (err) {
+              reactions[idea.id] = null;
+            }
+          })
+      );
+      setFlowUserReactions(reactions);
+    } catch (err: any) {
+      console.error('Failed to fetch ideas:', err);
+      setFlowIdeas([]);
+    } finally {
+      setFlowIdeasLoading(false);
+    }
+  };
 
-      {topicsLoading ? (
-        <div className="loading-container" style={{ minHeight: '200px' }}>
-          <div className="loading-spinner"></div>
-          <p>Загружаем темы...</p>
-        </div>
-      ) : topics.length === 0 ? (
-        <div className="empty-state">
-          <p>Тем для обсуждения пока нет.</p>
-        </div>
-      ) : (
-        <div className="topics-grid" style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', 
-          gap: '1.5rem',
-          marginTop: '1rem'
-        }}>
-          {topics.map((topic) => (
-            <div 
-              key={topic.id} 
-              className="topic-card"
-              style={{
-                background: 'var(--bg-primary)',
-                border: '1px solid var(--border-color)',
-                borderRadius: 'var(--border-radius)',
-                padding: '1.5rem',
-                transition: 'all var(--transition-fast)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '1rem',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-                minHeight: '220px',
-                position: 'relative',
-                cursor: 'pointer'
+  const handleFlowLike = async (ideaId: string) => {
+    try {
+      const currentReaction = flowUserReactions[ideaId];
+      await ideaAPI.likeIdea(ideaId);
+      
+      const newReactions = { ...flowUserReactions };
+      if (currentReaction === 'like') {
+        newReactions[ideaId] = null;
+      } else {
+        newReactions[ideaId] = 'like';
+      }
+      setFlowUserReactions(newReactions);
+      
+      if (selectedTopicForFlow) {
+        await fetchFlowIdeas(selectedTopicForFlow.id);
+      }
+    } catch (err: any) {
+      console.error('Failed to like idea:', err);
+      alert(err.response?.data?.message || 'Не удалось поставить лайк');
+    }
+  };
+
+  const handleFlowDislike = async (ideaId: string) => {
+    try {
+      const currentReaction = flowUserReactions[ideaId];
+      await ideaAPI.dislikeIdea(ideaId);
+      
+      const newReactions = { ...flowUserReactions };
+      if (currentReaction === 'dislike') {
+        newReactions[ideaId] = null;
+      } else {
+        newReactions[ideaId] = 'dislike';
+      }
+      setFlowUserReactions(newReactions);
+      
+      if (selectedTopicForFlow) {
+        await fetchFlowIdeas(selectedTopicForFlow.id);
+      }
+    } catch (err: any) {
+      console.error('Failed to dislike idea:', err);
+      alert(err.response?.data?.message || 'Не удалось поставить дизлайк');
+    }
+  };
+
+  const handleFlowImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const imageFiles = files.filter(file => file.type.startsWith('image/'));
+    
+    if (imageFiles.length === 0) {
+      alert('Пожалуйста, выберите файлы изображений');
+      return;
+    }
+
+    const maxFileSize = 5 * 1024 * 1024;
+    const validFiles = imageFiles.filter(file => {
+      if (file.size > maxFileSize) {
+        alert(`Файл "${file.name}" слишком большой (максимум 5MB). Он будет пропущен.`);
+        return false;
+      }
+      return true;
+    });
+
+    if (validFiles.length === 0) return;
+
+    const maxImages = 5;
+    const filesToAdd = validFiles.slice(0, maxImages - selectedImages.length);
+    
+    if (validFiles.length > filesToAdd.length) {
+      alert(`Можно загрузить максимум ${maxImages} изображений`);
+    }
+
+    setSelectedImages(prev => [...prev, ...filesToAdd]);
+
+    filesToAdd.forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreviews(prev => [...prev, reader.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeFlowImage = (index: number) => {
+    setSelectedImages(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const compressImage = (file: File, maxWidth: number = 1920, maxHeight: number = 1920, quality: number = 0.8): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          if (width > maxWidth || height > maxHeight) {
+            if (width > height) {
+              height = (height * maxWidth) / width;
+              width = maxWidth;
+            } else {
+              width = (width * maxHeight) / height;
+              height = maxHeight;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error('Не удалось создать контекст canvas'));
+            return;
+          }
+
+          ctx.drawImage(img, 0, 0, width, height);
+
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) {
+                reject(new Error('Не удалось сжать изображение'));
+                return;
+              }
+              const compressedFile = new File([blob], file.name, {
+                type: file.type,
+                lastModified: Date.now(),
+              });
+              resolve(compressedFile);
+            },
+            file.type,
+            quality
+          );
+        };
+        img.onerror = reject;
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const convertImagesToBase64 = async (files: File[]): Promise<string[]> => {
+    const compressedFiles = await Promise.all(
+      files.map(file => compressImage(file))
+    );
+
+    const base64Promises = compressedFiles.map(file => {
+      return new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const result = reader.result as string;
+          resolve(result);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    });
+    return Promise.all(base64Promises);
+  };
+
+  const handleFlowCreateIdea = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newIdeaTitle.trim() || !selectedTopicForFlow) {
+      return;
+    }
+
+    setIsSubmittingIdea(true);
+    try {
+      const imageBase64 = selectedImages.length > 0 
+        ? await convertImagesToBase64(selectedImages)
+        : undefined;
+
+      await ideaAPI.createIdea({
+        title: newIdeaTitle.trim(),
+        description: newIdeaTitle.trim(),
+        topicId: selectedTopicForFlow.id,
+        images: imageBase64,
+      });
+      setNewIdeaTitle('');
+      setSelectedImages([]);
+      setImagePreviews([]);
+      const fileInput = document.getElementById('flow-idea-images') as HTMLInputElement;
+      if (fileInput) {
+        fileInput.value = '';
+      }
+      await fetchFlowIdeas(selectedTopicForFlow.id);
+      await loadTopics(); // Обновляем счетчик идей
+    } catch (err: any) {
+      console.error('Failed to create idea:', err);
+      alert(err.response?.data?.message || 'Не удалось добавить идею');
+    } finally {
+      setIsSubmittingIdea(false);
+    }
+  };
+
+  const renderIdeaFlowTab = () => {
+    // Если выбрана тема, показываем детальный просмотр
+    if (selectedTopicForFlow) {
+      return (
+        <div className="admin-section">
+          <div className="admin-section__header" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <button
+              onClick={() => {
+                setSelectedTopicForFlow(null);
+                setFlowIdeas([]);
+                setNewIdeaTitle('');
+                setSelectedImages([]);
+                setImagePreviews([]);
               }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-4px)';
-                e.currentTarget.style.boxShadow = 'var(--shadow-md)';
-                e.currentTarget.style.borderColor = 'var(--primary-color)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.08)';
-                e.currentTarget.style.borderColor = 'var(--border-color)';
-              }}
+              className="cta-button secondary"
+              style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}
             >
+              ← Назад к темам
+            </button>
+            <div>
+              <h2>{selectedTopicForFlow.title}</h2>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.5rem' }}>
+                {selectedTopicForFlow.description}
+              </p>
+            </div>
+          </div>
+
+          {/* Форма добавления идеи */}
+          <div style={{ 
+            background: 'var(--bg-primary)', 
+            border: '1px solid var(--border-color)', 
+            borderRadius: 'var(--border-radius)', 
+            padding: '1.5rem', 
+            marginTop: '1.5rem' 
+          }}>
+            <h3 style={{ marginTop: 0, marginBottom: '1rem' }}>Добавить идею</h3>
+            <form onSubmit={handleFlowCreateIdea}>
+              <input
+                type="text"
+                value={newIdeaTitle}
+                onChange={(e) => setNewIdeaTitle(e.target.value)}
+                placeholder="Введите вашу идею..."
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  borderRadius: 'var(--border-radius)',
+                  border: '1px solid var(--border-color)',
+                  fontSize: '1rem',
+                  marginBottom: '1rem'
+                }}
+                disabled={isSubmittingIdea}
+              />
+              
+              <div style={{ marginBottom: '1rem' }}>
+                <label htmlFor="flow-idea-images" style={{ 
+                  display: 'inline-flex', 
+                  alignItems: 'center', 
+                  gap: '0.5rem',
+                  cursor: 'pointer',
+                  padding: '0.5rem 1rem',
+                  background: 'var(--bg-secondary)',
+                  borderRadius: 'var(--border-radius)',
+                  border: '1px solid var(--border-color)'
+                }}>
+                  <span>📷</span>
+                  <span>Добавить изображения (макс. 5)</span>
+                  <input
+                    id="flow-idea-images"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleFlowImageSelect}
+                    disabled={isSubmittingIdea || selectedImages.length >= 5}
+                    style={{ display: 'none' }}
+                  />
+                </label>
+                
+                {imagePreviews.length > 0 && (
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '1rem' }}>
+                    {imagePreviews.map((preview, index) => (
+                      <div key={index} style={{ position: 'relative' }}>
+                        <img 
+                          src={preview} 
+                          alt={`Preview ${index + 1}`} 
+                          style={{ 
+                            width: '100px', 
+                            height: '100px', 
+                            objectFit: 'cover', 
+                            borderRadius: 'var(--border-radius)' 
+                          }} 
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeFlowImage(index)}
+                          disabled={isSubmittingIdea}
+                          style={{
+                            position: 'absolute',
+                            top: '-8px',
+                            right: '-8px',
+                            background: '#dc3545',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '50%',
+                            width: '24px',
+                            height: '24px',
+                            cursor: 'pointer',
+                            fontSize: '16px',
+                            lineHeight: '1'
+                          }}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                className="cta-button primary"
+                disabled={!newIdeaTitle.trim() || isSubmittingIdea}
+              >
+                {isSubmittingIdea ? 'Добавление...' : 'Добавить идею'}
+              </button>
+            </form>
+          </div>
+
+          {/* Список идей */}
+          <div style={{ marginTop: '2rem' }}>
+            <h3>Идеи ({flowIdeas.length})</h3>
+            {flowIdeasLoading ? (
+              <div className="loading-container" style={{ minHeight: '200px' }}>
+                <div className="loading-spinner"></div>
+                <p>Загрузка идей...</p>
+              </div>
+            ) : flowIdeas.length === 0 ? (
+              <div className="empty-state">
+                <p>Пока нет идей. Будьте первым, кто предложит идею!</p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginTop: '1rem' }}>
+                {flowIdeas
+                  .filter((idea) => idea.id)
+                  .map((idea) => (
+                    <div 
+                      key={idea.id} 
+                      style={{
+                        background: 'var(--bg-primary)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: 'var(--border-radius)',
+                        padding: '1.5rem'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: '1rem' }}>
+                        <div style={{ flex: 1 }}>
+                          <h4 style={{ margin: 0, marginBottom: '0.5rem' }}>{idea.title}</h4>
+                          <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.9rem' }}>
+                            {idea.author?.firstName} {idea.author?.lastName} • {formatDate(idea.createdAt)}
+                          </p>
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button
+                            className={`cta-button ${flowUserReactions[idea.id] === 'like' ? 'primary' : 'secondary'}`}
+                            onClick={() => handleFlowLike(idea.id)}
+                            style={{ fontSize: '0.85rem', padding: '0.4rem 0.8rem' }}
+                          >
+                            👍 {idea.likes}
+                          </button>
+                          <button
+                            className={`cta-button ${flowUserReactions[idea.id] === 'dislike' ? 'primary' : 'secondary'}`}
+                            onClick={() => handleFlowDislike(idea.id)}
+                            style={{ fontSize: '0.85rem', padding: '0.4rem 0.8rem' }}
+                          >
+                            👎 {idea.dislikes}
+                          </button>
+                        </div>
+                      </div>
+                      
+                      {idea.images && idea.images.length > 0 && (
+                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+                          {idea.images
+                            .filter((image) => image && typeof image === 'string' && image.length > 100)
+                            .map((image, index) => {
+                              let imageSrc = image.trim();
+                              if (!imageSrc.startsWith('data:image')) {
+                                const cleanBase64 = imageSrc.replace(/\s/g, '');
+                                let mimeType = 'jpeg';
+                                if (cleanBase64.startsWith('iVBOR')) mimeType = 'png';
+                                else if (cleanBase64.startsWith('/9j/')) mimeType = 'jpeg';
+                                imageSrc = `data:image/${mimeType};base64,${cleanBase64}`;
+                              }
+                              return (
+                                <img
+                                  key={index}
+                                  src={imageSrc}
+                                  alt={`${idea.title} - изображение ${index + 1}`}
+                                  style={{
+                                    maxWidth: '200px',
+                                    maxHeight: '200px',
+                                    borderRadius: 'var(--border-radius)',
+                                    objectFit: 'cover'
+                                  }}
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                  }}
+                                />
+                              );
+                            })}
+                        </div>
+                      )}
+                      
+                      <CommentSection ideaId={idea.id} />
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // Показываем список тем
+    return (
+      <div className="admin-section">
+        <div className="admin-section__header">
+          <h2>Idea Flow</h2>
+        
+        </div>
+
+        {topicsLoading ? (
+          <div className="loading-container" style={{ minHeight: '200px' }}>
+            <div className="loading-spinner"></div>
+            <p>Загружаем темы...</p>
+          </div>
+        ) : topics.length === 0 ? (
+          <div className="empty-state">
+            <p>Тем для обсуждения пока нет.</p>
+          </div>
+        ) : (
+          <div className="topics-grid" style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', 
+            gap: '1.5rem',
+            marginTop: '1rem'
+          }}>
+            {topics.map((topic) => (
+              <div 
+                key={topic.id} 
+                className="topic-card"
+                style={{
+                  background: 'var(--bg-primary)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: 'var(--border-radius)',
+                  padding: '1.5rem',
+                  transition: 'all var(--transition-fast)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '1rem',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+                  minHeight: '220px',
+                  position: 'relative',
+                  cursor: 'pointer'
+                }}
+                onClick={() => {
+                  setSelectedTopicForFlow(topic);
+                  fetchFlowIdeas(topic.id);
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-4px)';
+                  e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+                  e.currentTarget.style.borderColor = 'var(--primary-color)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.08)';
+                  e.currentTarget.style.borderColor = 'var(--border-color)';
+                }}
+              >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
                 <h3 style={{ 
                   fontSize: '1.25rem', 
@@ -887,15 +1351,14 @@ const Dashboard: React.FC = () => {
         </div>
       )}
     </div>
-  );
+    );
+  };
 
   const renderIdeasTab = () => (
     <div className="admin-section">
       <div className="admin-section__header">
         <h2>Идеи и комментарии</h2>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.5rem' }}>
-          Просмотр и управление идеями пользователей и их комментариями
-        </p>
+        
       </div>
 
       {ideasLoading ? (
