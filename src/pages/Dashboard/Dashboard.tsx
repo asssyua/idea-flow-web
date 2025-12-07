@@ -1374,7 +1374,6 @@ const Dashboard: React.FC = () => {
             <thead>
               <tr>
                 <th>Название</th>
-                <th>Описание</th>
                 <th>Автор</th>
                 <th>Тема</th>
                 <th>Лайки</th>
@@ -1394,13 +1393,6 @@ const Dashboard: React.FC = () => {
                     <tr>
                       <td>
                         <strong>{idea.title}</strong>
-                      </td>
-                      <td>
-                        <div className="idea-description">
-                          {idea.description.length > 100
-                            ? `${idea.description.substring(0, 100)}...`
-                            : idea.description}
-                        </div>
                       </td>
                       <td>
                         {idea.author?.firstName} {idea.author?.lastName}
@@ -1454,7 +1446,7 @@ const Dashboard: React.FC = () => {
                     </tr>
                     {isExpanded && (
                       <tr>
-                        <td colSpan={10} style={{ padding: '1rem', backgroundColor: 'var(--bg-secondary)' }}>
+                        <td colSpan={9} style={{ padding: '1rem', backgroundColor: 'var(--bg-secondary)' }}>
                           <div style={{ marginBottom: '1rem' }}>
                             <h4 style={{ marginBottom: '0.5rem', fontSize: '1rem' }}>Комментарии к идее:</h4>
                             {commentsLoading ? (
