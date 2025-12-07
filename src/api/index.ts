@@ -99,6 +99,7 @@ export const ideaAPI = {
   getComments: (ideaId: string) => api.get(`/ideas/${ideaId}/comments`),
   addComment: (ideaId: string, data: { content: string; parentId?: string }) => api.post(`/ideas/${ideaId}/comments`, data),
   deleteComment: (commentId: string) => api.delete(`/ideas/comments/${commentId}`),
+  getUserReaction: (ideaId: string) => api.get(`/ideas/${ideaId}/my-reaction`),
   getUserStatistics: () => api.get('/ideas/profile/statistics'),
   getAllIdeas: () => api.get('/ideas/admin/all'),
   deleteIdea: (ideaId: string) => api.delete(`/ideas/admin/${ideaId}`),

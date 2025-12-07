@@ -90,6 +90,23 @@ const TopicDetail: React.FC = () => {
         }
       });
       setIdeas(ideasData);
+      
+      // Загружаем реакции пользователя для каждой идеи
+      const reactions: Record<string, 'like' | 'dislike' | null> = {};
+      await Promise.all(
+        ideasData
+          .filter((idea: Idea) => idea.id) // Фильтруем идеи с валидным id
+          .map(async (idea: Idea) => {
+            try {
+              const reactionResponse = await ideaAPI.getUserReaction(idea.id);
+              reactions[idea.id] = reactionResponse.data?.type || null;
+            } catch (err) {
+              // Если не удалось загрузить реакцию, считаем что её нет
+              reactions[idea.id] = null;
+            }
+          })
+      );
+      setUserReactions(reactions);
     } catch (err: any) {
       console.error('Failed to fetch ideas:', err);
       setIdeas([]);
@@ -267,17 +284,14 @@ const TopicDetail: React.FC = () => {
       const currentReaction = userReactions[ideaId];
       await ideaAPI.likeIdea(ideaId);
       
-      // Обновляем состояние реакций
+      // Обновляем состояние реакций на основе текущей реакции
       const newReactions = { ...userReactions };
       if (currentReaction === 'like') {
-        // Если уже был лайк, возможно произошла ошибка или реакция была удалена
+        // Если уже был лайк, теперь он удален (toggle)
         newReactions[ideaId] = null;
       } else {
+        // Ставим лайк (либо новый, либо заменяем дизлайк)
         newReactions[ideaId] = 'like';
-        // Если был дизлайк, убираем его
-        if (currentReaction === 'dislike') {
-          newReactions[ideaId] = 'like';
-        }
       }
       setUserReactions(newReactions);
       
@@ -285,9 +299,7 @@ const TopicDetail: React.FC = () => {
     } catch (err: any) {
       console.error('Failed to like idea:', err);
       const errorMsg = err.response?.data?.message || 'Не удалось поставить лайк';
-      if (!errorMsg.includes('already liked')) {
-        alert(errorMsg);
-      }
+      alert(errorMsg);
     }
   };
 
@@ -296,17 +308,14 @@ const TopicDetail: React.FC = () => {
       const currentReaction = userReactions[ideaId];
       await ideaAPI.dislikeIdea(ideaId);
       
-      // Обновляем состояние реакций
+      // Обновляем состояние реакций на основе текущей реакции
       const newReactions = { ...userReactions };
       if (currentReaction === 'dislike') {
-        // Если уже был дизлайк, возможно произошла ошибка или реакция была удалена
+        // Если уже был дизлайк, теперь он удален (toggle)
         newReactions[ideaId] = null;
       } else {
+        // Ставим дизлайк (либо новый, либо заменяем лайк)
         newReactions[ideaId] = 'dislike';
-        // Если был лайк, убираем его
-        if (currentReaction === 'like') {
-          newReactions[ideaId] = 'dislike';
-        }
       }
       setUserReactions(newReactions);
       
@@ -314,9 +323,7 @@ const TopicDetail: React.FC = () => {
     } catch (err: any) {
       console.error('Failed to dislike idea:', err);
       const errorMsg = err.response?.data?.message || 'Не удалось поставить дизлайк';
-      if (!errorMsg.includes('already disliked')) {
-        alert(errorMsg);
-      }
+      alert(errorMsg);
     }
   };
 
@@ -475,7 +482,9 @@ const TopicDetail: React.FC = () => {
               </div>
             ) : (
               <div className="ideas-list">
-                {ideas.map((idea) => (
+                {ideas
+                  .filter((idea) => idea.id) // Фильтруем идеи с валидным id
+                  .map((idea) => (
                   <div key={idea.id} className="idea-card-with-comments">
                     <div className="idea-card">
                       <div className="idea-content">
@@ -484,21 +493,30 @@ const TopicDetail: React.FC = () => {
                         {/* Изображения идеи */}
                         {idea.images && idea.images.length > 0 && (
                           <div className="idea-images">
-                            {idea.images.map((image, index) => {
+                            {idea.images
+                              .filter((image) => image && typeof image === 'string' && image.length > 0)
+                              .map((image, index) => {
                               // Убеждаемся, что base64 строка имеет правильный формат
-                              const imageSrc = image.startsWith('data:image') 
-                                ? image 
-                                : `data:image/jpeg;base64,${image}`;
+                              let imageSrc = image;
+                              if (!image.startsWith('data:image')) {
+                                // Определяем тип изображения по началу base64 строки
+                                if (image.startsWith('/9j/') || image.startsWith('iVBORw0KGgo')) {
+                                  const mimeType = image.startsWith('/9j/') ? 'image/jpeg' : 'image/png';
+                                  imageSrc = `data:${mimeType};base64,${image}`;
+                                } else {
+                                  imageSrc = `data:image/jpeg;base64,${image}`;
+                                }
+                              }
                               
                               return (
-                                <div key={index} className="idea-image-wrapper">
+                                <div key={`${idea.id}-img-${index}`} className="idea-image-wrapper">
                                   <img 
                                     src={imageSrc} 
                                     alt={`${idea.title} - изображение ${index + 1}`}
                                     className="idea-image"
                                     onClick={() => setViewingImage(imageSrc)}
                                     onError={(e) => {
-                                      console.error('Failed to load image:', image);
+                                      console.error('Failed to load image:', image.substring(0, 50));
                                       e.currentTarget.style.display = 'none';
                                     }}
                                   />
