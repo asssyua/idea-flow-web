@@ -58,6 +58,11 @@ button {
   outline: none;
 }
 
+/* Стили для красных кнопок (danger) - белый текст при hover */
+.cta-button.danger:hover {
+  color: white !important;
+}
+
 /* Формы */
 input, textarea, select {
   font-family: inherit;

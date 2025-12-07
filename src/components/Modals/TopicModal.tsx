@@ -209,7 +209,7 @@ const TopicModal: React.FC<TopicModalProps> = ({ isOpen, onClose, onSave, topic,
           <div className="modal-actions">
             <button
               type="button"
-              className="cta-button secondary"
+              className="cta-button"
               onClick={onClose}
               disabled={isLoading}
             >
@@ -217,7 +217,7 @@ const TopicModal: React.FC<TopicModalProps> = ({ isOpen, onClose, onSave, topic,
             </button>
             <button
               type="submit"
-              className="cta-button"
+              className="cta-button primary"
               disabled={isLoading}
             >
               {isLoading 

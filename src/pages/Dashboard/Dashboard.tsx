@@ -55,7 +55,7 @@ interface Topic {
   author?: {
     firstName: string;
     lastName: string;
-  }; // Для обратной совместимости
+  };
   createdAt?: string;
 }
 
@@ -481,7 +481,6 @@ const Dashboard: React.FC = () => {
       if (!comment || !comment.idea) {
         return false;
       }
-      // Приводим к строке для надежного сравнения и убираем пробелы
       const commentIdeaId = String(comment.idea.id || '').trim();
       const targetIdeaId = String(ideaId || '').trim();
       return commentIdeaId === targetIdeaId;
@@ -742,7 +741,6 @@ const Dashboard: React.FC = () => {
     return formatDate(deadline);
   };
 
-  // Функции для работы с идеями во вкладке Idea Flow
   const fetchFlowIdeas = async (topicId: string) => {
     try {
       setFlowIdeasLoading(true);
@@ -750,7 +748,6 @@ const Dashboard: React.FC = () => {
       const ideasData = Array.isArray(response.data) ? response.data : response.data?.ideas || [];
       setFlowIdeas(ideasData);
       
-      // Загружаем реакции пользователя для каждой идеи
       const reactions: Record<string, 'like' | 'dislike' | null> = {};
       await Promise.all(
         ideasData
@@ -960,7 +957,7 @@ const Dashboard: React.FC = () => {
         fileInput.value = '';
       }
       await fetchFlowIdeas(selectedTopicForFlow.id);
-      await loadTopics(); // Обновляем счетчик идей
+      await loadTopics();
     } catch (err: any) {
       console.error('Failed to create idea:', err);
       alert(err.response?.data?.message || 'Не удалось добавить идею');
@@ -970,7 +967,6 @@ const Dashboard: React.FC = () => {
   };
 
   const renderIdeaFlowTab = () => {
-    // Если выбрана тема, показываем детальный просмотр
     if (selectedTopicForFlow) {
       return (
         <div className="admin-section">
@@ -996,7 +992,6 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Форма добавления идеи */}
           <div style={{ 
             background: 'var(--bg-primary)', 
             border: '1px solid var(--border-color)', 
@@ -1097,7 +1092,6 @@ const Dashboard: React.FC = () => {
             </form>
           </div>
 
-          {/* Список идей */}
           <div style={{ marginTop: '2rem' }}>
             <h3>Идеи ({flowIdeas.length})</h3>
             {flowIdeasLoading ? (
@@ -1191,7 +1185,6 @@ const Dashboard: React.FC = () => {
       );
     }
 
-    // Показываем список тем
     return (
       <div className="admin-section">
         <div className="admin-section__header">
@@ -1374,7 +1367,6 @@ const Dashboard: React.FC = () => {
             <thead>
               <tr>
                 <th>Название</th>
-                <th>Описание</th>
                 <th>Автор</th>
                 <th>Тема</th>
                 <th>Лайки</th>
@@ -1394,13 +1386,6 @@ const Dashboard: React.FC = () => {
                     <tr>
                       <td>
                         <strong>{idea.title}</strong>
-                      </td>
-                      <td>
-                        <div className="idea-description">
-                          {idea.description.length > 100
-                            ? `${idea.description.substring(0, 100)}...`
-                            : idea.description}
-                        </div>
                       </td>
                       <td>
                         {idea.author?.firstName} {idea.author?.lastName}
@@ -1454,7 +1439,7 @@ const Dashboard: React.FC = () => {
                     </tr>
                     {isExpanded && (
                       <tr>
-                        <td colSpan={10} style={{ padding: '1rem', backgroundColor: 'var(--bg-secondary)' }}>
+                        <td colSpan={9} style={{ padding: '1rem', backgroundColor: 'var(--bg-secondary)' }}>
                           <div style={{ marginBottom: '1rem' }}>
                             <h4 style={{ marginBottom: '0.5rem', fontSize: '1rem' }}>Комментарии к идее:</h4>
                             {commentsLoading ? (

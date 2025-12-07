@@ -43,7 +43,6 @@ const ContactSupportModal: React.FC<ContactSupportModalProps> = ({
       setSuccess(true);
       setMessage('');
       
-      // Закрываем модалку через 2 секунды после успешной отправки
       setTimeout(() => {
         setSuccess(false);
         onClose();

@@ -65,7 +65,6 @@ const StatisticsModal: React.FC<StatisticsModalProps> = ({ isOpen, onClose }) =>
           </div>
         ) : statistics ? (
           <div className="statistics-content">
-            {/* Основные метрики */}
             <div className="statistics-grid">
               <div className="stat-card">
                 <div className="stat-icon">💡</div>
@@ -89,7 +88,6 @@ const StatisticsModal: React.FC<StatisticsModalProps> = ({ isOpen, onClose }) =>
               </div>
             </div>
 
-            {/* Рейтинг */}
             <div className="statistics-section">
               <h4 className="statistics-section-title">Общий рейтинг</h4>
               <div className="rating-card">
@@ -106,7 +104,6 @@ const StatisticsModal: React.FC<StatisticsModalProps> = ({ isOpen, onClose }) =>
               </div>
             </div>
 
-            {/* Идеи по темам */}
             {Object.keys(statistics.ideasByTopic).length > 0 && (
               <div className="statistics-section">
                 <h4 className="statistics-section-title">Идеи по темам</h4>

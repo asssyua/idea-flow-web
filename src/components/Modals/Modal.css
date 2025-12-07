@@ -1,4 +1,3 @@
-/* Overlay */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -24,7 +23,6 @@
   border: 1px solid var(--border-color);
 }
 
-/* Modal Header */
 .modal-header {
   display: flex;
   justify-content: space-between;
@@ -61,7 +59,6 @@
   color: var(--text-primary);
 }
 
-/* Modal Form */
 .modal-form {
   display: flex;
   flex-direction: column;
@@ -117,7 +114,6 @@
   margin-top: 0.25rem;
 }
 
-/* Messages */
 .error-message {
   background-color: rgba(255, 107, 107, 0.1);
   color: var(--accent-dark);
@@ -148,7 +144,6 @@
   border-left: 3px solid #17a2b8;
 }
 
-/* Links and Buttons */
 .forgot-password-link {
   background: none;
   border: none;
@@ -174,7 +169,6 @@
   margin: 0.5rem 0;
 }
 
-/* Modal Actions */
 .modal-actions {
   display: flex;
   gap: 1rem;
@@ -222,7 +216,6 @@
   color: var(--primary-dark);
 }
 
-/* Loading State */
 .loading-overlay {
   position: absolute;
   top: 0;
@@ -237,7 +230,6 @@
   z-index: 10;
 }
 
-/* Topic Modal - Smaller size */
 .topic-modal-content {
   max-width: 500px;
   max-height: 90vh;
@@ -284,12 +276,22 @@
   font-size: 0.9rem;
 }
 
+.topic-modal-content .modal-actions .cta-button:not(.primary):not(.secondary):not(.danger) {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.topic-modal-content .modal-actions .cta-button:not(.primary):not(.secondary):not(.danger):hover {
+  background-color: var(--bg-secondary);
+  border-color: var(--primary-color);
+}
+
 .topic-modal-content .form-group textarea {
   resize: vertical;
   min-height: 60px;
 }
 
-/* Responsive */
 @media (max-width: 480px) {
   .modal-content {
     padding: 1.5rem;

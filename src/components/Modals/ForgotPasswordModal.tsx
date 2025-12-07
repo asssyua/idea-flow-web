@@ -40,12 +40,10 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen, onClo
 
     try {
       if (!isTokenStep) {
-        // Шаг 1: отправка токена на email
         await authAPI.forgotPassword(data.email);
         setSuccess('Мы отправили токен для сброса пароля на ваш email. Введите его ниже вместе с новым паролем.');
         setIsTokenStep(true);
       } else {
-        // Шаг 2: сброс пароля по токену
         if (!resetToken.trim()) {
           setError('Введите токен из письма.');
           return;
@@ -88,8 +86,6 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen, onClo
   if (!isOpen) return null;
 
   const handleOverlayClick = (e: React.MouseEvent) => {
-    // На шаге с токеном не закрываем модалку кликом по фону,
-    // чтобы форма не закрывалась «сама» во время ввода токена
     if (!isTokenStep && e.target === e.currentTarget) {
       onClose();
     }

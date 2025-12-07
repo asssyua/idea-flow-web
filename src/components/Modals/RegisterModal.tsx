@@ -43,7 +43,6 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
   });
 
   const onSubmit = async (data: RegisterFormData) => {
-    // Если уже на шаге подтверждения кода, не отправляем повторно регистрацию
     if (isCodeStep) {
       return;
     }
