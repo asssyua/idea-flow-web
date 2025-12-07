@@ -252,6 +252,8 @@
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 0.75rem;
   margin: 1rem 0;
+  position: relative;
+  z-index: 1;
 }
 
 .idea-image-wrapper {
@@ -279,6 +281,8 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  z-index: 1;
+  background: var(--bg-secondary);
 }
 
 /* Модальное окно для просмотра изображения */
@@ -407,6 +411,8 @@
 .idea-content {
   flex: 1;
   min-width: 0;
+  position: relative;
+  z-index: 0;
 }
 
 .idea-title {
@@ -415,6 +421,8 @@
   color: var(--text-primary);
   margin: 0 0 0.75rem 0;
   word-wrap: break-word;
+  position: relative;
+  z-index: 0;
 }
 
 .idea-meta {

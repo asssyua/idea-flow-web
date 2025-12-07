@@ -77,6 +77,18 @@ const TopicDetail: React.FC = () => {
       setIdeasLoading(true);
       const response = await ideaAPI.getIdeasByTopic(id!);
       const ideasData = Array.isArray(response.data) ? response.data : response.data?.ideas || [];
+      console.log('Fetched ideas:', ideasData);
+      // Логируем изображения для отладки
+      ideasData.forEach((idea: Idea) => {
+        if (idea.images && idea.images.length > 0) {
+          console.log(`Idea ${idea.id} images:`, idea.images.map((img, idx) => ({
+            index: idx,
+            length: img.length,
+            startsWithData: img.startsWith('data:image'),
+            preview: img.substring(0, 50) + '...'
+          })));
+        }
+      });
       setIdeas(ideasData);
     } catch (err: any) {
       console.error('Failed to fetch ideas:', err);
@@ -472,16 +484,27 @@ const TopicDetail: React.FC = () => {
                         {/* Изображения идеи */}
                         {idea.images && idea.images.length > 0 && (
                           <div className="idea-images">
-                            {idea.images.map((image, index) => (
-                              <div key={index} className="idea-image-wrapper">
-                                <img 
-                                  src={image} 
-                                  alt={`${idea.title} - изображение ${index + 1}`}
-                                  className="idea-image"
-                                  onClick={() => setViewingImage(image)}
-                                />
-                              </div>
-                            ))}
+                            {idea.images.map((image, index) => {
+                              // Убеждаемся, что base64 строка имеет правильный формат
+                              const imageSrc = image.startsWith('data:image') 
+                                ? image 
+                                : `data:image/jpeg;base64,${image}`;
+                              
+                              return (
+                                <div key={index} className="idea-image-wrapper">
+                                  <img 
+                                    src={imageSrc} 
+                                    alt={`${idea.title} - изображение ${index + 1}`}
+                                    className="idea-image"
+                                    onClick={() => setViewingImage(imageSrc)}
+                                    onError={(e) => {
+                                      console.error('Failed to load image:', image);
+                                      e.currentTarget.style.display = 'none';
+                                    }}
+                                  />
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
                         
