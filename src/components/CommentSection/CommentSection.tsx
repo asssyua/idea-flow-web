@@ -36,7 +36,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({ ideaId }) => {
       const response = await ideaAPI.getComments(ideaId);
       const commentsData = Array.isArray(response.data) ? response.data : [];
       
-      // Организуем комментарии в иерархическую структуру
       const organizedComments = organizeComments(commentsData);
       setComments(organizedComments);
     } catch (err: any) {
@@ -48,11 +47,9 @@ const CommentSection: React.FC<CommentSectionProps> = ({ ideaId }) => {
   };
 
   const organizeComments = (commentsData: Comment[]): Comment[] => {
-    // Разделяем на родительские и дочерние комментарии
     const parentComments = commentsData.filter(c => !c.parentId);
     const childComments = commentsData.filter(c => c.parentId);
 
-    // Группируем дочерние комментарии по parentId
     const repliesMap = new Map<string, Comment[]>();
     childComments.forEach(reply => {
       if (reply.parentId) {
@@ -63,7 +60,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({ ideaId }) => {
       }
     });
 
-    // Добавляем ответы к родительским комментариям
     return parentComments.map(comment => ({
       ...comment,
       replies: repliesMap.get(comment.id) || []
@@ -149,7 +145,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({ ideaId }) => {
     <div className="comment-section">
       <h3 className="comment-section-title">Комментарии</h3>
 
-      {/* Форма добавления комментария */}
       <form onSubmit={handleSubmitComment} className="comment-form">
         <textarea
           value={newComment}
@@ -168,7 +163,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({ ideaId }) => {
         </button>
       </form>
 
-      {/* Список комментариев */}
       <div className="comments-list">
         {comments.length === 0 ? (
           <div className="empty-comments">
@@ -253,7 +247,6 @@ const CommentItem: React.FC<CommentItemProps> = ({
         </button>
       </div>
 
-      {/* Форма ответа */}
       {isReplying && (
         <div className="reply-form">
           <textarea
@@ -283,7 +276,6 @@ const CommentItem: React.FC<CommentItemProps> = ({
         </div>
       )}
 
-      {/* Вложенные комментарии (ответы) */}
       {comment.replies && comment.replies.length > 0 && (
         <div className="comment-replies">
           {comment.replies.map((reply) => (

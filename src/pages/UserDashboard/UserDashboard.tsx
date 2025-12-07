@@ -49,7 +49,6 @@ const UserDashboard: React.FC = () => {
       const userData = response.data.user;
       setUser(userData);
       
-      // Если пользователь - админ, перенаправляем на админ панель
       const userRole = userData.role;
       const isAdmin = typeof userRole === 'string' 
         ? userRole.toLowerCase() === 'admin'
@@ -79,13 +78,11 @@ const UserDashboard: React.FC = () => {
       console.log('Fetching topics...');
       const response = await topicAPI.getPublicTopics();
       
-      // Бэкенд возвращает массив напрямую
       let topicsData = [];
       
       if (Array.isArray(response.data)) {
         topicsData = response.data;
       } else if (response.data) {
-        // Если это объект, пытаемся извлечь массив
         if (response.data.topics && Array.isArray(response.data.topics)) {
           topicsData = response.data.topics;
         } else if (response.data.data && Array.isArray(response.data.data)) {
@@ -123,16 +120,13 @@ const UserDashboard: React.FC = () => {
     deadline: string | null;
   }) => {
     try {
-      // Для обычных пользователей используется endpoint suggest
-      // SuggestTopicDto принимает только title и description
       await topicAPI.suggestTopic({
         title: data.title,
         description: data.description,
       });
       setTopicModalOpen(false);
-      // Показываем сообщение об успехе
       alert('Тема успешно предложена! Она будет отправлена на модерацию администратору.');
-      fetchTopics(); // Обновляем список топиков
+      fetchTopics();
     } catch (err: any) {
       console.error('Failed to create topic:', err);
       const errorMessage = err.response?.data?.message || 'Не удалось предложить тему';

@@ -52,7 +52,6 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLoginSuccess
       const errorMessage = err.response?.data?.message || 'Ошибка при входе';
       setError(errorMessage);
       
-      // Если пользователь заблокирован, извлекаем причину и показываем кнопку для связи с поддержкой
       if (errorMessage.includes('blocked') || errorMessage.includes('заблокирован')) {
         const reasonMatch = errorMessage.match(/Reason: (.+?)\./);
         if (reasonMatch) {

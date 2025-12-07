@@ -21,7 +21,6 @@ const HomePage: React.FC = () => {
 
   return (
     <div className="home-page">
-      {/* Header */}
       <header className="header">
         <nav className="container">
           <a href="/" className="logo">IdeaFlow</a>
@@ -36,7 +35,6 @@ const HomePage: React.FC = () => {
         </nav>
       </header>
 
-      {/* Hero Section */}
       <section 
         className="hero-section"
         style={{ backgroundImage: `url(${lightImage})` }}
@@ -51,12 +49,11 @@ const HomePage: React.FC = () => {
             анализируйте результаты и принимайте обоснованные решения.
           </p>
           <button className="cta-button primary" onClick={handleGetStarted}>
-            Начать бесплатно
+            Начать 
           </button>
         </div>
       </section>
 
-      {/* About Section */}
       <section className="about-section">
         <div className="container">
           <h2 className="section-title">О приложении</h2>
@@ -81,14 +78,12 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* Footer */}
       <footer className="footer">
         <div className="container">
           <p>© 2025 IdeaFlow. Все права защищены.</p>
         </div>
       </footer>
 
-      {/* Login Modal */}
       <LoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
