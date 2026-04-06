@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { topicAPI, ideaAPI } from '../../api';
 import CommentSection from '../../components/CommentSection/CommentSection';
+import DragDropUpload from '../../components/DragDropUpload/DragDropUpload';
 import '../../styles/globals.css';
 import '../../styles/animations.css';
 import './TopicDetail.css';
@@ -177,44 +178,31 @@ const TopicDetail: React.FC = () => {
     }
   };
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    const imageFiles = files.filter(file => file.type.startsWith('image/'));
+  const handleFilesSelected = (files: File[]) => {
+    const maxFileSize = 10 * 1024 * 1024; // 10 MB
+    const validFiles = files.filter(file => file.size <= maxFileSize);
     
-    if (imageFiles.length === 0) {
-      return;
-    }
-
-    const maxFileSize = 5 * 1024 * 1024;
-    const validFiles = imageFiles.filter(file => {
-      if (file.size > maxFileSize) {
-        return false;
-      }
-      return true;
+    setSelectedImages(prev => {
+      const combined = [...prev, ...validFiles];
+      return combined.slice(0, 5); // max 5 files
     });
 
-    if (validFiles.length === 0) {
-      return;
-    }
-
-    const maxImages = 5;
-    const filesToAdd = validFiles.slice(0, maxImages - selectedImages.length);
-    
-    if (validFiles.length > filesToAdd.length) {
-    }
-
-    setSelectedImages(prev => [...prev, ...filesToAdd]);
-
-    filesToAdd.forEach(file => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreviews(prev => [...prev, reader.result as string]);
-      };
-      reader.readAsDataURL(file);
+    files.forEach(file => {
+      if (file.size <= maxFileSize) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setImagePreviews(prev => {
+            const combined = [...prev, reader.result as string];
+            return combined.slice(0, 5);
+          });
+        };
+        reader.readAsDataURL(file);
+      }
     });
   };
 
-  const removeImage = (index: number) => {
+  const handleFileRemove = (fileId: string) => {
+    const index = parseInt(fileId, 10) || 0;
     setSelectedImages(prev => prev.filter((_, i) => i !== index));
     setImagePreviews(prev => prev.filter((_, i) => i !== index));
   };
@@ -662,37 +650,16 @@ const TopicDetail: React.FC = () => {
               )}
               
               <div className="image-upload-section">
-                <label htmlFor="idea-images" className="image-upload-label">
-                  <span className="upload-icon">📷</span>
-                  <span>Добавить изображения (макс. 5)</span>
-                  <input
-                    id="idea-images"
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleImageSelect}
-                    disabled={isSubmitting || selectedImages.length >= 5}
-                    style={{ display: 'none' }}
-                  />
-                </label>
-                
-                {imagePreviews.length > 0 && (
-                  <div className="image-previews">
-                    {imagePreviews.map((preview, index) => (
-                      <div key={index} className="image-preview-item">
-                        <img src={preview} alt={`Preview ${index + 1}`} className="image-preview" />
-                        <button
-                          type="button"
-                          className="remove-image-btn"
-                          onClick={() => removeImage(index)}
-                          disabled={isSubmitting}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <DragDropUpload
+                  maxFiles={5}
+                  maxFileSize={10 * 1024 * 1024}
+                  acceptedFormats={['image/jpeg', 'image/png', 'image/jpg']}
+                  onFilesSelected={handleFilesSelected}
+                  onFileRemove={handleFileRemove}
+                  disabled={isSubmitting || selectedImages.length >= 5}
+                  label="Перетащите изображения сюда или нажмите для выбора"
+                  key={selectedImages.length === 0 ? 'empty' : 'filled'}
+                />
               </div>
 
               <button
