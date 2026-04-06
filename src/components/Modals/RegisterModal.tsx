@@ -68,14 +68,8 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, onRegist
 
   if (!isOpen) return null;
 
-  const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
   return (
-    <div className="modal-overlay" onClick={handleOverlayClick}>
+    <div className="modal-overlay">
       <div className="modal-content">
         <div className="modal-header">
           <h3>Регистрация в IdeaFlow</h3>

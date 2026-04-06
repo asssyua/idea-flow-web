@@ -54,14 +54,8 @@ const ContactSupportModal: React.FC<ContactSupportModalProps> = ({
     }
   };
 
-  const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget && !success) {
-      onClose();
-    }
-  };
-
   return (
-    <div className="modal-overlay" onClick={handleOverlayClick}>
+    <div className="modal-overlay">
       <div className="modal-content">
         <div className="modal-header">
           <h3>Связаться с поддержкой</h3>

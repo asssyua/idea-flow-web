@@ -66,12 +66,6 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLoginSuccess
 
   if (!isOpen) return null;
 
-  const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
   if (showRegister) {
     return (
       <RegisterModal
@@ -82,7 +76,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLoginSuccess
         }}
         onRegisterSuccess={() => {
           setShowRegister(false);
-          alert('Регистрация успешна! Проверьте вашу почту для подтверждения email.');
+          
         }}
       />
     );
@@ -98,14 +92,13 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLoginSuccess
         }}
         onSuccess={() => {
           setShowForgotPassword(false);
-          alert('Инструкции по восстановлению пароля отправлены на ваш email');
         }}
       />
     );
   }
 
   return (
-    <div className="modal-overlay" onClick={handleOverlayClick}>
+    <div className="modal-overlay">
       <div className="modal-content">
         <div className="modal-header">
           <h3>Вход в IdeaFlow</h3>

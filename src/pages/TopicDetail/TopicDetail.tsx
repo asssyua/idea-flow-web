@@ -25,6 +25,9 @@ interface Idea {
   description: string;
   likes: number;
   dislikes: number;
+  isPinned?: boolean;
+  canPin?: boolean;
+  canEdit?: boolean;
   createdAt: string;
   images?: string[];
   author: {
@@ -47,13 +50,74 @@ const TopicDetail: React.FC = () => {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [viewingImage, setViewingImage] = useState<string | null>(null);
+  const [ideaValidationError, setIdeaValidationError] = useState('');
+
+  const [editingIdeaId, setEditingIdeaId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editSelectedImages, setEditSelectedImages] = useState<File[]>([]);
+  const [editImagePreviews, setEditImagePreviews] = useState<string[]>([]);
+  const [isUpdatingIdea, setIsUpdatingIdea] = useState(false);
+
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
+
+  const getUserRoleFromToken = (): string | null => {
+    try {
+      const token = localStorage.getItem('access_token');
+      if (!token) return null;
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const role = payload?.role;
+      return role ? String(role) : null;
+    } catch {
+      return null;
+    }
+  };
 
   useEffect(() => {
     if (id) {
       fetchTopic();
       fetchIdeas();
+      fetchFavoriteStatus();
     }
   }, [id]);
+
+  const fetchFavoriteStatus = async () => {
+    try {
+      const role = getUserRoleFromToken();
+      if (!role || role.toLowerCase() === 'admin') {
+        return;
+      }
+      setFavoriteLoading(true);
+      const response = await topicAPI.isTopicFavorite(id!);
+      setIsFavorite(!!response.data?.isFavorite);
+    } catch (err: any) {
+      // Если админ/нет прав - просто не показываем функционал
+    } finally {
+      setFavoriteLoading(false);
+    }
+  };
+
+  const toggleFavorite = async () => {
+    try {
+      const role = getUserRoleFromToken();
+      if (!role || role.toLowerCase() === 'admin') {
+        return;
+      }
+      setFavoriteLoading(true);
+      if (isFavorite) {
+        const response = await topicAPI.removeTopicFromFavorites(id!);
+        setIsFavorite(!!response.data?.isFavorite);
+      } else {
+        const response = await topicAPI.addTopicToFavorites(id!);
+        setIsFavorite(!!response.data?.isFavorite);
+      }
+    } catch (err: any) {
+      // 403 для админа/нет доступа
+    } finally {
+      setFavoriteLoading(false);
+    }
+  };
 
   const fetchTopic = async () => {
     try {
@@ -118,14 +182,12 @@ const TopicDetail: React.FC = () => {
     const imageFiles = files.filter(file => file.type.startsWith('image/'));
     
     if (imageFiles.length === 0) {
-      alert('Пожалуйста, выберите файлы изображений');
       return;
     }
 
     const maxFileSize = 5 * 1024 * 1024;
     const validFiles = imageFiles.filter(file => {
       if (file.size > maxFileSize) {
-        alert(`Файл "${file.name}" слишком большой (максимум 5MB). Он будет пропущен.`);
         return false;
       }
       return true;
@@ -139,7 +201,6 @@ const TopicDetail: React.FC = () => {
     const filesToAdd = validFiles.slice(0, maxImages - selectedImages.length);
     
     if (validFiles.length > filesToAdd.length) {
-      alert(`Можно загрузить максимум ${maxImages} изображений`);
     }
 
     setSelectedImages(prev => [...prev, ...filesToAdd]);
@@ -156,6 +217,34 @@ const TopicDetail: React.FC = () => {
   const removeImage = (index: number) => {
     setSelectedImages(prev => prev.filter((_, i) => i !== index));
     setImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleEditImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const imageFiles = files.filter(file => file.type.startsWith('image/'));
+    if (imageFiles.length === 0) return;
+
+    const maxFileSize = 5 * 1024 * 1024;
+    const validFiles = imageFiles.filter(file => file.size <= maxFileSize);
+    if (validFiles.length === 0) return;
+
+    const maxImages = 5;
+    const filesToAdd = validFiles.slice(0, maxImages - editSelectedImages.length);
+
+    setEditSelectedImages(prev => [...prev, ...filesToAdd]);
+
+    filesToAdd.forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditImagePreviews(prev => [...prev, reader.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeEditImage = (index: number) => {
+    setEditSelectedImages(prev => prev.filter((_, i) => i !== index));
+    setEditImagePreviews(prev => prev.filter((_, i) => i !== index));
   };
 
   const compressImage = (file: File, maxWidth: number = 1920, maxHeight: number = 1920, quality: number = 0.8): Promise<File> => {
@@ -232,13 +321,82 @@ const TopicDetail: React.FC = () => {
     return Promise.all(base64Promises);
   };
 
+  const startEditingIdea = (idea: Idea) => {
+    setEditingIdeaId(idea.id);
+    setEditTitle(idea.title || '');
+    setEditDescription(idea.description || '');
+    setEditSelectedImages([]);
+    setEditImagePreviews([]);
+  };
+
+  const cancelEditingIdea = () => {
+    setEditingIdeaId(null);
+    setEditTitle('');
+    setEditDescription('');
+    setEditSelectedImages([]);
+    setEditImagePreviews([]);
+  };
+
+  const handleUpdateIdea = async (ideaId: string) => {
+    try {
+      setIsUpdatingIdea(true);
+
+      const payload: any = {
+        title: editTitle.trim(),
+        description: editDescription.trim(),
+      };
+
+      if (editSelectedImages.length > 0) {
+        payload.images = await convertImagesToBase64(editSelectedImages);
+      }
+
+      await ideaAPI.updateIdea(ideaId, payload);
+      cancelEditingIdea();
+      await fetchIdeas();
+    } catch (err: any) {
+      console.error('Failed to update idea:', err);
+      if (err.response?.status === 403) {
+        cancelEditingIdea();
+      }
+    } finally {
+      setIsUpdatingIdea(false);
+    }
+  };
+
   const handleCreateIdea = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newIdeaTitle.trim() || !topic) {
+    
+    if (!topic) {
+      return;
+    }
+
+    // Валидация: проверка на пустое поле
+    if (!newIdeaTitle.trim()) {
+      setIdeaValidationError('Поле не может быть пустым (минимум 15 символов)');
+      // Добавляем анимацию к полю ввода
+      const input = document.querySelector('.idea-input') as HTMLInputElement;
+      if (input) {
+        input.classList.add('shake');
+        setTimeout(() => input.classList.remove('shake'), 500);
+      }
+      return;
+    }
+    
+    // Валидация: проверка на минимум 15 символов
+    if (newIdeaTitle.trim().length < 15) {
+      setIdeaValidationError('Поле не может быть пустым (минимум 15 символов)');
+      // Добавляем анимацию к полю ввода
+      const input = document.querySelector('.idea-input') as HTMLInputElement;
+      if (input) {
+        input.classList.add('shake');
+        setTimeout(() => input.classList.remove('shake'), 500);
+      }
       return;
     }
 
     setIsSubmitting(true);
+    setIdeaValidationError('');
+    
     try {
       const imageBase64 = selectedImages.length > 0 
         ? await convertImagesToBase64(selectedImages)
@@ -253,6 +411,7 @@ const TopicDetail: React.FC = () => {
       setNewIdeaTitle('');
       setSelectedImages([]);
       setImagePreviews([]);
+      setIdeaValidationError('');
       const fileInput = document.getElementById('idea-images') as HTMLInputElement;
       if (fileInput) {
         fileInput.value = '';
@@ -261,7 +420,7 @@ const TopicDetail: React.FC = () => {
       await fetchTopic();
     } catch (err: any) {
       console.error('Failed to create idea:', err);
-      alert(err.response?.data?.message || 'Не удалось добавить идею');
+      setIdeaValidationError('Тема закрыта для обсуждения.');
     } finally {
       setIsSubmitting(false);
     }
@@ -270,8 +429,9 @@ const TopicDetail: React.FC = () => {
   const handleLike = async (ideaId: string) => {
     try {
       const currentReaction = userReactions[ideaId];
-      await ideaAPI.likeIdea(ideaId);
+      const response = await ideaAPI.likeIdea(ideaId);
       
+      // Обновляем реакцию пользователя
       const newReactions = { ...userReactions };
       if (currentReaction === 'like') {
         newReactions[ideaId] = null;
@@ -280,19 +440,28 @@ const TopicDetail: React.FC = () => {
       }
       setUserReactions(newReactions);
       
-      await fetchIdeas();
+      // Обновляем счетчики лайков/дизлайков для конкретной идеи
+      if (response.data) {
+        setIdeas(prevIdeas => 
+          prevIdeas.map(idea => 
+            idea.id === ideaId 
+              ? { ...idea, likes: response.data.likes, dislikes: response.data.dislikes }
+              : idea
+          )
+        );
+      }
     } catch (err: any) {
       console.error('Failed to like idea:', err);
       const errorMsg = err.response?.data?.message || 'Не удалось поставить лайк';
-      alert(errorMsg);
     }
   };
 
   const handleDislike = async (ideaId: string) => {
     try {
       const currentReaction = userReactions[ideaId];
-      await ideaAPI.dislikeIdea(ideaId);
+      const response = await ideaAPI.dislikeIdea(ideaId);
       
+      // Обновляем реакцию пользователя
       const newReactions = { ...userReactions };
       if (currentReaction === 'dislike') {
         newReactions[ideaId] = null;
@@ -301,11 +470,47 @@ const TopicDetail: React.FC = () => {
       }
       setUserReactions(newReactions);
       
-      await fetchIdeas();
+      // Обновляем счетчики лайков/дизлайков для конкретной идеи
+      if (response.data) {
+        setIdeas(prevIdeas => 
+          prevIdeas.map(idea => 
+            idea.id === ideaId 
+              ? { ...idea, likes: response.data.likes, dislikes: response.data.dislikes }
+              : idea
+          )
+        );
+      }
     } catch (err: any) {
       console.error('Failed to dislike idea:', err);
       const errorMsg = err.response?.data?.message || 'Не удалось поставить дизлайк';
-      alert(errorMsg);
+    }
+  };
+
+  const handlePin = async (ideaId: string) => {
+    try {
+      const response = await ideaAPI.pinIdea(ideaId);
+      if (response.data) {
+        setIdeas((prevIdeas: Idea[]) =>
+          prevIdeas.map((idea: Idea) => (idea.id === ideaId ? { ...idea, ...response.data } : idea))
+        );
+      }
+      await fetchIdeas();
+    } catch (err: any) {
+      console.error('Failed to pin idea:', err);
+    }
+  };
+
+  const handleUnpin = async (ideaId: string) => {
+    try {
+      const response = await ideaAPI.unpinIdea(ideaId);
+      if (response.data) {
+        setIdeas((prevIdeas: Idea[]) =>
+          prevIdeas.map((idea: Idea) => (idea.id === ideaId ? { ...idea, ...response.data } : idea))
+        );
+      }
+      await fetchIdeas();
+    } catch (err: any) {
+      console.error('Failed to unpin idea:', err);
     }
   };
 
@@ -368,6 +573,26 @@ const TopicDetail: React.FC = () => {
           <div className="topic-card-detail">
             <div className="topic-card-header">
               <h1 className="topic-card-title">{topic.title}</h1>
+              {(() => {
+                const role = getUserRoleFromToken();
+                const canUseFavorites = role && role.toLowerCase() !== 'admin';
+                if (!canUseFavorites) return null;
+
+                return (
+                  <button
+                    className={`cta-button ${isFavorite ? 'secondary' : 'primary'}`}
+                    onClick={toggleFavorite}
+                    disabled={favoriteLoading}
+                    style={{ marginLeft: '1rem', padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
+                  >
+                    {favoriteLoading
+                      ? '...'
+                      : isFavorite
+                        ? 'Удалить из избранного'
+                        : 'В избранное'}
+                  </button>
+                );
+              })()}
               {topic.deadline && (
                 <span className={`topic-deadline ${new Date(topic.deadline) < new Date() ? 'expired' : ''}`}>
                   {formatDeadline(topic.deadline) || 'Истек'}
@@ -396,11 +621,45 @@ const TopicDetail: React.FC = () => {
               <input
                 type="text"
                 value={newIdeaTitle}
-                onChange={(e) => setNewIdeaTitle(e.target.value)}
-                placeholder="Введите вашу идею..."
+                onChange={(e) => {
+                  setNewIdeaTitle(e.target.value);
+                  // Сбрасываем ошибку при вводе текста
+                  if (ideaValidationError) {
+                    setIdeaValidationError('');
+                  }
+                }}
+                onBlur={() => {
+                  // Показываем ошибку при потере фокуса, если текста недостаточно
+                  if (newIdeaTitle.trim().length > 0 && newIdeaTitle.trim().length < 15) {
+                    setIdeaValidationError('Поле не может быть пустым (минимум 15 символов)');
+                  }
+                }}
+                placeholder="Введите вашу идею (минимум 15 символов)..."
                 className="idea-input"
                 disabled={isSubmitting}
+                style={{
+                  border: ideaValidationError 
+                    ? '1px solid #dc3545' 
+                    : '1px solid var(--border-color)',
+                  marginBottom: ideaValidationError ? '0.5rem' : '1rem',
+                  boxShadow: ideaValidationError ? '0 0 0 0.2rem rgba(220, 53, 69, 0.25)' : 'none'
+                }}
               />
+              
+              {/* Сообщение об ошибке */}
+              {ideaValidationError && (
+                <div style={{
+                  color: '#dc3545',
+                  fontSize: '0.875rem',
+                  marginBottom: '1rem',
+                  padding: '0.5rem',
+                  backgroundColor: '#f8d7da',
+                  border: '1px solid #f5c6cb',
+                  borderRadius: '4px'
+                }}>
+                  {ideaValidationError}
+                </div>
+              )}
               
               <div className="image-upload-section">
                 <label htmlFor="idea-images" className="image-upload-label">
@@ -439,7 +698,7 @@ const TopicDetail: React.FC = () => {
               <button
                 type="submit"
                 className="cta-button primary"
-                disabled={!newIdeaTitle.trim() || isSubmitting}
+                disabled={!newIdeaTitle.trim() || newIdeaTitle.trim().length < 15 || isSubmitting}
               >
                 {isSubmitting ? 'Добавление...' : 'Добавить идею'}
               </button>
@@ -465,7 +724,78 @@ const TopicDetail: React.FC = () => {
                   <div key={idea.id} className="idea-card-with-comments">
                     <div className="idea-card">
                       <div className="idea-content">
-                        <h3 className="idea-title">{idea.title}</h3>
+                        {editingIdeaId === idea.id ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                            <input
+                              type="text"
+                              value={editTitle}
+                              onChange={(e) => setEditTitle(e.target.value)}
+                              className="idea-input"
+                              disabled={isUpdatingIdea}
+                            />
+                            <textarea
+                              value={editDescription}
+                              onChange={(e) => setEditDescription(e.target.value)}
+                              disabled={isUpdatingIdea}
+                              style={{
+                                width: '100%',
+                                minHeight: '90px',
+                                padding: '0.75rem',
+                                borderRadius: 'var(--border-radius)',
+                                border: '1px solid var(--border-color)',
+                                backgroundColor: 'var(--bg-primary)',
+                                color: 'var(--text-primary)',
+                                resize: 'vertical'
+                              }}
+                            />
+
+                            <div className="image-upload-section">
+                              <label htmlFor={`edit-idea-images-${idea.id}`} className="image-upload-label">
+                                <span className="upload-icon">📷</span>
+                                <span>Обновить изображения (макс. 5)</span>
+                                <input
+                                  id={`edit-idea-images-${idea.id}`}
+                                  type="file"
+                                  accept="image/*"
+                                  multiple
+                                  onChange={handleEditImageSelect}
+                                  disabled={isUpdatingIdea || editSelectedImages.length >= 5}
+                                  style={{ display: 'none' }}
+                                />
+                              </label>
+
+                              {editImagePreviews.length > 0 && (
+                                <div className="image-previews">
+                                  {editImagePreviews.map((preview, index) => (
+                                    <div key={index} className="image-preview-item">
+                                      <img src={preview} alt={`Edit preview ${index + 1}`} className="image-preview" />
+                                      <button
+                                        type="button"
+                                        className="remove-image-btn"
+                                        onClick={() => removeEditImage(index)}
+                                        disabled={isUpdatingIdea}
+                                      >
+                                        ×
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <h3 className="idea-title">
+                              {idea.isPinned ? <span title="Закреплено">📌 </span> : null}
+                              {idea.title}
+                            </h3>
+                            {idea.description && (
+                              <p style={{ marginTop: '0.5rem', marginBottom: 0, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                                {idea.description}
+                              </p>
+                            )}
+                          </>
+                        )}
                         
                         {idea.images && idea.images.length > 0 && (
                           <div className="idea-images">
@@ -596,6 +926,57 @@ const TopicDetail: React.FC = () => {
                           <span className="action-icon">👎</span>
                           <span className="action-count">{idea.dislikes}</span>
                         </button>
+
+                        {idea.canEdit && (
+                          editingIdeaId === idea.id ? (
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                              <button
+                                className="cta-button primary"
+                                onClick={() => handleUpdateIdea(idea.id)}
+                                disabled={isUpdatingIdea || !editTitle.trim() || editTitle.trim().length < 15}
+                                style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
+                              >
+                                {isUpdatingIdea ? 'Сохранение...' : 'Сохранить'}
+                              </button>
+                              <button
+                                className="cta-button secondary"
+                                onClick={cancelEditingIdea}
+                                disabled={isUpdatingIdea}
+                                style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
+                              >
+                                Отмена
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              className="cta-button secondary"
+                              onClick={() => startEditingIdea(idea)}
+                              style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
+                            >
+                              Редактировать
+                            </button>
+                          )
+                        )}
+
+                        {idea.canPin && (
+                          idea.isPinned ? (
+                            <button
+                              className="cta-button secondary"
+                              onClick={() => handleUnpin(idea.id)}
+                              style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
+                            >
+                              Открепить
+                            </button>
+                          ) : (
+                            <button
+                              className="cta-button secondary"
+                              onClick={() => handlePin(idea.id)}
+                              style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
+                            >
+                              Закрепить
+                            </button>
+                          )
+                        )}
                       </div>
                     </div>
                     <CommentSection ideaId={idea.id} />

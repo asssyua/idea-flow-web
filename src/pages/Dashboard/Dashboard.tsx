@@ -120,6 +120,11 @@ const Dashboard: React.FC = () => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [expandedIdeaId, setExpandedIdeaId] = useState<string | null>(null);
+
+  const [editingAdminIdeaId, setEditingAdminIdeaId] = useState<string | null>(null);
+  const [adminEditTitle, setAdminEditTitle] = useState('');
+  const [adminEditDescription, setAdminEditDescription] = useState('');
+  const [isUpdatingAdminIdea, setIsUpdatingAdminIdea] = useState(false);
   const [blockModalOpen, setBlockModalOpen] = useState(false);
   const [unblockModalOpen, setUnblockModalOpen] = useState(false);
   const [topicModalOpen, setTopicModalOpen] = useState(false);
@@ -140,7 +145,36 @@ const Dashboard: React.FC = () => {
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [isSubmittingIdea, setIsSubmittingIdea] = useState(false);
+  const [ideaValidationError, setIdeaValidationError] = useState('');
   const navigate = useNavigate();
+
+  const startAdminEditingIdea = (idea: Idea) => {
+    setEditingAdminIdeaId(idea.id);
+    setAdminEditTitle(idea.title || '');
+    setAdminEditDescription(idea.description || '');
+  };
+
+  const cancelAdminEditingIdea = () => {
+    setEditingAdminIdeaId(null);
+    setAdminEditTitle('');
+    setAdminEditDescription('');
+  };
+
+  const handleAdminUpdateIdea = async (ideaId: string) => {
+    try {
+      setIsUpdatingAdminIdea(true);
+      await ideaAPI.updateIdea(ideaId, {
+        title: adminEditTitle.trim(),
+        description: adminEditDescription.trim(),
+      });
+      cancelAdminEditingIdea();
+      await loadIdeas();
+    } catch (err: any) {
+      console.error('Failed to update idea as admin:', err);
+    } finally {
+      setIsUpdatingAdminIdea(false);
+    }
+  };
 
   useEffect(() => {
     fetchProfile();
@@ -349,7 +383,6 @@ const Dashboard: React.FC = () => {
     } catch (err: any) {
       console.error('Failed to delete topic', err);
       const errorMessage = err.response?.data?.message || 'Не удалось удалить тему для обсуждения';
-      alert(errorMessage);
     }
   };
 
@@ -366,7 +399,6 @@ const Dashboard: React.FC = () => {
     } catch (err: any) {
       console.error('Failed to save topic', err);
       const errorMessage = err.response?.data?.message || 'Не удалось сохранить тему для обсуждения';
-      alert(errorMessage);
     }
   };
 
@@ -388,7 +420,6 @@ const Dashboard: React.FC = () => {
     } catch (err: any) {
       console.error('Failed to block user', err);
       const errorMessage = err.response?.data?.message || 'Не удалось заблокировать пользователя';
-      alert(errorMessage);
     }
   };
 
@@ -409,7 +440,6 @@ const Dashboard: React.FC = () => {
       setSelectedUserName('');
     } catch (err) {
       console.error('Failed to unblock user', err);
-      alert('Не удалось разблокировать пользователя');
     }
   };
 
@@ -444,7 +474,6 @@ const Dashboard: React.FC = () => {
     } catch (err: any) {
       console.error('Failed to delete idea', err);
       const errorMessage = err.response?.data?.message || 'Не удалось удалить идею';
-      alert(errorMessage);
     }
   };
 
@@ -464,7 +493,6 @@ const Dashboard: React.FC = () => {
     } catch (err: any) {
       console.error('Failed to delete comment', err);
       const errorMessage = err.response?.data?.message || 'Не удалось удалить комментарий';
-      alert(errorMessage);
     }
   };
 
@@ -788,7 +816,6 @@ const Dashboard: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Failed to like idea:', err);
-      alert(err.response?.data?.message || 'Не удалось поставить лайк');
     }
   };
 
@@ -810,7 +837,6 @@ const Dashboard: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Failed to dislike idea:', err);
-      alert(err.response?.data?.message || 'Не удалось поставить дизлайк');
     }
   };
 
@@ -819,14 +845,12 @@ const Dashboard: React.FC = () => {
     const imageFiles = files.filter(file => file.type.startsWith('image/'));
     
     if (imageFiles.length === 0) {
-      alert('Пожалуйста, выберите файлы изображений');
       return;
     }
 
     const maxFileSize = 5 * 1024 * 1024;
     const validFiles = imageFiles.filter(file => {
       if (file.size > maxFileSize) {
-        alert(`Файл "${file.name}" слишком большой (максимум 5MB). Он будет пропущен.`);
         return false;
       }
       return true;
@@ -838,7 +862,6 @@ const Dashboard: React.FC = () => {
     const filesToAdd = validFiles.slice(0, maxImages - selectedImages.length);
     
     if (validFiles.length > filesToAdd.length) {
-      alert(`Можно загрузить максимум ${maxImages} изображений`);
     }
 
     setSelectedImages(prev => [...prev, ...filesToAdd]);
@@ -931,40 +954,66 @@ const Dashboard: React.FC = () => {
     return Promise.all(base64Promises);
   };
 
-  const handleFlowCreateIdea = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newIdeaTitle.trim() || !selectedTopicForFlow) {
-      return;
+const handleFlowCreateIdea = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  // Валидация
+  if (!newIdeaTitle.trim()) {
+    setIdeaValidationError('Поле "идея" не может быть пустым');
+    // Добавляем анимацию к полю ввода
+    const input = document.querySelector('input[type="text"]');
+    if (input) {
+      input.classList.add('shake');
+      setTimeout(() => input.classList.remove('shake'), 500);
     }
-
-    setIsSubmittingIdea(true);
-    try {
-      const imageBase64 = selectedImages.length > 0 
-        ? await convertImagesToBase64(selectedImages)
-        : undefined;
-
-      await ideaAPI.createIdea({
-        title: newIdeaTitle.trim(),
-        description: newIdeaTitle.trim(),
-        topicId: selectedTopicForFlow.id,
-        images: imageBase64,
-      });
-      setNewIdeaTitle('');
-      setSelectedImages([]);
-      setImagePreviews([]);
-      const fileInput = document.getElementById('flow-idea-images') as HTMLInputElement;
-      if (fileInput) {
-        fileInput.value = '';
-      }
-      await fetchFlowIdeas(selectedTopicForFlow.id);
-      await loadTopics();
-    } catch (err: any) {
-      console.error('Failed to create idea:', err);
-      alert(err.response?.data?.message || 'Не удалось добавить идею');
-    } finally {
-      setIsSubmittingIdea(false);
+    return;
+  }
+  
+  if (newIdeaTitle.trim().length < 15) {
+    setIdeaValidationError('Идея должна содержать минимум 15 символов');
+    // Добавляем анимацию к полю ввода
+    const input = document.querySelector('input[type="text"]');
+    if (input) {
+      input.classList.add('shake');
+      setTimeout(() => input.classList.remove('shake'), 500);
     }
-  };
+    return;
+  }
+  
+  if (!selectedTopicForFlow) {
+    return;
+  }
+
+  setIsSubmittingIdea(true);
+  setIdeaValidationError('');
+  
+  try {
+    const imageBase64 = selectedImages.length > 0 
+      ? await convertImagesToBase64(selectedImages)
+      : undefined;
+
+    await ideaAPI.createIdea({
+      title: newIdeaTitle.trim(),
+      description: newIdeaTitle.trim(),
+      topicId: selectedTopicForFlow.id,
+      images: imageBase64,
+    });
+    setNewIdeaTitle('');
+    setSelectedImages([]);
+    setImagePreviews([]);
+    const fileInput = document.getElementById('flow-idea-images') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
+    await fetchFlowIdeas(selectedTopicForFlow.id);
+    await loadTopics();
+  } catch (err: any) {
+    console.error('Failed to create idea:', err);
+    setIdeaValidationError('Тема закрыта.');
+  } finally {
+    setIsSubmittingIdea(false);
+  }
+};
 
   const renderIdeaFlowTab = () => {
     if (selectedTopicForFlow) {
@@ -1000,96 +1049,235 @@ const Dashboard: React.FC = () => {
             marginTop: '1.5rem' 
           }}>
             <h3 style={{ marginTop: 0, marginBottom: '1rem' }}>Добавить идею</h3>
-            <form onSubmit={handleFlowCreateIdea}>
-              <input
-                type="text"
-                value={newIdeaTitle}
-                onChange={(e) => setNewIdeaTitle(e.target.value)}
-                placeholder="Введите вашу идею..."
-                style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  borderRadius: 'var(--border-radius)',
-                  border: '1px solid var(--border-color)',
-                  fontSize: '1rem',
-                  marginBottom: '1rem'
-                }}
-                disabled={isSubmittingIdea}
-              />
-              
-              <div style={{ marginBottom: '1rem' }}>
-                <label htmlFor="flow-idea-images" style={{ 
-                  display: 'inline-flex', 
-                  alignItems: 'center', 
-                  gap: '0.5rem',
-                  cursor: 'pointer',
-                  padding: '0.5rem 1rem',
-                  background: 'var(--bg-secondary)',
-                  borderRadius: 'var(--border-radius)',
-                  border: '1px solid var(--border-color)'
-                }}>
-                  <span>📷</span>
-                  <span>Добавить изображения (макс. 5)</span>
-                  <input
-                    id="flow-idea-images"
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleFlowImageSelect}
-                    disabled={isSubmittingIdea || selectedImages.length >= 5}
-                    style={{ display: 'none' }}
-                  />
-                </label>
-                
-                {imagePreviews.length > 0 && (
-                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '1rem' }}>
-                    {imagePreviews.map((preview, index) => (
-                      <div key={index} style={{ position: 'relative' }}>
-                        <img 
-                          src={preview} 
-                          alt={`Preview ${index + 1}`} 
-                          style={{ 
-                            width: '100px', 
-                            height: '100px', 
-                            objectFit: 'cover', 
-                            borderRadius: 'var(--border-radius)' 
-                          }} 
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeFlowImage(index)}
-                          disabled={isSubmittingIdea}
-                          style={{
-                            position: 'absolute',
-                            top: '-8px',
-                            right: '-8px',
-                            background: '#dc3545',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '50%',
-                            width: '24px',
-                            height: '24px',
-                            cursor: 'pointer',
-                            fontSize: '16px',
-                            lineHeight: '1'
-                          }}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+           <form onSubmit={handleFlowCreateIdea}>
+  <input
+    type="text"
+    value={newIdeaTitle}
+    onChange={(e) => {
+      setNewIdeaTitle(e.target.value);
+      // Сбрасываем ошибку при вводе текста
+      if (ideaValidationError) {
+        setIdeaValidationError('');
+      }
+    }}
+    onBlur={() => {
+      // Показываем ошибку при потере фокуса, если текста недостаточно
+      if (newIdeaTitle.trim().length > 0 && newIdeaTitle.trim().length < 15) {
+        setIdeaValidationError('Идея должна содержать минимум 15 символов');
+      }
+    }}
+    placeholder="Введите вашу идею (минимум 15 символов)..."
+    style={{
+      width: '100%',
+      padding: '0.75rem',
+      borderRadius: 'var(--border-radius)',
+      border: ideaValidationError 
+        ? '1px solid #dc3545' 
+        : '1px solid var(--border-color)',
+      fontSize: '1rem',
+      marginBottom: ideaValidationError ? '0.5rem' : '1rem',
+      boxShadow: ideaValidationError ? '0 0 0 0.2rem rgba(220, 53, 69, 0.25)' : 'none'
+    }}
+    disabled={isSubmittingIdea}
+  />
+  
+  {/* Сообщение об ошибке */}
+  {ideaValidationError && (
+    <div style={{
+      color: '#dc3545',
+      fontSize: '0.875rem',
+      marginBottom: '1rem',
+      padding: '0.5rem',
+      backgroundColor: '#f8d7da',
+      borderRadius: 'var(--border-radius)',
+      border: '1px solid #f5c6cb',
+      animation: 'fadeIn 0.3s ease-in'
+    }}>
+      {ideaValidationError}
+    </div>
+  )}
+  
+  {/* Счетчик символов с визуальной индикацией */}
+  <div style={{
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '1rem'
+  }}>
+    <div style={{ 
+      color: newIdeaTitle.length >= 15 ? 'var(--success-color, #28a745)' : 
+             newIdeaTitle.length > 0 ? 'var(--warning-color, #ffc107)' : 
+             'var(--text-secondary)', 
+      fontSize: '0.85rem',
+      fontWeight: newIdeaTitle.length < 15 && newIdeaTitle.length > 0 ? 600 : 'normal'
+    }}>
+      {newIdeaTitle.length}/15 символов
+      {newIdeaTitle.length >= 15 && ' ✓'}
+    </div>
+    {newIdeaTitle.length < 15 && newIdeaTitle.length > 0 && (
+      <div style={{ 
+        color: '#dc3545', 
+        fontSize: '0.85rem',
+        fontWeight: 600 
+      }}>
+        Осталось {15 - newIdeaTitle.length} симв.
+      </div>
+    )}
+  </div>
+  
+  {/* Загрузка изображений */}
+  <div style={{ marginBottom: '1rem' }}>
+    <label htmlFor="flow-idea-images" style={{ 
+      display: 'inline-flex', 
+      alignItems: 'center', 
+      gap: '0.5rem',
+      cursor: selectedImages.length >= 5 ? 'not-allowed' : 'pointer',
+      padding: '0.5rem 1rem',
+      background: 'var(--bg-secondary)',
+      borderRadius: 'var(--border-radius)',
+      border: '1px solid var(--border-color)',
+      opacity: selectedImages.length >= 5 ? 0.6 : 1,
+      transition: 'all 0.2s ease'
+    }}>
+      <span>📷</span>
+      <span>Добавить изображения (макс. 5) {selectedImages.length > 0 ? `(${selectedImages.length} добавлено)` : ''}</span>
+      <input
+        id="flow-idea-images"
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={handleFlowImageSelect}
+        disabled={isSubmittingIdea || selectedImages.length >= 5}
+        style={{ display: 'none' }}
+      />
+    </label>
+    
+    {/* Сообщение о максимальном количестве изображений */}
+    {selectedImages.length >= 5 && (
+      <div style={{
+        color: '#856404',
+        fontSize: '0.875rem',
+        marginTop: '0.5rem',
+        padding: '0.5rem',
+        backgroundColor: '#fff3cd',
+        borderRadius: 'var(--border-radius)',
+        border: '1px solid #ffeaa7'
+      }}>
+        Достигнуто максимальное количество изображений (5)
+      </div>
+    )}
+    
+    {/* Превью изображений */}
+    {imagePreviews.length > 0 && (
+      <div style={{ 
+        display: 'flex', 
+        gap: '0.5rem', 
+        flexWrap: 'wrap', 
+        marginTop: '1rem',
+        borderTop: imagePreviews.length > 0 ? '1px solid var(--border-color)' : 'none',
+        paddingTop: imagePreviews.length > 0 ? '1rem' : '0'
+      }}>
+        {imagePreviews.map((preview, index) => (
+          <div key={index} style={{ position: 'relative' }}>
+            <img 
+              src={preview} 
+              alt={`Preview ${index + 1}`} 
+              style={{ 
+                width: '100px', 
+                height: '100px', 
+                objectFit: 'cover', 
+                borderRadius: 'var(--border-radius)',
+                border: '2px solid var(--border-color)'
+              }} 
+            />
+            <button
+              type="button"
+              onClick={() => removeFlowImage(index)}
+              disabled={isSubmittingIdea}
+              style={{
+                position: 'absolute',
+                top: '-8px',
+                right: '-8px',
+                background: '#dc3545',
+                color: 'white',
+                border: 'none',
+                borderRadius: '50%',
+                width: '24px',
+                height: '24px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                lineHeight: '1',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                transition: 'transform 0.2s ease'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+            >
+              ×
+            </button>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
 
-              <button
-                type="submit"
-                className="cta-button primary"
-                disabled={!newIdeaTitle.trim() || isSubmittingIdea}
-              >
-                {isSubmittingIdea ? 'Добавление...' : 'Добавить идею'}
-              </button>
-            </form>
+  <button
+    type="submit"
+    className="cta-button primary"
+    disabled={!newIdeaTitle.trim() || newIdeaTitle.trim().length < 15 || isSubmittingIdea}
+    style={{
+      opacity: (!newIdeaTitle.trim() || newIdeaTitle.trim().length < 15) ? 0.6 : 1,
+      cursor: (!newIdeaTitle.trim() || newIdeaTitle.trim().length < 15) ? 'not-allowed' : 'pointer',
+      position: 'relative'
+    }}
+    onClick={(e) => {
+      // Принудительно показываем ошибку при клике, если валидация не пройдена
+      if (!newIdeaTitle.trim()) {
+        e.preventDefault();
+        setIdeaValidationError('Поле "идея" не может быть пустым');
+        // Прокручиваем к полю ввода
+        document.querySelector('input[type="text"]')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else if (newIdeaTitle.trim().length < 15) {
+        e.preventDefault();
+        setIdeaValidationError('Идея должна содержать минимум 15 символов');
+        document.querySelector('input[type="text"]')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }}
+  >
+    {isSubmittingIdea ? (
+      <>
+        <span style={{ opacity: 0.7 }}>Добавление...</span>
+      </>
+    ) : (
+      'Добавить идею'
+    )}
+  </button>
+  
+  {/* Подсказка под кнопкой */}
+  {(!newIdeaTitle.trim() || newIdeaTitle.trim().length < 15) && (
+    <div style={{
+      marginTop: '0.75rem',
+      padding: '0.5rem',
+      backgroundColor: 'rgba(255, 193, 7, 0.1)',
+      borderRadius: 'var(--border-radius)',
+      border: '1px solid rgba(255, 193, 7, 0.3)',
+      fontSize: '0.85rem',
+      color: '#856404'
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <span>💡</span>
+        <span>
+          {!newIdeaTitle.trim() 
+            ? 'Введите текст идеи, чтобы продолжить' 
+            : `Введите еще ${15 - newIdeaTitle.trim().length} символов`}
+        </span>
+      </div>
+    </div>
+  )}
+</form>
           </div>
 
           <div style={{ marginTop: '2rem' }}>
@@ -1385,7 +1573,22 @@ const Dashboard: React.FC = () => {
                   <React.Fragment key={idea.id}>
                     <tr>
                       <td>
-                        <strong>{idea.title}</strong>
+                        {editingAdminIdeaId === idea.id ? (
+                          <input
+                            type="text"
+                            value={adminEditTitle}
+                            onChange={(e) => setAdminEditTitle(e.target.value)}
+                            disabled={isUpdatingAdminIdea}
+                            style={{
+                              width: '100%',
+                              padding: '0.4rem 0.6rem',
+                              borderRadius: 'var(--border-radius-sm)',
+                              border: '1px solid var(--border-color)',
+                            }}
+                          />
+                        ) : (
+                          <strong>{idea.title}</strong>
+                        )}
                       </td>
                       <td>
                         {idea.author?.firstName} {idea.author?.lastName}
@@ -1428,18 +1631,65 @@ const Dashboard: React.FC = () => {
                         })}
                       </td>
                       <td className="users-table__actions">
-                        <button
-                          className="cta-button danger"
-                          onClick={() => handleDeleteIdea(idea)}
-                          style={{ fontSize: '0.85rem', padding: '0.4rem 0.8rem' }}
-                        >
-                          Удалить
-                        </button>
+                        {editingAdminIdeaId === idea.id ? (
+                          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            <button
+                              className="cta-button primary"
+                              onClick={() => handleAdminUpdateIdea(idea.id)}
+                              disabled={isUpdatingAdminIdea || !adminEditTitle.trim()}
+                              style={{ fontSize: '0.85rem', padding: '0.4rem 0.8rem' }}
+                            >
+                              {isUpdatingAdminIdea ? 'Сохранение...' : 'Сохранить'}
+                            </button>
+                            <button
+                              className="cta-button secondary"
+                              onClick={cancelAdminEditingIdea}
+                              disabled={isUpdatingAdminIdea}
+                              style={{ fontSize: '0.85rem', padding: '0.4rem 0.8rem' }}
+                            >
+                              Отмена
+                            </button>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            <button
+                              className="cta-button secondary"
+                              onClick={() => startAdminEditingIdea(idea)}
+                              style={{ fontSize: '0.85rem', padding: '0.4rem 0.8rem' }}
+                            >
+                              Редактировать
+                            </button>
+                            <button
+                              className="cta-button danger"
+                              onClick={() => handleDeleteIdea(idea)}
+                              style={{ fontSize: '0.85rem', padding: '0.4rem 0.8rem' }}
+                            >
+                              Удалить
+                            </button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                     {isExpanded && (
                       <tr>
                         <td colSpan={9} style={{ padding: '1rem', backgroundColor: 'var(--bg-secondary)' }}>
+                          {editingAdminIdeaId === idea.id && (
+                            <div style={{ marginBottom: '1rem' }}>
+                              <textarea
+                                value={adminEditDescription}
+                                onChange={(e) => setAdminEditDescription(e.target.value)}
+                                disabled={isUpdatingAdminIdea}
+                                style={{
+                                  width: '100%',
+                                  minHeight: '90px',
+                                  padding: '0.75rem',
+                                  borderRadius: 'var(--border-radius)',
+                                  border: '1px solid var(--border-color)',
+                                  resize: 'vertical'
+                                }}
+                              />
+                            </div>
+                          )}
                           <div style={{ marginBottom: '1rem' }}>
                             <h4 style={{ marginBottom: '0.5rem', fontSize: '1rem' }}>Комментарии к идее:</h4>
                             {commentsLoading ? (

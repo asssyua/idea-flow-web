@@ -209,6 +209,10 @@
   padding: 1.5rem;
 }
 
+.badges-sidebar-card {
+  margin-bottom: 1rem;
+}
+
 .sidebar-title {
   font-size: 1.1rem;
   font-weight: 600;

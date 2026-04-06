@@ -96,16 +96,10 @@ const TopicModal: React.FC<TopicModalProps> = ({ isOpen, onClose, onSave, topic,
     }
   };
 
-  const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={handleOverlayClick}>
+    <div className="modal-overlay">
       <div className="modal-content topic-modal-content">
         <div className="modal-header">
           <h2>{topic ? 'Редактировать тему для обсуждения' : (isUserMode ? 'Предложить тему' : 'Создать тему для осбуждения')}</h2>

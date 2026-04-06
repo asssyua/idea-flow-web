@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { profileAPI, authAPI, topicAPI } from '../../api';
 import TopicModal from '../../components/Modals/TopicModal';
 import StatisticsModal from '../../components/Modals/StatisticsModal';
+import BadgeList, { BadgeItem } from '../../components/BadgeList/BadgeList';
 import '../../styles/globals.css';
 import '../../styles/animations.css';
 import './UserDashboard.css';
@@ -13,6 +14,7 @@ interface UserProfile {
   status: string;
   email?: string;
   role?: string;
+  badges?: BadgeItem[];
 }
 
 interface Topic {
@@ -28,19 +30,26 @@ interface Topic {
   } | null;
 }
 
+type UserTab = 'topics' | 'favorites';
+
 const UserDashboard: React.FC = () => {
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [badges, setBadges] = useState<BadgeItem[]>([]);
   const [topics, setTopics] = useState<Topic[]>([]);
+  const [favoriteTopics, setFavoriteTopics] = useState<Topic[]>([]);
   const [loading, setLoading] = useState(true);
   const [topicsLoading, setTopicsLoading] = useState(true);
+  const [favoritesLoading, setFavoritesLoading] = useState(true);
   const [error, setError] = useState('');
   const [topicModalOpen, setTopicModalOpen] = useState(false);
   const [statisticsModalOpen, setStatisticsModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<UserTab>('topics');
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchProfile();
     fetchTopics();
+    fetchFavoriteTopics();
   }, []);
 
   const fetchProfile = async () => {
@@ -48,6 +57,7 @@ const UserDashboard: React.FC = () => {
       const response = await profileAPI.getProfile();
       const userData = response.data.user;
       setUser(userData);
+      setBadges(Array.isArray(userData.badges) ? userData.badges : []);
       
       const userRole = userData.role;
       const isAdmin = typeof userRole === 'string' 
@@ -69,6 +79,19 @@ const UserDashboard: React.FC = () => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchFavoriteTopics = async () => {
+    try {
+      setFavoritesLoading(true);
+      const response = await topicAPI.getFavoriteTopics();
+      const data = Array.isArray(response.data) ? response.data : response.data?.topics || [];
+      setFavoriteTopics(data);
+    } catch (err: any) {
+      setFavoriteTopics([]);
+    } finally {
+      setFavoritesLoading(false);
     }
   };
 
@@ -125,12 +148,10 @@ const UserDashboard: React.FC = () => {
         description: data.description,
       });
       setTopicModalOpen(false);
-      alert('Тема успешно предложена! Она будет отправлена на модерацию администратору.');
       fetchTopics();
     } catch (err: any) {
-      console.error('Failed to create topic:', err);
+      console.error('CLIENT_VALIDATION_FAILED:', err);
       const errorMessage = err.response?.data?.message || 'Не удалось предложить тему';
-      alert(`Ошибка: ${errorMessage}`);
       throw err;
     }
   };
@@ -205,76 +226,151 @@ const UserDashboard: React.FC = () => {
           <div className="dashboard-layout">
             {}
             <div className="topics-section">
-              <h2 className="section-title">Темы для обсуждения</h2>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+                <h2 className="section-title" style={{ margin: 0 }}>
+                  {activeTab === 'topics' ? 'Темы для обсуждения' : 'Избранные темы'}
+                </h2>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button
+                    className={`cta-button ${activeTab === 'topics' ? 'primary' : 'secondary'}`}
+                    onClick={() => setActiveTab('topics')}
+                    style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
+                  >
+                    Темы
+                  </button>
+                  <button
+                    className={`cta-button ${activeTab === 'favorites' ? 'primary' : 'secondary'}`}
+                    onClick={() => {
+                      setActiveTab('favorites');
+                      fetchFavoriteTopics();
+                    }}
+                    style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
+                  >
+                    Избранное
+                  </button>
+                </div>
+              </div>
              
-              
-              
-              {topicsLoading ? (
-                <div className="loading-container">
-                  <div className="loading-spinner"></div>
-                  <p>Загрузка тем для обсуждения...</p>
-                </div>
-              ) : topics.length === 0 ? (
-                <div className="empty-state">
-                  <p>Пока нет доступных тем для обсуждения.</p>
-                  <p style={{ marginTop: '1rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                    Вы можете предложить свою тему для обсуждения, используя кнопку справа.
-                  </p>
-                </div>
-              ) : (
-                <div className="topics-grid">
-                  {Array.isArray(topics) && topics.length > 0 ? (
-                    topics.map((topic) => {
-                      if (!topic || !topic.id) {
-                        return null;
-                      }
-                      return (
-                        <div 
-                          key={topic.id} 
-                          className="topic-card"
-                          onClick={() => navigate(`/topic/${topic.id}`)}
-                        >
-                          <div className="topic-header">
-                            <h3 className="topic-title">{topic.title || 'Без названия'}</h3>
-                            {topic.deadline && (
-                              <span className={`topic-deadline ${new Date(topic.deadline) < new Date() ? 'expired' : ''}`}>
-                                {formatDeadline(topic.deadline) || 'Истек'}
-                              </span>
-                            )}
-                          </div>
-                          <p className="topic-description">{topic.description || 'Нет описания'}</p>
-                          <div className="topic-footer">
-                            <div className="topic-meta">
-                              <span className="topic-author">
-                                Автор: {topic.createdBy ? `${topic.createdBy.firstName} ${topic.createdBy.lastName}` : 'Неизвестен'}
-                              </span>
-                              {topic.createdAt && (
-                                <span className="topic-date">
-                                  Создан: {formatDate(topic.createdAt)}
+             
+             
+              {activeTab === 'topics' ? (
+                topicsLoading ? (
+                  <div className="loading-container">
+                    <div className="loading-spinner"></div>
+                    <p>Загрузка тем для обсуждения...</p>
+                  </div>
+                ) : topics.length === 0 ? (
+                  <div className="empty-state">
+                    <p>Пока нет доступных тем для обсуждения.</p>
+                    <p style={{ marginTop: '1rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                      Вы можете предложить свою тему для обсуждения, используя кнопку справа.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="topics-grid">
+                    {Array.isArray(topics) && topics.length > 0 ? (
+                      topics.map((topic) => {
+                        if (!topic || !topic.id) {
+                          return null;
+                        }
+                        return (
+                          <div 
+                            key={topic.id} 
+                            className="topic-card"
+                            onClick={() => navigate(`/topic/${topic.id}`)}
+                          >
+                            <div className="topic-header">
+                              <h3 className="topic-title">{topic.title || 'Без названия'}</h3>
+                              {topic.deadline && (
+                                <span className={`topic-deadline ${new Date(topic.deadline) < new Date() ? 'expired' : ''}`}>
+                                  {formatDeadline(topic.deadline) || 'Истек'}
                                 </span>
                               )}
-                              <span className="topic-ideas">
-                                Идей: {topic.ideaCount || 0}
-                              </span>
+                            </div>
+                            <p className="topic-description">{topic.description || 'Нет описания'}</p>
+                            <div className="topic-footer">
+                              <div className="topic-meta">
+                                <span className="topic-author">
+                                  Автор: {topic.createdBy ? `${topic.createdBy.firstName} ${topic.createdBy.lastName}` : 'Неизвестен'}
+                                </span>
+                                {topic.createdAt && (
+                                  <span className="topic-date">
+                                    Создан: {formatDate(topic.createdAt)}
+                                  </span>
+                                )}
+                                <span className="topic-ideas">
+                                  Идей: {topic.ideaCount || 0}
+                                </span>
+                              </div>
                             </div>
                           </div>
+                        );
+                      })
+                    ) : (
+                      <div className="empty-state">
+                        <p>Ошибка: topics не является массивом или пуст</p>
+                        <p style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                          Проверьте консоль браузера для деталей
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )
+              ) : (
+                favoritesLoading ? (
+                  <div className="loading-container">
+                    <div className="loading-spinner"></div>
+                    <p>Загрузка избранных тем...</p>
+                  </div>
+                ) : favoriteTopics.length === 0 ? (
+                  <div className="empty-state">
+                    <p>В избранном пока нет тем.</p>
+                  </div>
+                ) : (
+                  <div className="topics-grid">
+                    {favoriteTopics.map((topic) => (
+                      <div 
+                        key={topic.id} 
+                        className="topic-card"
+                        onClick={() => navigate(`/topic/${topic.id}`)}
+                      >
+                        <div className="topic-header">
+                          <h3 className="topic-title">{topic.title || 'Без названия'}</h3>
+                          {topic.deadline && (
+                            <span className={`topic-deadline ${new Date(topic.deadline) < new Date() ? 'expired' : ''}`}>
+                              {formatDeadline(topic.deadline) || 'Истек'}
+                            </span>
+                          )}
                         </div>
-                      );
-                    })
-                  ) : (
-                    <div className="empty-state">
-                      <p>Ошибка: topics не является массивом или пуст</p>
-                      <p style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                        Проверьте консоль браузера для деталей
-                      </p>
-                    </div>
-                  )}
-                </div>
+                        <p className="topic-description">{topic.description || 'Нет описания'}</p>
+                        <div className="topic-footer">
+                          <div className="topic-meta">
+                            <span className="topic-author">
+                              Автор: {topic.createdBy ? `${topic.createdBy.firstName} ${topic.createdBy.lastName}` : 'Неизвестен'}
+                            </span>
+                            {topic.createdAt && (
+                              <span className="topic-date">
+                                Создан: {formatDate(topic.createdAt)}
+                              </span>
+                            )}
+                            <span className="topic-ideas">
+                              Идей: {topic.ideaCount || 0}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )
               )}
             </div>
 
             {}
             <aside className="sidebar">
+              <div className="sidebar-card badges-sidebar-card">
+                <h3 className="sidebar-title">Достижения</h3>
+                <BadgeList badges={badges} compact />
+              </div>
               <div className="sidebar-card">
                 <h3 className="sidebar-title">Действия</h3>
                 <button
@@ -318,6 +414,7 @@ const UserDashboard: React.FC = () => {
         <StatisticsModal
           isOpen={statisticsModalOpen}
           onClose={() => setStatisticsModalOpen(false)}
+          initialBadges={badges}
         />
       )}
     </div>

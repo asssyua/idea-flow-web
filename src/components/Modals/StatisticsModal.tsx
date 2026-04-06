@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { ideaAPI } from '../../api';
+import { ideaAPI, profileAPI } from '../../api';
+import BadgeList, { BadgeItem } from '../BadgeList/BadgeList';
 import './Modal.css';
 import './StatisticsModal.css';
 
@@ -15,10 +16,12 @@ interface Statistics {
 interface StatisticsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialBadges?: BadgeItem[];
 }
 
-const StatisticsModal: React.FC<StatisticsModalProps> = ({ isOpen, onClose }) => {
+const StatisticsModal: React.FC<StatisticsModalProps> = ({ isOpen, onClose, initialBadges = [] }) => {
   const [statistics, setStatistics] = useState<Statistics | null>(null);
+  const [badges, setBadges] = useState<BadgeItem[]>(initialBadges);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -28,12 +31,21 @@ const StatisticsModal: React.FC<StatisticsModalProps> = ({ isOpen, onClose }) =>
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    setBadges(initialBadges);
+  }, [initialBadges]);
+
   const fetchStatistics = async () => {
     setLoading(true);
     setError('');
     try {
-      const response = await ideaAPI.getUserStatistics();
-      setStatistics(response.data);
+      const [statsRes, profileRes] = await Promise.all([
+        ideaAPI.getUserStatistics(),
+        profileAPI.getProfile(),
+      ]);
+      setStatistics(statsRes.data);
+      const fromProfile = profileRes.data?.user?.badges;
+      setBadges(Array.isArray(fromProfile) ? fromProfile : []);
     } catch (err: any) {
       console.error('Failed to fetch statistics:', err);
       setError('Не удалось загрузить статистику');
@@ -102,6 +114,11 @@ const StatisticsModal: React.FC<StatisticsModalProps> = ({ isOpen, onClose }) =>
                     : 'Нейтральный рейтинг'}
                 </div>
               </div>
+            </div>
+
+            <div className="statistics-section">
+              <h4 className="statistics-section-title">Достижения</h4>
+              <BadgeList badges={badges} />
             </div>
 
             {Object.keys(statistics.ideasByTopic).length > 0 && (

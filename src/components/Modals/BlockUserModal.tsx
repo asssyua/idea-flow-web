@@ -27,14 +27,8 @@ const BlockUserModal: React.FC<BlockUserModalProps> = ({ isOpen, onClose, onConf
     setError('');
   };
 
-  const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
   return (
-    <div className="modal-overlay" onClick={handleOverlayClick}>
+    <div className="modal-overlay">
       <div className="modal-content">
         <div className="modal-header">
           <h3>Блокировка пользователя</h3>

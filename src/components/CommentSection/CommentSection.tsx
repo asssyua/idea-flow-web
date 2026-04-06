@@ -81,7 +81,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({ ideaId }) => {
       await fetchComments();
     } catch (err: any) {
       console.error('Failed to add comment:', err);
-      alert(err.response?.data?.message || 'Не удалось добавить комментарий');
     } finally {
       setIsSubmitting(false);
     }
@@ -108,7 +107,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({ ideaId }) => {
       await fetchComments();
     } catch (err: any) {
       console.error('Failed to add reply:', err);
-      alert(err.response?.data?.message || 'Не удалось добавить ответ');
     } finally {
       setIsSubmitting(false);
     }
