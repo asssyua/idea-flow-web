@@ -53,6 +53,82 @@
   color: var(--primary);
 }
 
+/* ===== User Tabs (Secondary Navigation) ===== */
+.user-tabs {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0.5rem 0;
+}
+
+.user-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.user-nav-links a {
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  position: relative;
+}
+
+.user-nav-links a:hover {
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.user-nav-links a.active {
+  color: var(--primary);
+  font-weight: 600;
+  background: var(--primary-soft);
+}
+
+.user-nav-links a.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 12px;
+  right: 12px;
+  height: 2px;
+  background: var(--primary);
+  border-radius: 1px;
+}
+
+.user-profile-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 4px 12px;
+  background: var(--bg-main);
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  margin-left: auto;
+}
+
+.logout-btn-sm {
+  background-color: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 0.4rem 1rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all var(--transition-fast);
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+}
+
+.logout-btn-sm:hover {
+  background-color: var(--primary-soft);
+  color: var(--primary);
+}
+
 .user-dashboard-content {
   flex: 1;
   padding: 2rem 0;

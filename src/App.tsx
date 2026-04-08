@@ -30,6 +30,18 @@ function App() {
               <UserDashboard />
             </PrivateRoute>
           } />
+
+          <Route path="/user-dashboard/topics" element={
+            <PrivateRoute>
+              <UserDashboard />
+            </PrivateRoute>
+          } />
+
+          <Route path="/user-dashboard/profile" element={
+            <PrivateRoute>
+              <UserDashboard />
+            </PrivateRoute>
+          } />
           
           <Route path="/topic/:id" element={
             <PrivateRoute>

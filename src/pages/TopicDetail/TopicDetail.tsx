@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { topicAPI, ideaAPI } from '../../api';
-import CommentSection from '../../components/CommentSection/CommentSection';
-import DragDropUpload from '../../components/DragDropUpload/DragDropUpload';
 import '../../styles/globals.css';
 import '../../styles/animations.css';
+import CommentSection from '../../components/CommentSection/CommentSection';
+import DragDropUpload from '../../components/DragDropUpload/DragDropUpload';
+import Header from '../../components/Header/Header';
 import './TopicDetail.css';
 
 interface Topic {
@@ -537,7 +538,7 @@ const TopicDetail: React.FC = () => {
       <div className="error-container">
         <h3>Ошибка</h3>
         <p>{error || 'Тема не найдена'}</p>
-        <button className="cta-button primary" onClick={() => navigate('/user-dashboard')}>
+        <button className="cta-button primary" onClick={() => navigate('/user-dashboard/topics')}>
           Вернуться к темам
         </button>
       </div>
@@ -546,26 +547,12 @@ const TopicDetail: React.FC = () => {
 
   return (
     <div className="topic-detail">
-      <header className="topic-detail-header">
-        <div className="container">
-          <div className="header-content">
-            <div className="logo" onClick={() => navigate('/')}>
-              <i className="fas fa-layer-group" style={{ color: 'var(--primary)' }}></i>
-              IdeaFlow
-            </div>
-            <nav className="nav-links">
-              <a onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>Главная</a>
-              <a onClick={() => navigate('/user-dashboard')} style={{ cursor: 'pointer' }}>Темы</a>
-              <a onClick={() => navigate('/dashboard')} style={{ cursor: 'pointer' }}>Мой профиль</a>
-            </nav>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       <main className="topic-detail-content">
         <div className="container">
           <div className="back-nav">
-            <span className="back-link" onClick={() => navigate('/user-dashboard')}>
+            <span className="back-link" onClick={() => navigate('/user-dashboard/topics')}>
               <i className="fas fa-arrow-left"></i> Ко всем темам
             </span>
           </div>
@@ -600,12 +587,21 @@ const TopicDetail: React.FC = () => {
               <span className="topic-stat">
                 <i className="far fa-lightbulb"></i> {topic.ideaCount || 0} идей
               </span>
-              <span className="topic-stat">
-                <i className="far fa-user"></i> {topic.createdBy ? `${topic.createdBy.firstName} ${topic.createdBy.lastName}` : 'Неизвестен'}
-              </span>
-              <span className="topic-stat">
-                <i className="far fa-calendar"></i> {topic.deadline ? `До ${formatDeadline(topic.deadline)}` : 'Без срока'}
-              </span>
+              {topic.createdBy && (
+                <span className="topic-stat">
+                  <i className="far fa-user"></i> {topic.createdBy.firstName} {topic.createdBy.lastName}
+                </span>
+              )}
+              {topic.deadline && (
+                <span className={`topic-stat topic-stat-tag ${new Date(topic.deadline) < new Date() ? 'tag tag-accent' : 'tag'}`}>
+                  <i className="far fa-calendar"></i> {new Date(topic.deadline) < new Date() ? 'Завершено:' : 'До:'} {formatDeadline(topic.deadline)}
+                </span>
+              )}
+              {!topic.deadline && (
+                <span className="topic-stat">
+                  <i className="far fa-calendar"></i> Без срока
+                </span>
+              )}
             </div>
           </div>
 
@@ -696,7 +692,7 @@ const TopicDetail: React.FC = () => {
                 <p>Пока нет идей. Будьте первым, кто предложит идею!</p>
               </div>
             ) : (
-              <div className="ideas-list">
+              <div className="ideas-list" id="ideas-list">
                 {ideas
                   .filter((idea) => idea.id)
                   .map((idea) => (
@@ -956,6 +952,10 @@ const TopicDetail: React.FC = () => {
           </div>
         </div>
       </main>
+
+      <footer className="topic-detail-footer">
+        &copy; 2026 IdeaFlow Platform — обсуждение идей
+      </footer>
 
       {viewingImage && (
         <div className="image-viewer-overlay" onClick={() => setViewingImage(null)}>

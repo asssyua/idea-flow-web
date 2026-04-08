@@ -51,6 +51,11 @@
   color: var(--text-main);
   letter-spacing: -0.5px;
   cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.topic-detail-header .logo:hover {
+  opacity: 0.8;
 }
 
 .topic-detail-header .nav-links {
@@ -65,11 +70,34 @@
   font-size: 0.9rem;
   font-weight: 500;
   text-decoration: none;
-  transition: color 0.2s;
+  transition: all 0.2s;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
 }
 
 .topic-detail-header .nav-links a:hover {
   color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.topic-detail-header .nav-links a.active {
+  color: var(--primary);
+  font-weight: 600;
+  position: relative;
+  background: var(--primary-soft);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+}
+
+.topic-detail-header .nav-links a.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 12px;
+  right: 12px;
+  height: 2px;
+  background: var(--primary);
+  border-radius: 1px;
 }
 
 /* ===== Back Navigation ===== */
@@ -209,6 +237,12 @@
   gap: 6px;
   font-size: 0.85rem;
   color: var(--text-muted);
+}
+
+.topic-stat-tag {
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-weight: 600;
 }
 
 /* ===== Add Idea Bar ===== */
@@ -651,6 +685,16 @@
   color: var(--text-muted);
 }
 
+.topic-detail-footer {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  border-top: 1px solid var(--border);
+  margin-top: 2rem;
+  background: var(--bg-main);
+}
+
 /* ===== Loading ===== */
 .loading-container {
   display: flex;
@@ -801,6 +845,10 @@
   .topic-header,
   .add-idea-section {
     padding: 1rem;
+  }
+
+  .topic-detail-footer {
+    padding: 1.5rem 1rem;
   }
 
   .topic-title {

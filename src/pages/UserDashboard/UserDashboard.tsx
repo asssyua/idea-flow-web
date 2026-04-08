@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { profileAPI, authAPI, topicAPI, ideaAPI } from '../../api';
+import '../../styles/globals.css';
+import '../../styles/animations.css';
 import TopicModal from '../../components/Modals/TopicModal';
 import StatisticsModal from '../../components/Modals/StatisticsModal';
 import BadgeList, { BadgeItem } from '../../components/BadgeList/BadgeList';
-import '../../styles/globals.css';
-import '../../styles/animations.css';
+import Header from '../../components/Header/Header';
 import './UserDashboard.css';
 
 interface UserProfile {
@@ -38,6 +39,18 @@ interface Topic {
 
 type UserTab = 'home' | 'topics' | 'profile';
 
+const getActiveTabByPath = (pathname: string): UserTab => {
+  if (pathname === '/user-dashboard/profile') {
+    return 'profile';
+  }
+
+  if (pathname === '/user-dashboard/topics' || pathname.startsWith('/topic/')) {
+    return 'topics';
+  }
+
+  return 'home';
+};
+
 interface UserStatistics {
   ideasCount: number;
   commentsCount: number;
@@ -57,7 +70,6 @@ const UserDashboard: React.FC = () => {
   const [error, setError] = useState('');
   const [topicModalOpen, setTopicModalOpen] = useState(false);
   const [statisticsModalOpen, setStatisticsModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<UserTab>('home');
   const [stats, setStats] = useState<UserStatistics>({
     ideasCount: 0,
     commentsCount: 0,
@@ -66,6 +78,8 @@ const UserDashboard: React.FC = () => {
     rating: 0,
   });
   const navigate = useNavigate();
+  const location = useLocation();
+  const activeTab = getActiveTabByPath(location.pathname);
 
   useEffect(() => {
     fetchProfile();
@@ -256,31 +270,8 @@ const UserDashboard: React.FC = () => {
 
   return (
     <div className="user-dashboard">
-      <header className="user-dashboard-header">
-        <div className="container">
-          <div className="header-content">
-            <div className="logo" onClick={() => navigate('/dashboard')}>
-              <i className="fas fa-layer-group" style={{ color: 'var(--primary)' }}></i>
-              IdeaFlow
-            </div>
-            <nav className="nav-links">
-              <a onClick={() => setActiveTab('home')} className={activeTab === 'home' ? 'active' : ''} style={{ cursor: 'pointer' }}>Главная</a>
-              <a onClick={() => setActiveTab('topics')} className={activeTab === 'topics' ? 'active' : ''} style={{ cursor: 'pointer' }}>Темы</a>
-              <a onClick={() => setActiveTab('profile')} className={activeTab === 'profile' ? 'active' : ''} style={{ cursor: 'pointer' }}>Личный кабинет</a>
-              <div className="profile-pill">
-                <div className="avatar-sq">{user.firstName.charAt(0)}{user.lastName.charAt(0)}</div>
-                <div style={{ fontSize: '0.8rem' }}>
-                  <strong>{user.firstName} {user.lastName.charAt(0)}.</strong>
-                </div>
-              </div>
-              <button onClick={handleLogout} className="logout-btn">
-                Выйти
-              </button>
-            </nav>
-          </div>
-        </div>
-      </header>
-      
+      <Header />
+
       <main className="user-dashboard-content">
         <div className="container">
           {/* Home Tab */}
@@ -288,7 +279,7 @@ const UserDashboard: React.FC = () => {
             <div className="welcome-card card">
               <h2>Пространство ваших инициатив</h2>
               <p>Предлагайте идеи, обсуждайте проекты коллег и помогайте компании расти. Лучшие предложения попадут в итоговый отчет и будут реализованы.</p>
-              <button className="btn btn-primary" onClick={() => setActiveTab('topics')}>
+              <button className="btn btn-primary" onClick={() => navigate('/user-dashboard/topics')}>
                 <i className="fas fa-compass"></i> Перейти к темам
               </button>
             </div>
@@ -470,13 +461,12 @@ const UserDashboard: React.FC = () => {
 
               {/* Two Column Layout: Favorites + Placeholder for future content */}
               <div className="two-column-grid">
-                {/* Favorite Topics */}
                 <div className="card">
                   <div className="card-title-with-icon">
                     <h3><i className="far fa-bookmark"></i> Избранные темы</h3>
                     <button 
                       className="btn btn-outline btn-sm" 
-                      onClick={() => setActiveTab('topics')}
+                      onClick={() => navigate('/user-dashboard/topics')}
                     >
                       К темам →
                     </button>
@@ -512,7 +502,6 @@ const UserDashboard: React.FC = () => {
                   )}
                 </div>
 
-                {/* Additional content can go here */}
                 <div className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '200px' }}>
                   <p style={{ color: 'var(--text-muted)', textAlign: 'center' }}>
                     <i className="far fa-clock" style={{ fontSize: '2rem', marginBottom: '1rem', display: 'block' }}></i>

@@ -141,7 +141,9 @@ const CommentSection: React.FC<CommentSectionProps> = ({ ideaId }) => {
 
   return (
     <div className="comment-section">
-      <h3 className="comment-section-title">Комментарии</h3>
+      <div className="comments-title">
+        <i className="far fa-message"></i> {comments.length} комментариев
+      </div>
 
       <form onSubmit={handleSubmitComment} className="comment-form">
         <textarea
@@ -161,7 +163,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ ideaId }) => {
         </button>
       </form>
 
-      <div className="comments-list">
+      <div className="comment-thread comments-list">
         {comments.length === 0 ? (
           <div className="empty-comments">
             <p>Пока нет комментариев. Будьте первым!</p>
@@ -228,7 +230,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
 
   return (
     <div className="comment-item">
-      <div className="comment-content">
+      <div className="comment-main comment-content">
         <div className="comment-header">
           <span className="comment-author">
             {comment.author.firstName} {comment.author.lastName}
@@ -236,17 +238,19 @@ const CommentItem: React.FC<CommentItemProps> = ({
           <span className="comment-date">{formatDate(comment.createdAt)}</span>
         </div>
         <p className="comment-text">{comment.content}</p>
-        <button
-          type="button"
-          className="reply-button"
-          onClick={(e) => {
-            e.preventDefault();
-            onReply(comment.id);
-          }}
-          disabled={isReplying || isSubmitting}
-        >
-          Ответить
-        </button>
+        <div className="comment-actions">
+          <button
+            type="button"
+            className="comment-action reply-button"
+            onClick={(e) => {
+              e.preventDefault();
+              onReply(comment.id);
+            }}
+            disabled={isReplying || isSubmitting}
+          >
+            <i className="far fa-reply"></i> Ответить
+          </button>
+        </div>
       </div>
 
       {isReplying && (
@@ -290,7 +294,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
         <div className="comment-replies">
           {comment.replies.map((reply) => (
             <div key={reply.id} className="comment-item reply-item">
-              <div className="comment-content">
+              <div className="reply-main comment-content">
                 <div className="comment-header">
                   <span className="comment-author">
                     {reply.author.firstName} {reply.author.lastName}
@@ -298,6 +302,19 @@ const CommentItem: React.FC<CommentItemProps> = ({
                   <span className="comment-date">{formatDate(reply.createdAt)}</span>
                 </div>
                 <p className="comment-text">{reply.content}</p>
+                <div className="comment-actions">
+                  <button
+                    type="button"
+                    className="comment-action reply-button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onReply(comment.id);
+                    }}
+                    disabled={isReplying || isSubmitting}
+                  >
+                    <i className="far fa-reply"></i> Ответить
+                  </button>
+                </div>
               </div>
             </div>
           ))}

@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { profileAPI, authAPI, adminAPI, topicAPI, ideaAPI } from '../../api';
+import '../../styles/globals.css';
+import '../../styles/animations.css';
 import BlockUserModal from '../../components/Modals/BlockUserModal';
 import ConfirmModal from '../../components/Modals/ConfirmModal';
 import TopicModal from '../../components/Modals/TopicModal';
 import CommentSection from '../../components/CommentSection/CommentSection';
-import '../../styles/globals.css';
-import '../../styles/animations.css';
+import Header from '../../components/Header/Header';
 import './Dashboard.css';
 
 interface UserProfile {
@@ -1813,54 +1814,8 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
 
   return (
     <div className="dashboard">
-      <header className="dashboard-header">
-        <div className="container">
-          <div className="header-content">
-            <div className="logo" onClick={() => navigate('/')}>
-              <i className="fas fa-layer-group" style={{ color: 'var(--primary)' }}></i>
-              IdeaFlow
-            </div>
-            {isAdmin ? (
-              <nav className="nav-links">
-                <a onClick={() => setActiveTab('users')} className={activeTab === 'users' ? 'active' : ''}>Пользователи</a>
-                <a onClick={() => setActiveTab('support')} className={activeTab === 'support' ? 'active' : ''}>
-                  Поддержка
-                  {supportMessages.filter(m => !m.isRead).length > 0 && (
-                    <span className="tab-badge">{supportMessages.filter(m => !m.isRead).length}</span>
-                  )}
-                </a>
-                <a onClick={() => setActiveTab('topics')} className={activeTab === 'topics' ? 'active' : ''}>Упр. темами</a>
-                <a onClick={() => setActiveTab('ideas')} className={activeTab === 'ideas' ? 'active' : ''}>Упр. идеями</a>
-                <div className="profile-pill">
-                  <div className="avatar-sq">{user.firstName.charAt(0)}{user.lastName.charAt(0)}</div>
-                  <div style={{ fontSize: '0.8rem' }}>
-                    <strong>{user.firstName} {user.lastName.charAt(0)}.</strong>
-                  </div>
-                </div>
-                <button onClick={handleLogout} className="logout-btn">
-                  Выйти
-                </button>
-              </nav>
-            ) : (
-              <nav className="nav-links">
-                <a onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>Главная</a>
-                <a onClick={() => navigate('/user-dashboard')} style={{ cursor: 'pointer' }}>Темы</a>
-                <a className="active">Мой профиль</a>
-                <div className="profile-pill">
-                  <div className="avatar-sq">{user.firstName.charAt(0)}{user.lastName.charAt(0)}</div>
-                  <div style={{ fontSize: '0.8rem' }}>
-                    <strong>{user.firstName} {user.lastName.charAt(0)}.</strong>
-                  </div>
-                </div>
-                <button onClick={handleLogout} className="logout-btn">
-                  Выйти
-                </button>
-              </nav>
-            )}
-          </div>
-        </div>
-      </header>
-      
+      <Header />
+
       <main className="dashboard-content">
         <div className={`container ${isAdmin ? 'admin-container' : ''}`}>
           {isAdmin ? (
