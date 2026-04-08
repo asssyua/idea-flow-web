@@ -558,42 +558,14 @@ const TopicDetail: React.FC = () => {
           </div>
 
           <div className="card topic-header">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
-              <h1 className="topic-title">{topic.title}</h1>
-              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                {(() => {
-                  const role = getUserRoleFromToken();
-                  const canUseFavorites = role && role.toLowerCase() !== 'admin';
-                  if (!canUseFavorites) return null;
-                  return (
-                    <button
-                      className={`fav-btn ${isFavorite ? 'active' : ''}`}
-                      onClick={toggleFavorite}
-                      disabled={favoriteLoading}
-                    >
-                      <i className={isFavorite ? 'fas fa-star' : 'far fa-star'}></i>
-                    </button>
-                  );
-                })()}
-                {topic.deadline && (
-                  <span className={`tag ${new Date(topic.deadline) < new Date() ? 'tag-accent' : ''}`}>
-                    {new Date(topic.deadline) < new Date() ? 'Завершена' : 'Активна'}
-                  </span>
-                )}
-              </div>
-            </div>
-            <p className="topic-description">{topic.description}</p>
+            <div className="topic-title">{topic.title}</div>
+            <div className="topic-description">{topic.description}</div>
             <div className="topic-stats">
               <span className="topic-stat">
                 <i className="far fa-lightbulb"></i> {topic.ideaCount || 0} идей
               </span>
-              {topic.createdBy && (
-                <span className="topic-stat">
-                  <i className="far fa-user"></i> {topic.createdBy.firstName} {topic.createdBy.lastName}
-                </span>
-              )}
               {topic.deadline && (
-                <span className={`topic-stat topic-stat-tag ${new Date(topic.deadline) < new Date() ? 'tag tag-accent' : 'tag'}`}>
+                <span className={`tag ${new Date(topic.deadline) < new Date() ? 'tag-accent' : ''}`}>
                   <i className="far fa-calendar"></i> {new Date(topic.deadline) < new Date() ? 'Завершено:' : 'До:'} {formatDeadline(topic.deadline)}
                 </span>
               )}
@@ -602,6 +574,25 @@ const TopicDetail: React.FC = () => {
                   <i className="far fa-calendar"></i> Без срока
                 </span>
               )}
+              {topic.createdBy && (
+                <span className="topic-stat">
+                  <i className="far fa-user"></i> {topic.createdBy.firstName} {topic.createdBy.lastName}
+                </span>
+              )}
+              {(() => {
+                const role = getUserRoleFromToken();
+                const canUseFavorites = role && role.toLowerCase() !== 'admin';
+                if (!canUseFavorites) return null;
+                return (
+                  <button
+                    className={`fav-btn ${isFavorite ? 'active' : ''}`}
+                    onClick={toggleFavorite}
+                    disabled={favoriteLoading}
+                  >
+                    <i className={isFavorite ? 'fas fa-star' : 'far fa-star'}></i>
+                  </button>
+                );
+              })()}
             </div>
           </div>
 
@@ -678,10 +669,7 @@ const TopicDetail: React.FC = () => {
             </form>
           </div>
 
-          <div className="ideas-section">
-            <div className="card-title" style={{ marginBottom: '1.5rem' }}>
-              <h3><i className="far fa-lightbulb"></i> Идеи ({ideas.length})</h3>
-            </div>
+          <div className="ideas-list-wrapper">
             {ideasLoading ? (
               <div className="loading-container">
                 <div className="loading-spinner"></div>

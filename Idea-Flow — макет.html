@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IdeaFlow | Платформа управления идеями</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-main: #F8FAFC;
+            --surface: #FFFFFF;
+            --border: #E2E8F0;
+            --text-main: #334155;
+            --text-muted: #64748B;
+            --primary: #7E99A3;
+            --primary-soft: #F1F5F9;
+            --accent: #A5B68D;
+            --danger: #E67E7E;
+            --shadow: 0 1px 3px rgba(0,0,0,0.05);
+            --radius-sm: 3px;
+            --radius-md: 6px;
+            --comment-bg: #FAF7FF;
+            --reply-bg: #F5F0FF;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 0.75rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--text-main);
+            letter-spacing: -0.5px;
+            cursor: pointer;
+        }
+
+        nav { display: flex; gap: 1.5rem; align-items: center; }
+        nav a { 
+            text-decoration: none; 
+            color: var(--text-muted); 
+            font-size: 0.9rem; 
+            font-weight: 500;
+            transition: color 0.2s;
+            cursor: pointer;
+        }
+        nav a:hover, nav a.active { color: var(--primary); }
+
+        .profile-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--primary-soft);
+            padding: 4px 12px 4px 4px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            cursor: pointer;
+        }
+
+        .avatar-sq {
+            width: 32px;
+            height: 32px;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .page {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        .page.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 1.5rem;
+        }
+
+        .card-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--primary-soft);
+        }
+
+        .card-title h3 { font-size: 1.1rem; font-weight: 600; }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
+        .btn-outline:hover { background: var(--bg-main); border-color: var(--primary); color: var(--primary); }
+        .btn-sm { padding: 4px 12px; font-size: 0.75rem; }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat-item {
+            padding: 1rem;
+            background: var(--bg-main);
+            border-radius: var(--radius-sm);
+            text-align: center;
+        }
+        .stat-val { font-size: 1.5rem; font-weight: 700; color: var(--primary); display: block; }
+        .stat-lab { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .tag {
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-weight: 600;
+            background: var(--primary-soft);
+            color: var(--text-muted);
+        }
+        .tag-accent { background: #FFF4E0; color: #B28C32; }
+
+        .topics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
+        }
+        .topic-card {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .topic-card:hover { 
+            border-color: var(--primary); 
+            transform: translateY(-2px); 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .topic-meta { display: flex; justify-content: space-between; margin-top: 1rem; font-size: 0.8rem; color: var(--text-muted); }
+        .fav-btn { color: var(--danger); background: #FEF2F2; padding: 4px 8px; border-radius: 3px; font-size: 0.8rem; cursor: pointer; }
+        .fa-star.fav-btn { color: #F59E0B; background: #FFFBEB; }
+
+        .profile-header { display: flex; gap: 2rem; align-items: flex-start; margin-bottom: 2rem; }
+        .profile-main-info { flex: 1; }
+        .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-top: 1rem; }
+        .stat-box { background: var(--surface); border: 1px solid var(--border); padding: 1rem; border-radius: var(--radius-sm); text-align: center; }
+        .stat-box span { display: block; font-weight: 700; font-size: 1.25rem; color: var(--primary); }
+        .stat-box label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; }
+
+        .badge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem; }
+        .badge-card { border: 1px solid var(--border); padding: 1rem; border-radius: var(--radius-sm); text-align: center; filter: grayscale(1); opacity: 0.6; transition: 0.3s; }
+        .badge-card.unlocked { filter: grayscale(0); opacity: 1; border-color: var(--accent); background: #F0F7F4; }
+        .badge-card i { font-size: 1.5rem; margin-bottom: 8px; color: var(--primary); }
+        .badge-card.unlocked i { color: #5B846E; }
+
+        .welcome-card {
+            position: relative;
+            overflow: hidden;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 3rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow);
+        }
+        .welcome-card::before {
+            content: "💡";
+            position: absolute;
+            font-size: 280px;
+            opacity: 0.08;
+            bottom: -40px;
+            right: -40px;
+            pointer-events: none;
+            color: #9B7BB5;
+            transform: rotate(-10deg);
+        }
+        .welcome-card h1 { font-weight: 700; font-size: 2rem; margin-bottom: 1rem; position: relative; z-index: 1; }
+        .welcome-card p { color: var(--text-muted); max-width: 600px; margin: 0 auto 2rem; position: relative; z-index: 1; }
+
+        /* Новый отчет на главной */
+        .idea-card-report {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: row;
+            align-items: stretch;
+            margin-bottom: 1rem;
+        }
+        .idea-card-report:hover { border-color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .idea-info { flex: 1; padding: 1rem; border-right: 1px solid var(--border); }
+        .idea-header-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+        .idea-name { font-weight: 600; font-size: 1rem; }
+        .likes-badge { background: #FEF2F2; border-radius: 3px; padding: 2px 10px; font-size: 0.75rem; font-weight: 500; color: #c2410c; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; transition: 0.2s; }
+        .likes-badge:hover { background: #ffe4e4; }
+        .idea-description { margin-top: 8px; font-size: 0.85rem; color: var(--text-main); }
+        .idea-meta { font-size: 0.7rem; color: var(--text-muted); display: flex; gap: 12px; margin-top: 8px; }
+        .top-comment-box { width: 280px; background: #FAF7FF; padding: 0.875rem; border-left: 2px solid #C4B5FD; }
+        .comment-quote-icon { color: #A78BFA; margin-right: 6px; font-size: 0.75rem; }
+        .comment-text-preview { font-size: 0.75rem; margin-bottom: 8px; }
+        .comment-footer { display: flex; justify-content: space-between; font-size: 0.65rem; border-top: 1px solid #E9E2FF; padding-top: 6px; margin-top: 4px; }
+        .comment-likes { display: flex; align-items: center; gap: 4px; color: #c2410c; }
+        .comment-author { font-weight: 600; color: #7C3AED; }
+
+        /* СТРАНИЦА ИДЕЙ ТЕМЫ (обновленная: убраны кнопки поддержать/комментировать под идеей) */
+        .back-nav { margin-bottom: 1.5rem; }
+        .back-link { display: inline-flex; align-items: center; gap: 8px; color: var(--text-muted); cursor: pointer; font-size: 0.9rem; font-weight: 500; }
+        .back-link:hover { color: var(--primary); }
+
+        .topic-header {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .topic-title { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.75rem; }
+        .topic-description { color: var(--text-muted); margin-bottom: 1rem; font-size: 0.95rem; }
+        .topic-stats { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+        .topic-stat { display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--text-muted); }
+        .add-idea-bar { margin-bottom: 1.5rem; display: flex; justify-content: flex-end; }
+
+        .ideas-list { display: flex; flex-direction: column; gap: 1.5rem; }
+        .idea-card-full {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+        }
+        .idea-main { padding: 1.25rem; border-bottom: 1px solid var(--border); }
+        
+        /* Стиль для лайка справа - сердечко с количеством */
+        .idea-like-right {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #FEF2F2;
+            padding: 4px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #c2410c;
+        }
+        .idea-like-right i {
+            font-size: 0.9rem;
+        }
+        .idea-like-right:hover {
+            background: #ffe4e4;
+            transform: scale(1.02);
+        }
+        .idea-like-right.liked {
+            background: #ffdddd;
+        }
+        
+        .comments-section { padding: 1rem 1.25rem 1.25rem; background: var(--bg-main); }
+        .comments-title { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 1rem; display: flex; align-items: center; gap: 8px; }
+        .comment-thread { margin-bottom: 1rem; }
+        .comment-item { margin-bottom: 0.75rem; }
+        .comment-main { background: var(--comment-bg); border-radius: var(--radius-sm); padding: 0.75rem; border-left: 2px solid #C4B5FD; }
+        .comment-header { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.7rem; }
+        .comment-author { font-weight: 600; color: #7C3AED; }
+        .comment-date { color: var(--text-muted); font-size: 0.65rem; }
+        .comment-text { font-size: 0.8rem; margin-bottom: 8px; }
+        .comment-actions { display: flex; gap: 12px; font-size: 0.65rem; }
+        .comment-action { background: none; border: none; color: var(--text-muted); cursor: pointer; display: inline-flex; align-items: center; gap: 4px; padding: 2px 4px; border-radius: 3px; }
+        .comment-action:hover { color: var(--primary); background: rgba(0,0,0,0.03); }
+        .replies { margin-left: 1.5rem; margin-top: 0.5rem; padding-left: 0.75rem; border-left: 2px dashed var(--border); }
+        .reply-item { margin-bottom: 0.5rem; }
+        .reply-main { background: var(--reply-bg); border-radius: var(--radius-sm); padding: 0.6rem; border-left: 2px solid #D4C5F0; }
+        .add-comment-form { margin-top: 0.75rem; display: flex; gap: 0.5rem; align-items: flex-start; }
+        .comment-input { flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: inherit; font-size: 0.8rem; resize: vertical; }
+        .reply-form { margin-top: 0.5rem; margin-left: 1.5rem; display: none; gap: 0.5rem; }
+        .reply-form.active { display: flex; }
+        .idea-entry { border-left: 3px solid var(--accent); padding-left: 1rem; margin-bottom: 1rem; }
+        .empty-state { text-align: center; padding: 2rem; color: var(--text-muted); }
+
+        @media (max-width: 768px) {
+            .idea-card-report { flex-direction: column; }
+            .idea-info { border-right: none; border-bottom: 1px solid var(--border); }
+            .top-comment-box { width: 100%; }
+            .replies { margin-left: 0.75rem; }
+        }
+        footer { text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.8rem; border-top: 1px solid var(--border); margin-top: 2rem; }
+        .section-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 1.25rem; }
+        
+        .action-btn-removed {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-box" onclick="showPage('home')">
+            <i class="fa-solid fa-layer-group" style="color: var(--primary);"></i>
+            IdeaFlow
+        </div>
+        <nav id="mainNav">
+            <a onclick="showPage('home')" id="link-home" class="active">Главная</a>
+            <a onclick="showPage('topics')" id="link-topics">Темы</a>
+            <a onclick="showPage('profile')" id="link-profile">Мой профиль</a>
+            <div class="profile-pill" onclick="showPage('profile')">
+                <div class="avatar-sq">AM</div>
+                <div style="font-size: 0.8rem;">
+                    <strong>Анна М.</strong>
+                    <div style="font-size: 0.7rem;"><i class="fa-solid fa-medal" style="color: var(--accent);"></i> Гуру (50)</div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container">
+        <!-- ГЛАВНАЯ -->
+        <section id="home" class="page active">
+            <div class="welcome-card">
+                <h1>Пространство ваших инициатив</h1>
+                <p>Предлагайте идеи, обсуждайте проекты коллег и помогайте компании расти. Лучшие предложения попадут в итоговый отчет и будут реализованы.</p>
+                <button class="btn btn-primary" onclick="showPage('topics')"><i class="fa-solid fa-plus"></i> Предложить идею</button>
+            </div>
+            <h2 class="section-title">Итоги завершенного обсуждения</h2>
+            <div class="card">
+                <div class="card-title"><h3><i class="fa-solid fa-square-poll-vertical"></i> Оптимизация офиса</h3><span class="tag">Завершено: 24.03.2026</span></div>
+                <div class="stats-row">
+                    <div class="stat-item"><span class="stat-val">42</span><span class="stat-lab">Идеи</span></div>
+                    <div class="stat-item"><span class="stat-val">156</span><span class="stat-lab">Мнения</span></div>
+                    <div class="stat-item"><span class="stat-val">89</span><span class="stat-lab">Участника</span></div>
+                </div>
+                <div class="card-title"><h3>Топ-3 идеи</h3></div>
+                <div class="top-ideas-list">
+                    <div class="idea-card-report"><div class="idea-info"><div class="idea-header-row"><div class="idea-name">Зона отдыха на террасе</div><div class="likes-badge"><i class="fa-solid fa-heart"></i> 56</div></div><div class="idea-description">Обустроить открытую террасу на крыше: кресла, столы, зелень.</div><div class="idea-meta"><span><i class="fa-regular fa-user"></i> Михаил С.</span><span><i class="fa-regular fa-calendar"></i> 15.03.2026</span></div></div><div class="top-comment-box"><div><i class="fa-solid fa-quote-left comment-quote-icon"></i><span class="comment-text-preview">Это увеличит продуктивность команды во второй половине дня. Коллеги смогут проводить неформальные встречи.</span></div><div class="comment-footer"><div class="comment-likes"><i class="fa-solid fa-heart"></i> 34</div><div class="comment-author">Ольга К.</div></div></div></div>
+                    <div class="idea-card-report"><div class="idea-info"><div class="idea-header-row"><div class="idea-name">Раздельный сбор мусора</div><div class="likes-badge"><i class="fa-solid fa-heart"></i> 41</div></div><div class="idea-description">Контейнеры для пластика, бумаги, стекла, обучение сотрудников.</div><div class="idea-meta"><span><i class="fa-regular fa-user"></i> Иван П.</span><span><i class="fa-regular fa-calendar"></i> 10.03.2026</span></div></div><div class="top-comment-box"><div><i class="fa-solid fa-quote-left comment-quote-icon"></i><span class="comment-text-preview">Отличная экологическая инициатива! Начать с установки контейнеров на каждом этаже.</span></div><div class="comment-footer"><div class="comment-likes"><i class="fa-solid fa-heart"></i> 27</div><div class="comment-author">Елена В.</div></div></div></div>
+                    <div class="idea-card-report"><div class="idea-info"><div class="idea-header-row"><div class="idea-name">Умные доски для брейнштормов</div><div class="likes-badge"><i class="fa-solid fa-heart"></i> 38</div></div><div class="idea-description">Интерактивные доски в переговорных для удаленных сессий.</div><div class="idea-meta"><span><i class="fa-regular fa-user"></i> Дмитрий К.</span><span><i class="fa-regular fa-calendar"></i> 05.03.2026</span></div></div><div class="top-comment-box"><div><i class="fa-solid fa-quote-left comment-quote-icon"></i><span class="comment-text-preview">Ускорят генерацию идей и сделают удаленные сессии продуктивнее. Поддерживаю!</span></div><div class="comment-footer"><div class="comment-likes"><i class="fa-solid fa-heart"></i> 42</div><div class="comment-author">Артем Н.</div></div></div></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- СТРАНИЦА ТЕМ -->
+        <section id="topics" class="page">
+            <div class="card"><div class="card-title"><h2>Активные темы обсуждения</h2><button class="btn btn-primary" onclick="alert('Форма создания новой темы')">+ Предложить тему</button></div></div>
+            <div class="topics-grid">
+                <div class="card topic-card" onclick="openTopicIdeas('Оптимизация офиса')"><div style="display:flex; justify-content:space-between"><h3>Оптимизация офиса</h3><i class="fa-regular fa-star fav-btn" onclick="event.stopPropagation(); toggleFavorite(this)"></i></div><p style="font-size:0.85rem; margin:10px 0;">Обсуждаем улучшение рабочего пространства: эргономика, зоны отдыха.</p><div class="tag">Завершена</div><div class="topic-meta"><span><i class="fa-regular fa-lightbulb"></i> 42 идеи</span><span><i class="fa-regular fa-calendar"></i> До 24.03</span></div></div>
+                <div class="card topic-card" onclick="openTopicIdeas('Цифровая трансформация 2026')"><div style="display:flex; justify-content:space-between"><h3>Цифровая трансформация 2026</h3><i class="fa-regular fa-star fav-btn" onclick="event.stopPropagation(); toggleFavorite(this)"></i></div><p style="font-size:0.85rem; margin:10px 0;">Внедрение AI-инструментов в рабочие процессы.</p><div class="tag" style="background:#E6F0EB;">Активна</div><div class="topic-meta"><span><i class="fa-regular fa-lightbulb"></i> 24 идеи</span><span><i class="fa-regular fa-calendar"></i> До 15.04</span></div></div>
+                <div class="card topic-card" onclick="openTopicIdeas('Экология в офисе')"><div style="display:flex; justify-content:space-between"><h3>Экология в офисе</h3><i class="fa-solid fa-star fav-btn" onclick="event.stopPropagation(); toggleFavorite(this)"></i></div><p style="font-size:0.85rem; margin:10px 0;">Раздельный сбор, отказ от пластика.</p><div class="tag">Эко</div><div class="topic-meta"><span><i class="fa-regular fa-lightbulb"></i> 12 идей</span><span><i class="fa-regular fa-calendar"></i> До 01.05</span></div></div>
+            </div>
+        </section>
+
+        <!-- СТРАНИЦА ИДЕЙ ТЕМЫ (обновленная) -->
+        <section id="topic-ideas" class="page">
+            <div class="back-nav"><span class="back-link" onclick="showPage('topics')"><i class="fa-solid fa-arrow-left"></i> Ко всем темам</span></div>
+            <div class="topic-header">
+                <div class="topic-title" id="topic-title"></div>
+                <div class="topic-description" id="topic-description"></div>
+                <div class="topic-stats" id="topic-stats"></div>
+            </div>
+            <div class="add-idea-bar"><button class="btn btn-primary" onclick="alert('Форма добавления новой идеи')"><i class="fa-solid fa-plus"></i> Предложить идею</button></div>
+            <div class="ideas-list" id="ideas-list"></div>
+        </section>
+
+        <!-- ПРОФИЛЬ -->
+        <section id="profile" class="page">
+            <div class="profile-header"><div class="avatar-sq" style="width:80px;height:80px;font-size:2rem;">AM</div><div class="profile-main-info"><h2>Анна Михайлова</h2><p style="color:var(--text-muted);">Senior UI/UX Designer • В системе с 2024</p><div class="stat-grid"><div class="stat-box"><label>Идей</label><span>14</span></div><div class="stat-box"><label>Коммент.</label><span>52</span></div><div class="stat-box"><label>Лайков</label><span>128</span></div><div class="stat-box"><label>Темы</label><span>3</span></div></div></div></div>
+            <div class="card"><div class="card-title"><h3>Достижения</h3></div><div class="badge-grid"><div class="badge-card unlocked"><i class="fa-solid fa-pen-nib"></i><div>Первый автор</div></div><div class="badge-card unlocked"><i class="fa-solid fa-comments"></i><div>Гуру комм. (50)</div></div><div class="badge-card"><i class="fa-solid fa-crown"></i><div>Мастер тем</div></div></div></div>
+        </section>
+    </main>
+    <footer>&copy; 2026 IdeaFlow Platform</footer>
+
+    <script>
+        // Полные данные для темы "Оптимизация офиса"
+        const fullIdeasData = {
+            'Оптимизация офиса': {
+                ideas: [
+                    {
+                        id: 0,
+                        name: 'Зона отдыха на террасе',
+                        likes: 56,
+                        author: 'Михаил С.',
+                        date: '15.03.2026',
+                        description: 'Предлагаю обустроить открытую террасу на крыше: добавить удобные кресла, столы, зелень и навес от солнца. Это станет отличным местом для неформальных встреч и отдыха.',
+                        comments: [
+                            {
+                                author: 'Ольга К.',
+                                date: '16.03.2026',
+                                text: 'Это увеличит продуктивность команды во второй половине дня, особенно в теплое время года. Коллеги смогут проводить неформальные встречи на свежем воздухе.',
+                                likes: 34,
+                                replies: [
+                                    { author: 'Анна М.', date: '16.03.2026', text: 'Полностью согласна! Можно ещё добавить уличные розетки для ноутбуков.', likes: 12 },
+                                    { author: 'Дмитрий К.', date: '17.03.2026', text: 'Отличная идея! На террасе можно проводить командные митапы.', likes: 8 }
+                                ]
+                            },
+                            {
+                                author: 'Екатерина С.',
+                                date: '15.03.2026',
+                                text: 'Отличная идея! Давно мечтаем о таком месте для отдыха.',
+                                likes: 15,
+                                replies: [
+                                    { author: 'Иван П.', date: '16.03.2026', text: 'Поддерживаю! И ещё добавить кофейную точку.', likes: 6 }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        id: 1,
+                        name: 'Система раздельного сбора мусора',
+                        likes: 41,
+                        author: 'Иван П.',
+                        date: '10.03.2026',
+                        description: 'Внедрить раздельный сбор отходов в офисе: установить контейнеры для пластика, бумаги, стекла и органики. Провести обучение для сотрудников.',
+                        comments: [
+                            {
+                                author: 'Елена В.',
+                                date: '11.03.2026',
+                                text: 'Отличная экологическая инициатива! Предлагаю начать с установки контейнеров на каждом этаже.',
+                                likes: 27,
+                                replies: []
+                            }
+                        ]
+                    },
+                    {
+                        id: 2,
+                        name: 'Умные доски для брейнштормов',
+                        likes: 38,
+                        author: 'Дмитрий К.',
+                        date: '05.03.2026',
+                        description: 'Установить интерактивные доски в переговорных комнатах для проведения брейнштормов и удаленных сессий.',
+                        comments: []
+                    }
+                ]
+            },
+            'Цифровая трансформация 2026': { ideas: [] },
+            'Экология в офисе': { ideas: [] }
+        };
+
+        let currentTopicName = '';
+
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('#mainNav a').forEach(l => l.classList.remove('active'));
+            const target = document.getElementById(pageId);
+            if (target) target.classList.add('active');
+            const link = document.getElementById('link-' + pageId);
+            if (link && pageId !== 'topic-ideas') link.classList.add('active');
+        }
+
+        function toggleFavorite(el) {
+            if (el.classList.contains('fa-regular')) {
+                el.classList.remove('fa-regular'); el.classList.add('fa-solid');
+                alert('Тема добавлена в избранное');
+            } else {
+                el.classList.remove('fa-solid'); el.classList.add('fa-regular');
+                alert('Тема удалена из избранного');
+            }
+        }
+
+        function openTopicIdeas(topicTitle) {
+            currentTopicName = topicTitle;
+            const data = fullIdeasData[topicTitle];
+            if (!data) return;
+            
+            document.getElementById('topic-title').innerText = topicTitle;
+            let desc = '';
+            if (topicTitle === 'Оптимизация офиса') desc = 'Обсуждаем улучшение рабочего пространства: эргономика, зоны отдыха, техническое оснащение и экологические инициативы.';
+            else if (topicTitle === 'Цифровая трансформация 2026') desc = 'Обсуждаем внедрение AI-инструментов в рабочие процессы отделов.';
+            else desc = 'Общая дискуссия по теме.';
+            document.getElementById('topic-description').innerText = desc;
+            
+            const statsDiv = document.getElementById('topic-stats');
+            const ideasCount = data.ideas.length;
+            // Оставляем только количество идей и дедлайн
+            statsDiv.innerHTML = `
+                <span class="topic-stat"><i class="fa-regular fa-lightbulb"></i> ${ideasCount} идей</span>
+                <span class="tag tag-accent"><i class="fa-regular fa-calendar"></i> Завершено: 24.03.2026</span>
+            `;
+            
+            renderFullIdeasList(topicTitle);
+            showPage('topic-ideas');
+        }
+
+        function renderFullIdeasList(topicTitle) {
+            const container = document.getElementById('ideas-list');
+            const topic = fullIdeasData[topicTitle];
+            if (!topic || topic.ideas.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="fa-regular fa-lightbulb"></i><p>Пока нет идей. Будьте первым, кто предложит идею!</p></div>';
+                return;
+            }
+            
+            container.innerHTML = topic.ideas.map((idea, idx) => `
+                <div class="idea-card-full" data-idea-id="${idea.id}">
+                    <div class="idea-main">
+                        <div class="idea-header-row">
+                            <div class="idea-name">${escapeHtml(idea.name)}</div>
+                            <div class="idea-like-right" onclick="toggleIdeaLikeInline(this, ${idea.id}, ${idea.likes})">
+                                <i class="fa-regular fa-heart"></i> <span class="likes-count">${idea.likes}</span>
+                            </div>
+                        </div>
+                        <div class="idea-description">${escapeHtml(idea.description)}</div>
+                        <div class="idea-meta">
+                            <span><i class="fa-regular fa-user"></i> Автор: ${escapeHtml(idea.author)}</span>
+                            <span><i class="fa-regular fa-calendar"></i> ${idea.date}</span>
+                        </div>
+                    </div>
+                    <div class="comments-section" id="comments-section-${idx}">
+                        <div class="comments-title">
+                            <i class="fa-regular fa-message"></i> ${idea.comments.length} комментариев
+                        </div>
+                        <div class="comment-thread" id="comment-thread-${idx}">
+                            ${renderCommentsTree(idea.comments, idx, 0)}
+                        </div>
+                        <div class="add-comment-form">
+                            <input type="text" class="comment-input" id="new-comment-${idx}" placeholder="Написать комментарий...">
+                            <button class="btn btn-primary btn-sm" onclick="addNewComment(${idx})">Отправить</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderCommentsTree(comments, ideaIdx, level) {
+            if (!comments.length) return '';
+            return comments.map((comment, cidx) => `
+                <div class="comment-item" data-comment-idx="${cidx}">
+                    <div class="comment-main">
+                        <div class="comment-header">
+                            <div class="comment-author">${escapeHtml(comment.author)}</div>
+                            <div class="comment-date">${comment.date}</div>
+                        </div>
+                        <div class="comment-text">${escapeHtml(comment.text)}</div>
+                        <div class="comment-actions">
+                            <button class="comment-action" onclick="toggleCommentLike(this)"><i class="fa-regular fa-heart"></i> <span class="like-count">${comment.likes}</span></button>
+                            <button class="comment-action" onclick="showReplyForm(this, ${ideaIdx}, ${cidx})"><i class="fa-regular fa-reply"></i> Ответить</button>
+                        </div>
+                    </div>
+                    ${comment.replies && comment.replies.length ? `
+                        <div class="replies" id="replies-${ideaIdx}-${cidx}">
+                            ${comment.replies.map((reply, ridx) => `
+                                <div class="reply-item">
+                                    <div class="reply-main">
+                                        <div class="comment-header">
+                                            <div class="comment-author">${escapeHtml(reply.author)}</div>
+                                            <div class="comment-date">${reply.date}</div>
+                                        </div>
+                                        <div class="comment-text">${escapeHtml(reply.text)}</div>
+                                        <div class="comment-actions">
+                                            <button class="comment-action" onclick="toggleCommentLike(this)"><i class="fa-regular fa-heart"></i> <span class="like-count">${reply.likes}</span></button>
+                                            <button class="comment-action" onclick="showReplyForm(this, ${ideaIdx}, ${cidx})"><i class="fa-regular fa-reply"></i> Ответить</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : '<div class="replies" id="replies-'+ideaIdx+'-'+cidx+'"></div>'}
+                    <div class="reply-form" id="reply-form-${ideaIdx}-${cidx}">
+                        <input type="text" class="comment-input" placeholder="Написать ответ..." id="reply-input-${ideaIdx}-${cidx}">
+                        <button class="btn btn-primary btn-sm" onclick="addReply(${ideaIdx}, ${cidx})">Отправить</button>
+                        <button class="btn btn-outline btn-sm" onclick="hideReplyForm(${ideaIdx}, ${cidx})">Отмена</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function toggleIdeaLikeInline(element, ideaId, currentLikes) {
+            const icon = element.querySelector('i');
+            const countSpan = element.querySelector('.likes-count');
+            let count = parseInt(countSpan.innerText);
+            if (icon.classList.contains('fa-regular')) {
+                icon.classList.remove('fa-regular');
+                icon.classList.add('fa-solid');
+                countSpan.innerText = count + 1;
+                element.classList.add('liked');
+            } else {
+                icon.classList.remove('fa-solid');
+                icon.classList.add('fa-regular');
+                countSpan.innerText = count - 1;
+                element.classList.remove('liked');
+            }
+        }
+
+        function toggleCommentLike(btn) {
+            const icon = btn.querySelector('i');
+            const likeSpan = btn.querySelector('.like-count');
+            let count = parseInt(likeSpan.innerText);
+            if (icon.classList.contains('fa-regular')) {
+                icon.classList.remove('fa-regular');
+                icon.classList.add('fa-solid');
+                likeSpan.innerText = count + 1;
+            } else {
+                icon.classList.remove('fa-solid');
+                icon.classList.add('fa-regular');
+                likeSpan.innerText = count - 1;
+            }
+        }
+
+        function showReplyForm(btn, ideaIdx, commentIdx) {
+            const form = document.getElementById(`reply-form-${ideaIdx}-${commentIdx}`);
+            if (form) {
+                form.classList.add('active');
+                form.querySelector('.comment-input')?.focus();
+            }
+        }
+
+        function hideReplyForm(ideaIdx, commentIdx) {
+            const form = document.getElementById(`reply-form-${ideaIdx}-${commentIdx}`);
+            if (form) {
+                form.classList.remove('active');
+                const input = document.getElementById(`reply-input-${ideaIdx}-${commentIdx}`);
+                if (input) input.value = '';
+            }
+        }
+
+        function addReply(ideaIdx, commentIdx) {
+            const input = document.getElementById(`reply-input-${ideaIdx}-${commentIdx}`);
+            const text = input.value.trim();
+            if (!text) { alert('Напишите текст ответа'); return; }
+            
+            const repliesContainer = document.getElementById(`replies-${ideaIdx}-${commentIdx}`);
+            if (!repliesContainer) return;
+            
+            const newReply = document.createElement('div');
+            newReply.className = 'reply-item';
+            newReply.innerHTML = `
+                <div class="reply-main">
+                    <div class="comment-header">
+                        <div class="comment-author">Анна М.</div>
+                        <div class="comment-date">Только что</div>
+                    </div>
+                    <div class="comment-text">${escapeHtml(text)}</div>
+                    <div class="comment-actions">
+                        <button class="comment-action" onclick="toggleCommentLike(this)"><i class="fa-regular fa-heart"></i> <span class="like-count">0</span></button>
+                        <button class="comment-action" onclick="showReplyForm(this, ${ideaIdx}, ${commentIdx})"><i class="fa-regular fa-reply"></i> Ответить</button>
+                    </div>
+                </div>
+            `;
+            repliesContainer.appendChild(newReply);
+            input.value = '';
+            hideReplyForm(ideaIdx, commentIdx);
+            
+            const commentsSection = document.getElementById(`comments-section-${ideaIdx}`);
+            const titleSpan = commentsSection.querySelector('.comments-title');
+            const currentCount = parseInt(titleSpan.innerText.match(/\d+/)?.[0] || '0');
+            titleSpan.innerHTML = `<i class="fa-regular fa-message"></i> ${currentCount + 1} комментарий`;
+        }
+
+        function addNewComment(ideaIdx) {
+            const input = document.getElementById(`new-comment-${ideaIdx}`);
+            const text = input.value.trim();
+            if (!text) { alert('Напишите комментарий'); return; }
+            
+            const thread = document.getElementById(`comment-thread-${ideaIdx}`);
+            const commentId = Date.now();
+            const newCommentDiv = document.createElement('div');
+            newCommentDiv.className = 'comment-item';
+            newCommentDiv.innerHTML = `
+                <div class="comment-main">
+                    <div class="comment-header">
+                        <div class="comment-author">Анна М.</div>
+                        <div class="comment-date">Только что</div>
+                    </div>
+                    <div class="comment-text">${escapeHtml(text)}</div>
+                    <div class="comment-actions">
+                        <button class="comment-action" onclick="toggleCommentLike(this)"><i class="fa-regular fa-heart"></i> <span class="like-count">0</span></button>
+                        <button class="comment-action" onclick="showReplyForm(this, ${ideaIdx}, ${commentId})"><i class="fa-regular fa-reply"></i> Ответить</button>
+                    </div>
+                </div>
+                <div class="replies" id="replies-${ideaIdx}-${commentId}"></div>
+                <div class="reply-form" id="reply-form-${ideaIdx}-${commentId}">
+                    <input type="text" class="comment-input" placeholder="Написать ответ..." id="reply-input-${ideaIdx}-${commentId}">
+                    <button class="btn btn-primary btn-sm" onclick="addReply(${ideaIdx}, ${commentId})">Отправить</button>
+                    <button class="btn btn-outline btn-sm" onclick="hideReplyForm(${ideaIdx}, ${commentId})">Отмена</button>
+                </div>
+            `;
+            thread.appendChild(newCommentDiv);
+            input.value = '';
+            
+            const commentsSection = document.getElementById(`comments-section-${ideaIdx}`);
+            const titleSpan = commentsSection.querySelector('.comments-title');
+            const currentCount = parseInt(titleSpan.innerText.match(/\d+/)?.[0] || '0');
+            titleSpan.innerHTML = `<i class="fa-regular fa-message"></i> ${currentCount + 1} комментарий`;
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

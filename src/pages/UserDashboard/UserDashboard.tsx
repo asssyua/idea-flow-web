@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { profileAPI, authAPI, topicAPI, ideaAPI } from '../../api';
+import { profileAPI, topicAPI, ideaAPI } from '../../api';
 import '../../styles/globals.css';
 import '../../styles/animations.css';
 import TopicModal from '../../components/Modals/TopicModal';
 import StatisticsModal from '../../components/Modals/StatisticsModal';
-import BadgeList, { BadgeItem } from '../../components/BadgeList/BadgeList';
+import { BadgeItem } from '../../components/BadgeList/BadgeList';
 import Header from '../../components/Header/Header';
 import './UserDashboard.css';
 
@@ -31,6 +31,7 @@ interface Topic {
   deadline: string | null;
   ideaCount: number;
   createdAt: string;
+  status?: string;
   createdBy?: {
     firstName: string;
     lastName: string;
@@ -58,6 +59,18 @@ interface UserStatistics {
   topicsCount: number;
   rating: number;
 }
+
+const getTopicTagLabel = (topic: Topic) => {
+  if (topic.status?.toLowerCase() === 'approved') {
+    return 'Активна';
+  }
+
+  if (topic.deadline && new Date(topic.deadline) < new Date()) {
+    return 'Завершена';
+  }
+
+  return 'Обсуждение';
+};
 
 const UserDashboard: React.FC = () => {
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -184,20 +197,6 @@ const UserDashboard: React.FC = () => {
     }
   }, [activeTab]);
 
-  const handleLogout = async () => {
-    try {
-      await authAPI.logout();
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('user');
-      navigate('/');
-    } catch (error) {
-      console.error('Logout failed:', error);
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('user');
-      navigate('/');
-    }
-  };
-
   const handleCreateTopic = async (data: {
     title: string;
     description: string;
@@ -239,9 +238,9 @@ const UserDashboard: React.FC = () => {
     return formatDate(deadline);
   };
 
-  const handleStatisticsClick = () => {
-    setStatisticsModalOpen(true);
-  };
+  const topTopics = [...topics]
+    .sort((a, b) => (b.ideaCount || 0) - (a.ideaCount || 0))
+    .slice(0, 3);
 
   if (loading) {
     return (
@@ -274,31 +273,81 @@ const UserDashboard: React.FC = () => {
 
       <main className="user-dashboard-content">
         <div className="container">
-          {/* Home Tab */}
           {activeTab === 'home' && (
-            <div className="welcome-card card">
-              <h2>Пространство ваших инициатив</h2>
-              <p>Предлагайте идеи, обсуждайте проекты коллег и помогайте компании расти. Лучшие предложения попадут в итоговый отчет и будут реализованы.</p>
-              <button className="btn btn-primary" onClick={() => navigate('/user-dashboard/topics')}>
-                <i className="fas fa-compass"></i> Перейти к темам
-              </button>
-            </div>
+            <>
+              <div className="welcome-card">
+                <h1>Пространство ваших инициатив</h1>
+                <p>Предлагайте идеи, обсуждайте проекты коллег и помогайте компании расти. Лучшие предложения попадут в итоговый отчет и будут реализованы.</p>
+                <button className="btn btn-primary" onClick={() => navigate('/user-dashboard/topics')}>
+                  <i className="fas fa-plus"></i> Предложить идею
+                </button>
+              </div>
+
+              <h2 className="section-title">Итоги завершенного обсуждения</h2>
+              <div className="card">
+                <div className="card-title report-card-title">
+                  <h3><i className="fas fa-square-poll-vertical"></i> Популярные темы сообщества</h3>
+                  <span className="tag">Обновлено: {new Date().toLocaleDateString('ru-RU')}</span>
+                </div>
+                <div className="stats-row">
+                  <div className="stat-item"><span className="stat-val">{topics.length}</span><span className="stat-lab">Темы</span></div>
+                  <div className="stat-item"><span className="stat-val">{stats.ideasCount}</span><span className="stat-lab">Идеи</span></div>
+                  <div className="stat-item"><span className="stat-val">{stats.commentsCount}</span><span className="stat-lab">Мнения</span></div>
+                </div>
+                <div className="card-title report-card-title-secondary"><h3>Топ-3 темы</h3></div>
+                <div className="top-ideas-list">
+                  {topTopics.length === 0 ? (
+                    <div className="empty-state">
+                      <p>Пока нет данных для отчета.</p>
+                    </div>
+                  ) : (
+                    topTopics.map((topic) => {
+                      const authorName = topic.createdBy
+                        ? `${topic.createdBy.firstName} ${topic.createdBy.lastName}`
+                        : 'Сообщество IdeaFlow';
+
+                      return (
+                        <div key={topic.id} className="idea-card-report" onClick={() => navigate(`/topic/${topic.id}`)}>
+                          <div className="idea-info">
+                            <div className="idea-header-row">
+                              <div className="idea-name">{topic.title || 'Без названия'}</div>
+                              <div className="likes-badge"><i className="fas fa-heart"></i> {topic.ideaCount || 0}</div>
+                            </div>
+                            <div className="idea-description">{topic.description || 'Описание темы отсутствует.'}</div>
+                            <div className="idea-meta">
+                              <span><i className="far fa-user"></i> {authorName}</span>
+                              <span><i className="far fa-calendar"></i> {topic.createdAt ? formatDate(topic.createdAt) : 'Без даты'}</span>
+                            </div>
+                          </div>
+                          <div className="top-comment-box">
+                            <div>
+                              <i className="fas fa-quote-left comment-quote-icon"></i>
+                              <span className="comment-text-preview">Откройте тему, чтобы изучить идеи участников и обсуждение коллег.</span>
+                            </div>
+                            <div className="comment-footer">
+                              <div className="comment-likes"><i className="fas fa-heart"></i> {topic.ideaCount || 0}</div>
+                              <div className="comment-author">{getTopicTagLabel(topic)}</div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            </>
           )}
 
-          {/* Topics Tab */}
           {activeTab === 'topics' && (
             <div className="topics-section-full">
-              <div className="card" style={{ marginBottom: '1.5rem' }}>
-                <div className="card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 0, paddingBottom: 0, borderBottom: 'none' }}>
-                  <h2 style={{ fontSize: '1.25rem', fontWeight: 600, margin: 0 }}>
-                    <i className="far fa-folder-open" style={{ marginRight: '10px' }}></i>
-                    Активные темы обсуждения
-                  </h2>
+              <div className="card topics-header-card">
+                <div className="card-title topics-main-card-title">
+                  <h2>Активные темы обсуждения</h2>
                   <button 
                     className="btn btn-primary" 
                     onClick={() => setTopicModalOpen(true)}
                   >
-                    <i className="fas fa-plus" style={{ marginRight: '6px' }}></i> Предложить тему
+                    + Предложить тему
                   </button>
                 </div>
               </div>
@@ -323,11 +372,11 @@ const UserDashboard: React.FC = () => {
                       return (
                         <div 
                           key={topic.id} 
-                          className="topic-card"
+                          className="card topic-card"
                           onClick={() => navigate(`/topic/${topic.id}`)}
                         >
                           <div className="flex-between">
-                            <h3 style={{ fontSize: '1.15rem' }}>{topic.title || 'Без названия'}</h3>
+                            <h3>{topic.title || 'Без названия'}</h3>
                             <i 
                               className={`${isFav ? 'fas' : 'far'} fa-star fav-btn`}
                               onClick={async (e) => {
@@ -345,14 +394,15 @@ const UserDashboard: React.FC = () => {
                               }}
                             ></i>
                           </div>
-                          <p style={{ fontSize: '0.9rem' }}>{topic.description || 'Нет описания'}</p>
+                          <p>{topic.description || 'Нет описания'}</p>
+                          <div className="tag">{getTopicTagLabel(topic)}</div>
                           <div className="topic-meta">
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <i className="far fa-lightbulb" style={{ color: 'var(--text-muted)' }}></i> 
+                            <span>
+                              <i className="far fa-lightbulb"></i> 
                               {topic.ideaCount || 0} идей
                             </span>
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <i className="far fa-calendar" style={{ color: 'var(--text-muted)' }}></i> 
+                            <span>
+                              <i className="far fa-calendar"></i> 
                               {topic.deadline ? `До ${formatDeadline(topic.deadline)}` : 'Без срока'}
                             </span>
                           </div>
@@ -375,139 +425,75 @@ const UserDashboard: React.FC = () => {
             </div>
           )}
 
-          {/* Profile Tab */}
           {activeTab === 'profile' && (
             <div className="profile-page">
-              {/* Profile Header with Large Avatar and Stats */}
-              <div className="profile-header-card-large">
-                <div className="profile-header-large">
-                  <div className="avatar-large">
+              <div className="profile-header">
+                <div className="avatar-sq profile-avatar-large">
                     {user.firstName.charAt(0)}{user.lastName.charAt(0)}
-                  </div>
-                  <div className="profile-main-info-large">
-                    <h2>{user.firstName} {user.lastName}</h2>
-                    <div className="profile-bio">
-                      <i className="far fa-envelope"></i> {user.email || 'Пользователь'}
-                    </div>
-                    <div className="stat-grid-4">
-                      <div className="stat-box-profile">
-                        <label>Идей</label>
-                        <span>{stats.ideasCount}</span>
-                      </div>
-                      <div className="stat-box-profile">
-                        <label>Комментариев</label>
-                        <span>{stats.commentsCount}</span>
-                      </div>
-                      <div className="stat-box-profile">
-                        <label>Лайков (получено)</label>
-                        <span>{stats.likesReceived}</span>
-                      </div>
-                      <div className="stat-box-profile">
-                        <label>Тем создано</label>
-                        <span>{stats.topicsCount}</span>
-                      </div>
-                    </div>
+                </div>
+                <div className="profile-main-info">
+                  <h2>{user.firstName} {user.lastName}</h2>
+                  <p className="profile-subtitle">{user.email || 'Участник платформы IdeaFlow'}</p>
+                  <div className="stat-grid">
+                    <div className="stat-box"><label>Идей</label><span>{stats.ideasCount}</span></div>
+                    <div className="stat-box"><label>Коммент.</label><span>{stats.commentsCount}</span></div>
+                    <div className="stat-box"><label>Лайков</label><span>{stats.likesReceived}</span></div>
+                    <div className="stat-box"><label>Темы</label><span>{stats.topicsCount}</span></div>
                   </div>
                 </div>
               </div>
 
-              {/* Badges Section */}
-              <div className="card badges-section">
-                <div className="card-title-with-icon">
-                  <h3><i className="fas fa-medal"></i> Мои достижения</h3>
-                  <span className="tag-badge">
-                    {[
-                      stats.ideasCount >= 1,
-                      stats.commentsCount >= 50,
-                      stats.topicsCount >= 5,
-                      stats.likesReceived >= 100,
-                      stats.ideasCount >= 20
-                    ].filter(Boolean).length} / 5 получено
-                  </span>
-                </div>
+              <div className="card">
+                <div className="card-title"><h3>Достижения</h3></div>
                 <div className="badge-grid">
-                  {/* Первый автор */}
                   <div className={`badge-card ${stats.ideasCount >= 1 ? 'unlocked' : ''}`}>
                     <i className="fas fa-pen-nib"></i>
-                    <p>Первый автор</p>
-                    <small>Опубликована первая идея</small>
+                    <div>Первый автор</div>
                   </div>
-                  {/* Гуру комментариев */}
                   <div className={`badge-card ${stats.commentsCount >= 50 ? 'unlocked' : ''}`}>
                     <i className="fas fa-comments"></i>
-                    <p>Гуру комм. (50+)</p>
-                    <small>50+ комментариев</small>
+                    <div>Гуру комм. (50)</div>
                   </div>
-                  {/* Мастер тем */}
                   <div className={`badge-card ${stats.topicsCount >= 5 ? 'unlocked' : ''}`}>
                     <i className="fas fa-crown"></i>
-                    <p>Мастер тем</p>
-                    <small>Создано 5+ тем</small>
-                  </div>
-                  {/* Сердце сообщества */}
-                  <div className={`badge-card ${stats.likesReceived >= 100 ? 'unlocked' : ''}`}>
-                    <i className="fas fa-heart-circle-check"></i>
-                    <p>Сердце сообщества</p>
-                    <small>100+ полученных лайков</small>
-                  </div>
-                  {/* Генератор идей */}
-                  <div className={`badge-card ${stats.ideasCount >= 20 ? 'unlocked' : ''}`}>
-                    <i className="fas fa-lightbulb"></i>
-                    <p>Генератор идей</p>
-                    <small>20+ идей</small>
+                    <div>Мастер тем</div>
                   </div>
                 </div>
               </div>
 
-              {/* Two Column Layout: Favorites + Placeholder for future content */}
-              <div className="two-column-grid">
-                <div className="card">
-                  <div className="card-title-with-icon">
-                    <h3><i className="far fa-bookmark"></i> Избранные темы</h3>
-                    <button 
-                      className="btn btn-outline btn-sm" 
-                      onClick={() => navigate('/user-dashboard/topics')}
-                    >
-                      К темам →
-                    </button>
+              <div className="card">
+                <div className="card-title card-title-with-action">
+                  <h3>Избранные темы</h3>
+                  <button className="btn btn-outline btn-sm" onClick={() => navigate('/user-dashboard/topics')}>
+                    К темам →
+                  </button>
+                </div>
+                {favoritesLoading ? (
+                  <div className="loading-container" style={{ padding: '1rem' }}>
+                    <div className="loading-spinner"></div>
+                    <p>Загрузка...</p>
                   </div>
-                  {favoritesLoading ? (
-                    <div className="loading-container" style={{ padding: '1rem' }}>
-                      <div className="loading-spinner"></div>
-                      <p>Загрузка...</p>
-                    </div>
-                  ) : favoriteTopics.length === 0 ? (
-                    <div style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                      <p>В избранном пока нет тем.</p>
-                      <p style={{ fontSize: '0.85rem', marginTop: '0.5rem' }}>
-                        Добавляйте темы в избранное, нажимая на звездочку в списке тем.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="favorite-topics-list">
-                      {favoriteTopics.slice(0, 5).map((topic) => (
-                        <div 
-                          key={topic.id} 
-                          className="fav-topic-item"
-                          onClick={() => navigate(`/topic/${topic.id}`)}
-                        >
-                          <span>
-                            <i className="fas fa-star" style={{ color: '#F59E0B' }}></i>
-                            {topic.title || 'Без названия'}
-                          </span>
-                          <small>{topic.ideaCount || 0} идей</small>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '200px' }}>
-                  <p style={{ color: 'var(--text-muted)', textAlign: 'center' }}>
-                    <i className="far fa-clock" style={{ fontSize: '2rem', marginBottom: '1rem', display: 'block' }}></i>
-                    Дополнительные функции<br/>в разработке
-                  </p>
-                </div>
+                ) : favoriteTopics.length === 0 ? (
+                  <div className="empty-state">
+                    <p>В избранном пока нет тем.</p>
+                  </div>
+                ) : (
+                  <div className="favorite-topics-list">
+                    {favoriteTopics.slice(0, 5).map((topic) => (
+                      <div 
+                        key={topic.id} 
+                        className="fav-topic-item"
+                        onClick={() => navigate(`/topic/${topic.id}`)}
+                      >
+                        <span>
+                          <i className="fas fa-star"></i>
+                          {topic.title || 'Без названия'}
+                        </span>
+                        <small>{topic.ideaCount || 0} идей</small>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}

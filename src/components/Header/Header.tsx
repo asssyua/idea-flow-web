@@ -58,11 +58,16 @@ const Header: React.FC = () => {
     return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`;
   };
 
+  const getShortName = () => {
+    if (!user) return '';
+    return `${user.firstName} ${user.lastName.charAt(0)}.`;
+  };
+
   return (
     <header className="app-header">
       <div className="container">
         <div className="header-content">
-          <div className="logo" onClick={() => navigate(homePath)}>
+          <div className="logo-box" onClick={() => navigate(homePath)}>
             <i className="fas fa-layer-group" style={{ color: 'var(--primary)' }}></i>
             IdeaFlow
           </div>
@@ -83,16 +88,22 @@ const Header: React.FC = () => {
               className={isActive(profilePath) ? 'active' : ''}
               onClick={() => navigate(profilePath)}
             >
-              Профиль
+              Мой профиль
             </a>
             {user && (
               <>
                 <div
-                  className="header-profile-avatar"
+                  className="profile-pill"
                   onClick={() => navigate(profilePath)}
                   title="Перейти в профиль"
                 >
-                  {getInitials()}
+                  <div className="avatar-sq">{getInitials()}</div>
+                  <div className="profile-pill-text">
+                    <strong>{getShortName()}</strong>
+                    <div className="profile-pill-subtitle">
+                      <i className="fas fa-medal"></i> Участник
+                    </div>
+                  </div>
                 </div>
                 <button onClick={handleLogout} className="header-logout-btn">
                   Выйти
