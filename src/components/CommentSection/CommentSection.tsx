@@ -237,8 +237,12 @@ const CommentItem: React.FC<CommentItemProps> = ({
         </div>
         <p className="comment-text">{comment.content}</p>
         <button
+          type="button"
           className="reply-button"
-          onClick={() => onReply(comment.id)}
+          onClick={(e) => {
+            e.preventDefault();
+            onReply(comment.id);
+          }}
           disabled={isReplying || isSubmitting}
         >
           Ответить
@@ -257,15 +261,23 @@ const CommentItem: React.FC<CommentItemProps> = ({
           />
           <div className="reply-actions">
             <button
+              type="button"
               className="cta-button primary"
-              onClick={() => onSubmitReply(comment.id)}
+              onClick={(e) => {
+                e.preventDefault();
+                onSubmitReply(comment.id);
+              }}
               disabled={!replyContent.trim() || isSubmitting}
             >
               {isSubmitting ? 'Отправка...' : 'Отправить'}
             </button>
             <button
+              type="button"
               className="cta-button secondary"
-              onClick={onCancelReply}
+              onClick={(e) => {
+                e.preventDefault();
+                onCancelReply();
+              }}
               disabled={isSubmitting}
             >
               Отмена

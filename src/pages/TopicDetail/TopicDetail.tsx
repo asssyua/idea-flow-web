@@ -549,92 +549,102 @@ const TopicDetail: React.FC = () => {
       <header className="topic-detail-header">
         <div className="container">
           <div className="header-content">
-            <button onClick={() => navigate('/user-dashboard')} className="back-button">
-              ← Назад к темам
-            </button>
+            <div className="logo" onClick={() => navigate('/')}>
+              <i className="fas fa-layer-group" style={{ color: 'var(--primary)' }}></i>
+              IdeaFlow
+            </div>
+            <nav className="nav-links">
+              <a onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>Главная</a>
+              <a onClick={() => navigate('/user-dashboard')} style={{ cursor: 'pointer' }}>Темы</a>
+              <a onClick={() => navigate('/dashboard')} style={{ cursor: 'pointer' }}>Мой профиль</a>
+            </nav>
           </div>
         </div>
       </header>
 
       <main className="topic-detail-content">
         <div className="container">
-          <div className="topic-card-detail">
-            <div className="topic-card-header">
-              <h1 className="topic-card-title">{topic.title}</h1>
-              {(() => {
-                const role = getUserRoleFromToken();
-                const canUseFavorites = role && role.toLowerCase() !== 'admin';
-                if (!canUseFavorites) return null;
+          <div className="back-nav">
+            <span className="back-link" onClick={() => navigate('/user-dashboard')}>
+              <i className="fas fa-arrow-left"></i> Ко всем темам
+            </span>
+          </div>
 
-                return (
-                  <button
-                    className={`cta-button ${isFavorite ? 'secondary' : 'primary'}`}
-                    onClick={toggleFavorite}
-                    disabled={favoriteLoading}
-                    style={{ marginLeft: '1rem', padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
-                  >
-                    {favoriteLoading
-                      ? '...'
-                      : isFavorite
-                        ? 'Удалить из избранного'
-                        : 'В избранное'}
-                  </button>
-                );
-              })()}
-              {topic.deadline && (
-                <span className={`topic-deadline ${new Date(topic.deadline) < new Date() ? 'expired' : ''}`}>
-                  {formatDeadline(topic.deadline) || 'Истек'}
-                </span>
-              )}
+          <div className="card topic-header">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+              <h1 className="topic-title">{topic.title}</h1>
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                {(() => {
+                  const role = getUserRoleFromToken();
+                  const canUseFavorites = role && role.toLowerCase() !== 'admin';
+                  if (!canUseFavorites) return null;
+                  return (
+                    <button
+                      className={`fav-btn ${isFavorite ? 'active' : ''}`}
+                      onClick={toggleFavorite}
+                      disabled={favoriteLoading}
+                    >
+                      <i className={isFavorite ? 'fas fa-star' : 'far fa-star'}></i>
+                    </button>
+                  );
+                })()}
+                {topic.deadline && (
+                  <span className={`tag ${new Date(topic.deadline) < new Date() ? 'tag-accent' : ''}`}>
+                    {new Date(topic.deadline) < new Date() ? 'Завершена' : 'Активна'}
+                  </span>
+                )}
+              </div>
             </div>
-            <p className="topic-card-description">{topic.description}</p>
-            <div className="topic-card-meta">
-              <span className="topic-card-author">
-                Автор: {topic.createdBy ? `${topic.createdBy.firstName} ${topic.createdBy.lastName}` : 'Неизвестен'}
+            <p className="topic-description">{topic.description}</p>
+            <div className="topic-stats">
+              <span className="topic-stat">
+                <i className="far fa-lightbulb"></i> {topic.ideaCount || 0} идей
               </span>
-              {topic.createdAt && (
-                <span className="topic-card-date">
-                  Создан: {formatDate(topic.createdAt)}
-                </span>
-              )}
-              <span className="topic-card-ideas">
-                Идей: {topic.ideaCount || 0}
+              <span className="topic-stat">
+                <i className="far fa-user"></i> {topic.createdBy ? `${topic.createdBy.firstName} ${topic.createdBy.lastName}` : 'Неизвестен'}
+              </span>
+              <span className="topic-stat">
+                <i className="far fa-calendar"></i> {topic.deadline ? `До ${formatDeadline(topic.deadline)}` : 'Без срока'}
               </span>
             </div>
           </div>
 
-          <div className="add-idea-section">
-            <h2 className="section-title">Добавить идею</h2>
+          <div className="add-idea-bar">
+            <button className="btn btn-primary" onClick={() => document.querySelector('.add-idea-section')?.scrollIntoView({ behavior: 'smooth' })}>
+              <i className="fas fa-plus"></i> Предложить идею
+            </button>
+          </div>
+
+          <div className="card add-idea-section">
+            <div className="card-title">
+              <h3>Добавить идею</h3>
+            </div>
             <form onSubmit={handleCreateIdea} className="add-idea-form">
               <input
                 type="text"
                 value={newIdeaTitle}
                 onChange={(e) => {
                   setNewIdeaTitle(e.target.value);
-                  // Сбрасываем ошибку при вводе текста
                   if (ideaValidationError) {
                     setIdeaValidationError('');
                   }
                 }}
                 onBlur={() => {
-                  // Показываем ошибку при потере фокуса, если текста недостаточно
                   if (newIdeaTitle.trim().length > 0 && newIdeaTitle.trim().length < 15) {
                     setIdeaValidationError('Поле не может быть пустым (минимум 15 символов)');
                   }
                 }}
                 placeholder="Введите вашу идею (минимум 15 символов)..."
-                className="idea-input"
+                className="comment-input"
                 disabled={isSubmitting}
                 style={{
                   border: ideaValidationError 
                     ? '1px solid #dc3545' 
-                    : '1px solid var(--border-color)',
+                    : '1px solid var(--border)',
                   marginBottom: ideaValidationError ? '0.5rem' : '1rem',
-                  boxShadow: ideaValidationError ? '0 0 0 0.2rem rgba(220, 53, 69, 0.25)' : 'none'
                 }}
               />
               
-              {/* Сообщение об ошибке */}
               {ideaValidationError && (
                 <div style={{
                   color: '#dc3545',
@@ -664,7 +674,7 @@ const TopicDetail: React.FC = () => {
 
               <button
                 type="submit"
-                className="cta-button primary"
+                className="btn btn-primary"
                 disabled={!newIdeaTitle.trim() || newIdeaTitle.trim().length < 15 || isSubmitting}
               >
                 {isSubmitting ? 'Добавление...' : 'Добавить идею'}
@@ -673,7 +683,9 @@ const TopicDetail: React.FC = () => {
           </div>
 
           <div className="ideas-section">
-            <h2 className="section-title">Идеи ({ideas.length})</h2>
+            <div className="card-title" style={{ marginBottom: '1.5rem' }}>
+              <h3><i className="far fa-lightbulb"></i> Идеи ({ideas.length})</h3>
+            </div>
             {ideasLoading ? (
               <div className="loading-container">
                 <div className="loading-spinner"></div>
@@ -688,263 +700,253 @@ const TopicDetail: React.FC = () => {
                 {ideas
                   .filter((idea) => idea.id)
                   .map((idea) => (
-                  <div key={idea.id} className="idea-card-with-comments">
-                    <div className="idea-card">
-                      <div className="idea-content">
-                        {editingIdeaId === idea.id ? (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                            <input
-                              type="text"
-                              value={editTitle}
-                              onChange={(e) => setEditTitle(e.target.value)}
-                              className="idea-input"
-                              disabled={isUpdatingIdea}
-                            />
-                            <textarea
-                              value={editDescription}
-                              onChange={(e) => setEditDescription(e.target.value)}
-                              disabled={isUpdatingIdea}
-                              style={{
-                                width: '100%',
-                                minHeight: '90px',
-                                padding: '0.75rem',
-                                borderRadius: 'var(--border-radius)',
-                                border: '1px solid var(--border-color)',
-                                backgroundColor: 'var(--bg-primary)',
-                                color: 'var(--text-primary)',
-                                resize: 'vertical'
-                              }}
-                            />
+                  <div key={idea.id} className="idea-card-full">
+                    <div className="idea-main">
+                      {editingIdeaId === idea.id ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                          <input
+                            type="text"
+                            value={editTitle}
+                            onChange={(e) => setEditTitle(e.target.value)}
+                            className="idea-input"
+                            disabled={isUpdatingIdea}
+                          />
+                          <textarea
+                            value={editDescription}
+                            onChange={(e) => setEditDescription(e.target.value)}
+                            disabled={isUpdatingIdea}
+                            style={{
+                              width: '100%',
+                              minHeight: '90px',
+                              padding: '0.75rem',
+                              borderRadius: 'var(--radius-sm)',
+                              border: '1px solid var(--border)',
+                              backgroundColor: 'var(--surface)',
+                              color: 'var(--text-main)',
+                              resize: 'vertical',
+                              fontFamily: 'inherit'
+                            }}
+                          />
 
-                            <div className="image-upload-section">
-                              <label htmlFor={`edit-idea-images-${idea.id}`} className="image-upload-label">
-                                <span className="upload-icon">📷</span>
-                                <span>Обновить изображения (макс. 5)</span>
-                                <input
-                                  id={`edit-idea-images-${idea.id}`}
-                                  type="file"
-                                  accept="image/*"
-                                  multiple
-                                  onChange={handleEditImageSelect}
-                                  disabled={isUpdatingIdea || editSelectedImages.length >= 5}
-                                  style={{ display: 'none' }}
-                                />
-                              </label>
+                          <div className="image-upload-section">
+                            <label htmlFor={`edit-idea-images-${idea.id}`} className="image-upload-label">
+                              <span className="upload-icon">📷</span>
+                              <span>Обновить изображения (макс. 5)</span>
+                              <input
+                                id={`edit-idea-images-${idea.id}`}
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                onChange={handleEditImageSelect}
+                                disabled={isUpdatingIdea || editSelectedImages.length >= 5}
+                                style={{ display: 'none' }}
+                              />
+                            </label>
 
-                              {editImagePreviews.length > 0 && (
-                                <div className="image-previews">
-                                  {editImagePreviews.map((preview, index) => (
-                                    <div key={index} className="image-preview-item">
-                                      <img src={preview} alt={`Edit preview ${index + 1}`} className="image-preview" />
-                                      <button
-                                        type="button"
-                                        className="remove-image-btn"
-                                        onClick={() => removeEditImage(index)}
-                                        disabled={isUpdatingIdea}
-                                      >
-                                        ×
-                                      </button>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
+                            {editImagePreviews.length > 0 && (
+                              <div className="image-previews">
+                                {editImagePreviews.map((preview, index) => (
+                                  <div key={index} className="image-preview-item">
+                                    <img src={preview} alt={`Edit preview ${index + 1}`} className="image-preview" />
+                                    <button
+                                      type="button"
+                                      className="remove-image-btn"
+                                      onClick={() => removeEditImage(index)}
+                                      disabled={isUpdatingIdea}
+                                    >
+                                      ×
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
-                        ) : (
-                          <>
-                            <h3 className="idea-title">
+
+                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <button
+                              className="btn btn-primary btn-sm"
+                              onClick={() => handleUpdateIdea(idea.id)}
+                              disabled={isUpdatingIdea || !editTitle.trim() || editTitle.trim().length < 15}
+                            >
+                              {isUpdatingIdea ? 'Сохранение...' : 'Сохранить'}
+                            </button>
+                            <button
+                              className="btn btn-outline btn-sm"
+                              onClick={cancelEditingIdea}
+                              disabled={isUpdatingIdea}
+                            >
+                              Отмена
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="idea-header-row">
+                            <div className="idea-name">
                               {idea.isPinned ? <span title="Закреплено">📌 </span> : null}
                               {idea.title}
-                            </h3>
-                            {idea.description && (
-                              <p style={{ marginTop: '0.5rem', marginBottom: 0, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                                {idea.description}
-                              </p>
-                            )}
-                          </>
-                        )}
-                        
-                        {idea.images && idea.images.length > 0 && (
-                          <div className="idea-images">
-                            {idea.images
-                              .filter((image) => {
-                                if (!image || typeof image !== 'string' || image.length < 100) {
-                                  return false;
-                                }
-                                return image.startsWith('data:image') || 
-                                       /^[A-Za-z0-9+/=]+$/.test(image.substring(0, 100)) ||
-                                       image.startsWith('/9j/') || 
-                                       image.startsWith('iVBORw0KGgo');
-                              })
-                              .map((image, index) => {
-                              let imageSrc = image.trim();
-                              
-                              try {
-                                if (imageSrc.startsWith('data:image')) {
-                                  const correctFormat = /^data:image\/([a-zA-Z]+);base64,([A-Za-z0-9+/=\s]+)$/;
-                                  const match = imageSrc.match(correctFormat);
-                                  
-                                  if (match && match[2] && match[2].trim().length > 100) {
-                                    imageSrc = `data:image/${match[1]};base64,${match[2].replace(/\s/g, '')}`;
-                                  } else {
-                                    const patterns = [
-                                      /base64[,:]\s*([A-Za-z0-9+/=\s]+)$/,
-                                      /base64\s*([A-Za-z0-9+/=\s]+)$/,
-                                      /:\s*([A-Za-z0-9+/=\s]+)$/,
-                                    ];
-                                    
-                                    let base64Data = null;
-                                    for (const pattern of patterns) {
-                                      const m = imageSrc.match(pattern);
-                                      if (m && m[1] && m[1].trim().length > 100) {
-                                        base64Data = m[1].trim().replace(/\s/g, '');
-                                        break;
-                                      }
-                                    }
-                                    
-                                    if (base64Data) {
-                                      let mimeType = 'jpeg';
-                                      const lowerSrc = imageSrc.toLowerCase();
-                                      if (lowerSrc.includes('png') || base64Data.startsWith('iVBOR')) {
-                                        mimeType = 'png';
-                                      } else if (lowerSrc.includes('jpeg') || lowerSrc.includes('jpg') || base64Data.startsWith('/9j/') || base64Data.startsWith('FFD8')) {
-                                        mimeType = 'jpeg';
-                                      } else if (lowerSrc.includes('gif') || base64Data.startsWith('R0lGOD')) {
-                                        mimeType = 'gif';
-                                      } else if (lowerSrc.includes('webp') || base64Data.startsWith('UklGR')) {
-                                        mimeType = 'webp';
-                                      }
-                                      imageSrc = `data:image/${mimeType};base64,${base64Data}`;
-                                    } else {
-                                      return null;
-                                    }
-                                  }
-                                } else {
-                                  const cleanBase64 = imageSrc.replace(/\s/g, '');
-                                  
-                                  let mimeType = 'jpeg';
-                                  if (cleanBase64.startsWith('iVBORw0KGgo') || cleanBase64.startsWith('iVBOR')) {
-                                    mimeType = 'png';
-                                  } else if (cleanBase64.startsWith('/9j/') || cleanBase64.startsWith('FFD8')) {
-                                    mimeType = 'jpeg';
-                                  } else if (cleanBase64.startsWith('R0lGOD')) {
-                                    mimeType = 'gif';
-                                  } else if (cleanBase64.startsWith('UklGR')) {
-                                    mimeType = 'webp';
-                                  }
-                                  imageSrc = `data:image/${mimeType};base64,${cleanBase64}`;
-                                }
-                                
-                                const base64Data = imageSrc.split(',')[1];
-                                if (!base64Data || base64Data.length < 100) {
-                                  return null;
-                                }
-                                
-                                if (!/^[A-Za-z0-9+/=]+$/.test(base64Data)) {
-                                  return null;
-                                }
-                              } catch (error) {
-                                console.error('Error processing image:', error);
-                                return null;
-                              }
-                              
-                              return (
-                                <div key={`${idea.id}-img-${index}`} className="idea-image-wrapper">
-                                  <img 
-                                    src={imageSrc} 
-                                    alt={`${idea.title} - изображение ${index + 1}`}
-                                    className="idea-image"
-                                    onClick={() => setViewingImage(imageSrc)}
-                                    onError={(e) => {
-                                      console.error('Failed to load image at index', index, 'Length:', imageSrc.length);
-                                      console.error('Image preview (first 100 chars):', imageSrc.substring(0, 100));
-                                      e.currentTarget.style.display = 'none';
-                                    }}
-                                  />
-                                </div>
-                              );
-                            })
-                            .filter(Boolean) 
-                          }
-                          </div>
-                        )}
-                        
-                        <div className="idea-meta">
-                          <span className="idea-author">
-                            {idea.author.firstName} {idea.author.lastName}
-                          </span>
-                          <span className="idea-date">
-                            {formatDate(idea.createdAt)}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="idea-actions">
-                        <button
-                          className={`action-button like-button ${userReactions[idea.id] === 'like' ? 'active' : ''}`}
-                          onClick={() => handleLike(idea.id)}
-                        >
-                          <span className="action-icon">👍</span>
-                          <span className="action-count">{idea.likes}</span>
-                        </button>
-                        <button
-                          className={`action-button dislike-button ${userReactions[idea.id] === 'dislike' ? 'active' : ''}`}
-                          onClick={() => handleDislike(idea.id)}
-                        >
-                          <span className="action-icon">👎</span>
-                          <span className="action-count">{idea.dislikes}</span>
-                        </button>
-
-                        {idea.canEdit && (
-                          editingIdeaId === idea.id ? (
-                            <div style={{ display: 'flex', gap: '0.5rem' }}>
-                              <button
-                                className="cta-button primary"
-                                onClick={() => handleUpdateIdea(idea.id)}
-                                disabled={isUpdatingIdea || !editTitle.trim() || editTitle.trim().length < 15}
-                                style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
-                              >
-                                {isUpdatingIdea ? 'Сохранение...' : 'Сохранить'}
-                              </button>
-                              <button
-                                className="cta-button secondary"
-                                onClick={cancelEditingIdea}
-                                disabled={isUpdatingIdea}
-                                style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
-                              >
-                                Отмена
-                              </button>
                             </div>
-                          ) : (
-                            <button
-                              className="cta-button secondary"
-                              onClick={() => startEditingIdea(idea)}
-                              style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
+                            <button 
+                              className={`idea-like-right ${userReactions[idea.id] === 'like' ? 'liked' : ''}`}
+                              onClick={() => handleLike(idea.id)}
                             >
-                              Редактировать
+                              <i className={userReactions[idea.id] === 'like' ? 'fas fa-heart' : 'far fa-heart'}></i>
+                              <span>{idea.likes}</span>
                             </button>
-                          )
-                        )}
+                          </div>
+                          
+                          {idea.description && (
+                            <p className="idea-description">
+                              {idea.description}
+                            </p>
+                          )}
+                          
+                          {idea.images && idea.images.length > 0 && (
+                            <div className="idea-images">
+                              {idea.images
+                                .filter((image) => {
+                                  if (!image || typeof image !== 'string' || image.length < 100) {
+                                    return false;
+                                  }
+                                  return image.startsWith('data:image') || 
+                                         /^[A-Za-z0-9+/=]+$/.test(image.substring(0, 100)) ||
+                                         image.startsWith('/9j/') || 
+                                         image.startsWith('iVBORw0KGgo');
+                                })
+                                .map((image, index) => {
+                                let imageSrc = image.trim();
+                                
+                                try {
+                                  if (imageSrc.startsWith('data:image')) {
+                                    const correctFormat = /^data:image\/([a-zA-Z]+);base64,([A-Za-z0-9+/=\s]+)$/;
+                                    const match = imageSrc.match(correctFormat);
+                                    
+                                    if (match && match[2] && match[2].trim().length > 100) {
+                                      imageSrc = `data:image/${match[1]};base64,${match[2].replace(/\s/g, '')}`;
+                                    } else {
+                                      const patterns = [
+                                        /base64[,:]\s*([A-Za-z0-9+/=\s]+)$/,
+                                        /base64\s*([A-Za-z0-9+/=\s]+)$/,
+                                        /:\s*([A-Za-z0-9+/=\s]+)$/,
+                                      ];
+                                      
+                                      let base64Data = null;
+                                      for (const pattern of patterns) {
+                                        const m = imageSrc.match(pattern);
+                                        if (m && m[1] && m[1].trim().length > 100) {
+                                          base64Data = m[1].trim().replace(/\s/g, '');
+                                          break;
+                                        }
+                                      }
+                                      
+                                      if (base64Data) {
+                                        let mimeType = 'jpeg';
+                                        const lowerSrc = imageSrc.toLowerCase();
+                                        if (lowerSrc.includes('png') || base64Data.startsWith('iVBOR')) {
+                                          mimeType = 'png';
+                                        } else if (lowerSrc.includes('jpeg') || lowerSrc.includes('jpg') || base64Data.startsWith('/9j/') || base64Data.startsWith('FFD8')) {
+                                          mimeType = 'jpeg';
+                                        } else if (lowerSrc.includes('gif') || base64Data.startsWith('R0lGOD')) {
+                                          mimeType = 'gif';
+                                        } else if (lowerSrc.includes('webp') || base64Data.startsWith('UklGR')) {
+                                          mimeType = 'webp';
+                                        }
+                                        imageSrc = `data:image/${mimeType};base64,${base64Data}`;
+                                      } else {
+                                        return null;
+                                      }
+                                    }
+                                  } else {
+                                    const cleanBase64 = imageSrc.replace(/\s/g, '');
+                                    
+                                    let mimeType = 'jpeg';
+                                    if (cleanBase64.startsWith('iVBORw0KGgo') || cleanBase64.startsWith('iVBOR')) {
+                                      mimeType = 'png';
+                                    } else if (cleanBase64.startsWith('/9j/') || cleanBase64.startsWith('FFD8')) {
+                                      mimeType = 'jpeg';
+                                    } else if (cleanBase64.startsWith('R0lGOD')) {
+                                      mimeType = 'gif';
+                                    } else if (cleanBase64.startsWith('UklGR')) {
+                                      mimeType = 'webp';
+                                    }
+                                    imageSrc = `data:image/${mimeType};base64,${cleanBase64}`;
+                                  }
+                                  
+                                  const base64Data = imageSrc.split(',')[1];
+                                  if (!base64Data || base64Data.length < 100) {
+                                    return null;
+                                  }
+                                  
+                                  if (!/^[A-Za-z0-9+/=]+$/.test(base64Data)) {
+                                    return null;
+                                  }
+                                } catch (error) {
+                                  console.error('Error processing image:', error);
+                                  return null;
+                                }
+                                
+                                return (
+                                  <div key={`${idea.id}-img-${index}`} className="idea-image-wrapper">
+                                    <img 
+                                      src={imageSrc} 
+                                      alt={`${idea.title} - изображение ${index + 1}`}
+                                      className="idea-image"
+                                      onClick={() => setViewingImage(imageSrc)}
+                                      onError={(e) => {
+                                        console.error('Failed to load image at index', index, 'Length:', imageSrc.length);
+                                        console.error('Image preview (first 100 chars):', imageSrc.substring(0, 100));
+                                        e.currentTarget.style.display = 'none';
+                                      }}
+                                    />
+                                  </div>
+                                );
+                              })
+                              .filter(Boolean) 
+                              }
+                            </div>
+                          )}
+                          
+                          <div className="idea-meta">
+                            <span>
+                              <i className="far fa-user"></i> Автор: {idea.author.firstName} {idea.author.lastName}
+                            </span>
+                            <span>
+                              <i className="far fa-calendar"></i> {formatDate(idea.createdAt)}
+                            </span>
+                          </div>
 
-                        {idea.canPin && (
-                          idea.isPinned ? (
-                            <button
-                              className="cta-button secondary"
-                              onClick={() => handleUnpin(idea.id)}
-                              style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
-                            >
-                              Открепить
-                            </button>
-                          ) : (
-                            <button
-                              className="cta-button secondary"
-                              onClick={() => handlePin(idea.id)}
-                              style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
-                            >
-                              Закрепить
-                            </button>
-                          )
-                        )}
-                      </div>
+                          {/* Admin actions */}
+                          {(idea.canEdit || idea.canPin) && (
+                            <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                              {idea.canEdit && (
+                                <button
+                                  className="btn btn-outline btn-sm"
+                                  onClick={() => startEditingIdea(idea)}
+                                >
+                                  Редактировать
+                                </button>
+                              )}
+                              {idea.canPin && (
+                                idea.isPinned ? (
+                                  <button
+                                    className="btn btn-outline btn-sm"
+                                    onClick={() => handleUnpin(idea.id)}
+                                  >
+                                    Открепить
+                                  </button>
+                                ) : (
+                                  <button
+                                    className="btn btn-outline btn-sm"
+                                    onClick={() => handlePin(idea.id)}
+                                  >
+                                    Закрепить
+                                  </button>
+                                )
+                              )}
+                            </div>
+                          )}
+                        </>
+                      )}
                     </div>
                     <CommentSection ideaId={idea.id} />
                   </div>

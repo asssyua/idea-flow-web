@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LoginModal from '../../components/Modals/LoginModal';
-import lightImage from '../../assets/light.jpg';
 import '../../styles/globals.css';
 import '../../styles/animations.css';
 import './HomePage.css';
@@ -23,8 +22,13 @@ const HomePage: React.FC = () => {
     <div className="home-page">
       <header className="header">
         <nav className="container">
-          <a href="/" className="logo">IdeaFlow</a>
+          <div className="logo" onClick={() => navigate('/')}>
+            <i className="fas fa-layer-group" style={{ color: 'var(--primary)' }}></i>
+            IdeaFlow
+          </div>
           <div className="nav-links">
+            <a href="/" className="active">Главная</a>
+            <a onClick={() => setIsLoginModalOpen(true)} style={{ cursor: 'pointer' }}>Темы</a>
             <button 
               className="login-btn" 
               onClick={() => setIsLoginModalOpen(true)}
@@ -35,29 +39,18 @@ const HomePage: React.FC = () => {
         </nav>
       </header>
 
-      <section 
-        className="hero-section"
-        style={{ backgroundImage: `url(${lightImage})` }}
-      >
-        <div className="container">
-          <h1 className="hero-title">IdeaFlow</h1>
-          <p className="hero-subtitle">
-            Платформа для сбора идей и обратной связи от вашего сообщества
-          </p>
-          <p className="hero-description">
-            Создавайте темы для обсуждения, собирайте идеи от пользователей, 
-            анализируйте результаты и принимайте обоснованные решения.
-          </p>
-          <button className="cta-button primary" onClick={handleGetStarted}>
-            Начать 
+      <main className="container">
+        <div className="welcome-card">
+          <h1>Пространство ваших инициатив</h1>
+          <p>Предлагайте идеи, обсуждайте проекты коллег и помогайте компании расти. Лучшие предложения попадут в итоговый отчет и будут реализованы.</p>
+          <button className="btn btn-primary" onClick={handleGetStarted}>
+            <i className="fas fa-plus"></i> Предложить идею
           </button>
         </div>
-      </section>
 
-      <section className="about-section">
-        <div className="container">
-          <h2 className="section-title">О приложении</h2>
+        <section className="about-section">
           <div className="about-content">
+            <h2 className="section-title">О приложении</h2>
             <div className="about-text">
               <p>
                 IdeaFlow — это современная платформа для краудсорсинга идей, 
@@ -75,12 +68,12 @@ const HomePage: React.FC = () => {
               </p>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </main>
 
       <footer className="footer">
         <div className="container">
-          <p>© 2025 IdeaFlow. Все права защищены.</p>
+          <p>© 2026 IdeaFlow Platform</p>
         </div>
       </footer>
 

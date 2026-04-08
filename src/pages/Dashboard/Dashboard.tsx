@@ -1815,67 +1815,64 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
     <div className="dashboard">
       <header className="dashboard-header">
         <div className="container">
-          {isAdmin ? (
-            <>
-              <div className="header-content admin-header">
-                <h1 className="dashboard-title">System Administrator</h1>
-              </div>
-              <div className="admin-tabs-wrapper">
-                <div className="admin-tabs">
-                  {[
-                    { key: 'users', label: 'Пользователи' },
-                    { key: 'support', label: 'Поддержка' },
-                    { key: 'topics', label: 'Темы' },
-                    { key: 'ideas', label: 'Идеи' },
-                    { key: 'ideaflow', label: 'Idea flow' },
-                  ].map((tab) => (
-                    <button
-                      key={tab.key}
-                      className={`admin-tab ${activeTab === tab.key ? 'active' : ''}`}
-                      onClick={() => setActiveTab(tab.key as AdminTab)}
-                    >
-                      {tab.label}
-                      {tab.key === 'support' && supportMessages.filter(m => !m.isRead).length > 0 && (
-                        <span className="tab-badge">{supportMessages.filter(m => !m.isRead).length}</span>
-                      )}
-                    </button>
-                  ))}
+          <div className="header-content">
+            <div className="logo" onClick={() => navigate('/')}>
+              <i className="fas fa-layer-group" style={{ color: 'var(--primary)' }}></i>
+              IdeaFlow
+            </div>
+            {isAdmin ? (
+              <nav className="nav-links">
+                <a onClick={() => setActiveTab('users')} className={activeTab === 'users' ? 'active' : ''}>Пользователи</a>
+                <a onClick={() => setActiveTab('support')} className={activeTab === 'support' ? 'active' : ''}>
+                  Поддержка
+                  {supportMessages.filter(m => !m.isRead).length > 0 && (
+                    <span className="tab-badge">{supportMessages.filter(m => !m.isRead).length}</span>
+                  )}
+                </a>
+                <a onClick={() => setActiveTab('topics')} className={activeTab === 'topics' ? 'active' : ''}>Упр. темами</a>
+                <a onClick={() => setActiveTab('ideas')} className={activeTab === 'ideas' ? 'active' : ''}>Упр. идеями</a>
+                <div className="profile-pill">
+                  <div className="avatar-sq">{user.firstName.charAt(0)}{user.lastName.charAt(0)}</div>
+                  <div style={{ fontSize: '0.8rem' }}>
+                    <strong>{user.firstName} {user.lastName.charAt(0)}.</strong>
+                  </div>
                 </div>
                 <button onClick={handleLogout} className="logout-btn">
                   Выйти
                 </button>
-              </div>
-            </>
-          ) : (
-            <div className="header-content">
-              <h1 className="dashboard-title">
-                Добро пожаловать в IdeaFlow, {user.firstName}!
-              </h1>
-              <div className="header-user-info">
-                <span className="user-name">{user.firstName} {user.lastName}</span>
+              </nav>
+            ) : (
+              <nav className="nav-links">
+                <a onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>Главная</a>
+                <a onClick={() => navigate('/user-dashboard')} style={{ cursor: 'pointer' }}>Темы</a>
+                <a className="active">Мой профиль</a>
+                <div className="profile-pill">
+                  <div className="avatar-sq">{user.firstName.charAt(0)}{user.lastName.charAt(0)}</div>
+                  <div style={{ fontSize: '0.8rem' }}>
+                    <strong>{user.firstName} {user.lastName.charAt(0)}.</strong>
+                  </div>
+                </div>
                 <button onClick={handleLogout} className="logout-btn">
                   Выйти
                 </button>
-              </div>
-            </div>
-          )}
+              </nav>
+            )}
+          </div>
         </div>
       </header>
       
       <main className="dashboard-content">
         <div className={`container ${isAdmin ? 'admin-container' : ''}`}>
-          <div className="dashboard-welcome fade-in">
-            <div className="welcome-card">
-              {isAdmin ? (
-                <>
-                  {activeTab === 'users' && renderUsersTab()}
-                  {activeTab === 'support' && renderSupportTab()}
-                  {activeTab === 'topics' && renderTopicsTab()}
-                  {activeTab === 'ideas' && renderIdeasTab()}
-                  {activeTab === 'ideaflow' && renderIdeaFlowTab()}
-                </>
-              ) : (
-                <>
+          {isAdmin ? (
+            <>
+              {activeTab === 'users' && renderUsersTab()}
+              {activeTab === 'support' && renderSupportTab()}
+              {activeTab === 'topics' && renderTopicsTab()}
+              {activeTab === 'ideas' && renderIdeasTab()}
+              {activeTab === 'ideaflow' && renderIdeaFlowTab()}
+            </>
+          ) : (
+            <div className="card welcome-card">
               <h2>Ваш профиль</h2>
               <div className="profile-info">
                 <div className="info-item">
@@ -1895,16 +1892,14 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
                   </span>
                 </div>
               </div>
-                </>
-              )}
             </div>
-          </div>
+          )}
         </div>
       </main>
       
       <footer className="dashboard-footer">
         <div className="container">
-          <p>© 2025 IdeaFlow Dashboard. Версия 1.0</p>
+          <p>© 2026 IdeaFlow Platform</p>
         </div>
       </footer>
 

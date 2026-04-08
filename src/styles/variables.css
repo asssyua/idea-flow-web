@@ -1,37 +1,55 @@
 :root {
-  /* Основные цвета - сиреневый */
-  --primary-color: #a777e3;
-  --primary-dark: #955bd9;
-  --primary-light: #b993e9;
+  /* Новая цветовая схема из макета */
+  --bg-main: #F8FAFC;
+  --surface: #FFFFFF;
+  --border: #E2E8F0;
+  --text-main: #334155;
+  --text-muted: #64748B;
+  --primary: #7E99A3;
+  --primary-soft: #F1F5F9;
+  --accent: #A5B68D;
+  --danger: #E67E7E;
+  --shadow: 0 1px 3px rgba(0,0,0,0.05);
+  --radius-sm: 3px;
+  --radius-md: 6px;
   
-  --secondary-color: #8b6fc7;
-  --secondary-dark: #7a5ab3;
-  --secondary-light: #9d7fd1;
+  /* Комментарии */
+  --comment-bg: #FAF7FF;
+  --reply-bg: #F5F0FF;
   
-  --accent-color: #ff6b6b;
-  --accent-dark: #ff5252;
-  --accent-light: #ff8585;
+  /* Legacy support - маппинг на старые переменные */
+  --primary-color: var(--primary);
+  --primary-dark: #6B8A94;
+  --primary-light: #9AB0B8;
+  
+  --secondary-color: var(--accent);
+  --secondary-dark: #8FA375;
+  --secondary-light: #B8C9A6;
+  
+  --accent-color: var(--accent);
+  --accent-dark: #8FA375;
+  --accent-light: #B8C9A6;
   
   /* Текст */
-  --text-primary: #333333;
-  --text-secondary: #6c757d;
-  --text-light: #adb5bd;
+  --text-primary: var(--text-main);
+  --text-secondary: var(--text-muted);
+  --text-light: #94A3B8;
   
   /* Фоны */
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8f9fa;
-  --bg-tertiary: #e9ecef;
+  --bg-primary: var(--surface);
+  --bg-secondary: var(--bg-main);
+  --bg-tertiary: var(--primary-soft);
   
   /* Границы */
-  --border-color: #dee2e6;
-  --border-radius: 8px;
-  --border-radius-sm: 4px;
+  --border-color: var(--border);
+  --border-radius: var(--radius-md);
+  --border-radius-sm: var(--radius-sm);
   --border-radius-lg: 12px;
   
   /* Тени */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.15);
+  --shadow-sm: var(--shadow);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  --shadow-lg: 0 10px 30px rgba(0,0,0,0.1);
   
   /* Анимации */
   --transition-fast: 150ms ease;
@@ -41,18 +59,19 @@
   /* Размеры */
   --header-height: 70px;
   --sidebar-width: 250px;
-  --container-max-width: 1200px;
+  --container-max-width: 1100px;
   
   /* Градиенты */
-  --gradient-primary: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
-  --gradient-accent: linear-gradient(135deg, var(--accent-color) 0%, #ffa726 100%);
+  --gradient-primary: linear-gradient(135deg, var(--primary) 0%, #6B8A94 100%);
+  --gradient-accent: linear-gradient(135deg, var(--accent) 0%, #8FA375 100%);
 }
 
 /* Темная тема (на будущее) */
 [data-theme="dark"] {
-  --text-primary: #ffffff;
-  --text-secondary: #b0b0b0;
-  --bg-primary: #1a1a1a;
-  --bg-secondary: #2d2d2d;
-  --border-color: #404040;
+  --text-main: #F1F5F9;
+  --text-muted: #94A3B8;
+  --bg-main: #0F172A;
+  --surface: #1E293B;
+  --border: #334155;
+  --primary-soft: #1E293B;
 }
