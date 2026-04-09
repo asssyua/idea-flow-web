@@ -503,9 +503,7 @@ const Dashboard: React.FC = () => {
                       <span className={new Date(topic.deadline) < new Date() ? 'deadline-expired' : ''}>
                         {new Date(topic.deadline).toLocaleDateString('ru-RU')}
                       </span>
-                    ) : (
-                      <span className="text-muted">—</span>
-                    )}
+                    ) : null}
                   </td>
                   <td>{topic.ideaCount}</td>
                   <td>
@@ -1051,27 +1049,7 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
     )}
   </button>
   
-  {/* Подсказка под кнопкой */}
-  {(!newIdeaTitle.trim() || newIdeaTitle.trim().length < 15) && (
-    <div style={{
-      marginTop: '0.75rem',
-      padding: '0.5rem',
-      backgroundColor: 'rgba(255, 193, 7, 0.1)',
-      borderRadius: 'var(--border-radius)',
-      border: '1px solid rgba(255, 193, 7, 0.3)',
-      fontSize: '0.85rem',
-      color: '#856404'
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-        <span>💡</span>
-        <span>
-          {!newIdeaTitle.trim() 
-            ? 'Введите текст идеи, чтобы продолжить' 
-            : `Введите еще ${15 - newIdeaTitle.trim().length} символов`}
-        </span>
-      </div>
-    </div>
-  )}
+
 </form>
           </div>
 
@@ -1099,20 +1077,13 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
                             {idea.author?.firstName} {idea.author?.lastName} • {formatDate(idea.createdAt)}
                           </p>
                         </div>
-                        <div className="flow-idea-reactions">
-                          <button
-                            onClick={() => handleFlowLike(idea.id)}
-                            className={`cta-button ${flowUserReactions[idea.id] === 'like' ? 'primary' : 'secondary'} admin-btn-compact`}
-                          >
-                            👍 {idea.likes}
-                          </button>
-                          <button
-                            onClick={() => handleFlowDislike(idea.id)}
-                            className={`cta-button ${flowUserReactions[idea.id] === 'dislike' ? 'primary' : 'secondary'} admin-btn-compact`}
-                          >
-                            👎 {idea.dislikes}
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => handleFlowLike(idea.id)}
+                          className={`idea-like-btn ${flowUserReactions[idea.id] === 'like' ? 'liked' : ''}`}
+                        >
+                          <i className={flowUserReactions[idea.id] === 'like' ? 'fas fa-heart' : 'far fa-heart'}></i>
+                          <span>{idea.likes}</span>
+                        </button>
                       </div>
                       
                       {idea.images && idea.images.length > 0 && (
@@ -1155,15 +1126,12 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
 
     return (
       <div className="admin-section">
-        <div className="admin-section__header">
-          <h2>Idea Flow</h2>
-        
-        </div>
+     
 
         <TopicsListView<Topic>
           topics={topics}
           loading={topicsLoading}
-          title="Idea Flow"
+          title=""
           onTopicClick={(topic) => {
             setSelectedTopicForFlow(topic);
             fetchFlowIdeas(topic.id);
@@ -1179,10 +1147,7 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
 
   const renderIdeasTab = () => (
     <div className="admin-section">
-      <div className="admin-section__header">
-        <h2>Идеи и комментарии</h2>
-        
-      </div>
+  
 
       {ideasLoading ? (
         <div className="loading-container" style={{ minHeight: '200px' }}>
@@ -1199,9 +1164,7 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
                 <th>Название</th>
                 <th>Автор</th>
                 <th>Тема</th>
-                <th>Лайки</th>
-                <th>Дизлайки</th>
-                <th>Рейтинг</th>
+                <th>Оценка</th>
                 <th>Комментарии</th>
                 <th>Дата создания</th>
                 <th>Действия</th>
@@ -1244,14 +1207,10 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
                           <span className="text-muted">—</span>
                         )}
                       </td>
-                      <td>{idea.likes}</td>
-                      <td>{idea.dislikes}</td>
                       <td>
-                        <span style={{ 
-                          color: idea.rating >= 0 ? '#28a745' : '#dc3545',
-                          fontWeight: 600 
-                        }}>
-                          {idea.rating >= 0 ? '+' : ''}{idea.rating}
+                        <span className="idea-likes-cell">
+                          <i className="fas fa-heart" style={{ color: '#c2410c', fontSize: '0.85rem' }}></i>
+                          {idea.likes}
                         </span>
                       </td>
                       <td>

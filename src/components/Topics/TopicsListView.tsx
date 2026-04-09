@@ -49,6 +49,13 @@ const TopicsListView = <T extends TopicsListItem>({
   footerHint,
   loadingText = 'Загрузка тем для обсуждения...',
 }: TopicsListViewProps<T>) => {
+  const isTopicCompleted = (topic: T): boolean => {
+    if (!topic.deadline) return false;
+    const deadlineDate = new Date(topic.deadline);
+    const now = new Date();
+    return deadlineDate < now;
+  };
+
   return (
     <div className="topics-section-full shared-topics-view">
       <div className="card topics-header-card">
@@ -76,7 +83,7 @@ const TopicsListView = <T extends TopicsListItem>({
           {topics.map((topic) => (
             <div
               key={topic.id}
-              className="card topic-card"
+              className={`card topic-card ${isTopicCompleted(topic) ? 'topic-card--completed' : ''}`}
               onClick={() => onTopicClick(topic)}
             >
               <div className="flex-between topic-card-header-row">
@@ -90,10 +97,12 @@ const TopicsListView = <T extends TopicsListItem>({
                   <i className="far fa-lightbulb"></i>
                   {topic.ideaCount || 0} идей
                 </span>
-                <span>
-                  <i className="far fa-calendar"></i>
-                  {topic.deadline ? `До ${formatDeadline(topic.deadline)}` : 'Без срока'}
-                </span>
+                {topic.deadline && (
+                  <span>
+                    <i className="far fa-calendar"></i>
+                    До {formatDeadline(topic.deadline)}
+                  </span>
+                )}
               </div>
             </div>
           ))}

@@ -199,6 +199,11 @@
   color: #B28C32;
 }
 
+.tag-warning {
+  background: #FEE2E2;
+  color: #991B1B;
+}
+
 /* ===== Topic Header ===== */
 .topic-header {
   background: var(--surface);

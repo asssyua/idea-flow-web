@@ -231,13 +231,23 @@ const UserDashboard: React.FC = () => {
     if (!deadline) return null;
     const deadlineDate = new Date(deadline);
     const now = new Date();
-    
+
     if (deadlineDate < now) {
       return 'Истек';
     }
-    
+
     return formatDate(deadline);
   };
+
+  const isTopicCompleted = (topic: Topic): boolean => {
+    if (!topic.deadline) return false;
+    const deadlineDate = new Date(topic.deadline);
+    const now = new Date();
+    return deadlineDate < now;
+  };
+
+  const activeTopics = topics.filter((t) => !isTopicCompleted(t));
+  const completedTopics = topics.filter((t) => isTopicCompleted(t));
 
   const topTopics = [...topics]
     .sort((a, b) => (b.ideaCount || 0) - (a.ideaCount || 0))
@@ -340,39 +350,73 @@ const UserDashboard: React.FC = () => {
           )}
 
           {activeTab === 'topics' && (
-            <TopicsListView<Topic>
-              topics={topics}
-              loading={topicsLoading}
-              title="Активные темы обсуждения"
-              actionLabel="+ Предложить тему"
-              onActionClick={() => setTopicModalOpen(true)}
-              onTopicClick={(topic) => navigate(`/topic/${topic.id}`)}
-              getTopicTagLabel={getTopicTagLabel}
-              formatDeadline={formatDeadline}
-              emptyText="Пока нет доступных тем для обсуждения."
-              renderTopicAction={(topic) => {
-                const isFav = favoriteTopics.some((ft) => ft.id === topic.id);
-                return (
-                  <i
-                    className={`${isFav ? 'fas' : 'far'} fa-star fav-btn`}
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      try {
-                        if (isFav) {
-                          await topicAPI.removeTopicFromFavorites(topic.id);
-                        } else {
-                          await topicAPI.addTopicToFavorites(topic.id);
+            <>
+              <TopicsListView<Topic>
+                topics={activeTopics}
+                loading={topicsLoading}
+                title="Активные темы обсуждения"
+                actionLabel="+ Предложить тему"
+                onActionClick={() => setTopicModalOpen(true)}
+                onTopicClick={(topic) => navigate(`/topic/${topic.id}`)}
+                getTopicTagLabel={getTopicTagLabel}
+                formatDeadline={formatDeadline}
+                emptyText="Пока нет активных тем для обсуждения."
+                renderTopicAction={(topic) => {
+                  const isFav = favoriteTopics.some((ft) => ft.id === topic.id);
+                  return (
+                    <i
+                      className={`${isFav ? 'fas' : 'far'} fa-star fav-btn`}
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        try {
+                          if (isFav) {
+                            await topicAPI.removeTopicFromFavorites(topic.id);
+                          } else {
+                            await topicAPI.addTopicToFavorites(topic.id);
+                          }
+                          fetchFavoriteTopics();
+                        } catch (err) {
+                          console.error('Failed to toggle favorite:', err);
                         }
-                        fetchFavoriteTopics();
-                      } catch (err) {
-                        console.error('Failed to toggle favorite:', err);
-                      }
-                    }}
-                  ></i>
-                );
-              }}
-            
-            />
+                      }}
+                    ></i>
+                  );
+                }}
+              />
+
+              {completedTopics.length > 0 && (
+                <TopicsListView<Topic>
+                  topics={completedTopics}
+                  loading={topicsLoading}
+                  title="Завершённые темы"
+                  onTopicClick={(topic) => navigate(`/topic/${topic.id}`)}
+                  getTopicTagLabel={getTopicTagLabel}
+                  formatDeadline={formatDeadline}
+                  emptyText=""
+                  renderTopicAction={(topic) => {
+                    const isFav = favoriteTopics.some((ft) => ft.id === topic.id);
+                    return (
+                      <i
+                        className={`${isFav ? 'fas' : 'far'} fa-star fav-btn`}
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          try {
+                            if (isFav) {
+                              await topicAPI.removeTopicFromFavorites(topic.id);
+                            } else {
+                              await topicAPI.addTopicToFavorites(topic.id);
+                            }
+                            fetchFavoriteTopics();
+                          } catch (err) {
+                            console.error('Failed to toggle favorite:', err);
+                          }
+                        }}
+                      ></i>
+                    );
+                  }}
+                />
+              )}
+            </>
           )}
 
           {activeTab === 'profile' && (

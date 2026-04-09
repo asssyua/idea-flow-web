@@ -516,12 +516,19 @@ const TopicDetail: React.FC = () => {
     if (!deadline) return null;
     const deadlineDate = new Date(deadline);
     const now = new Date();
-    
+
     if (deadlineDate < now) {
       return 'Истек';
     }
-    
+
     return formatDate(deadline);
+  };
+
+  const isTopicCompleted = (): boolean => {
+    if (!topic?.deadline) return false;
+    const deadlineDate = new Date(topic.deadline);
+    const now = new Date();
+    return deadlineDate < now;
   };
 
   if (loading) {
@@ -565,13 +572,13 @@ const TopicDetail: React.FC = () => {
                 <i className="far fa-lightbulb"></i> {topic.ideaCount || 0} идей
               </span>
               {topic.deadline && (
-                <span className={`tag ${new Date(topic.deadline) < new Date() ? 'tag-accent' : ''}`}>
-                  <i className="far fa-calendar"></i> {new Date(topic.deadline) < new Date() ? 'Завершено:' : 'До:'} {formatDeadline(topic.deadline)}
+                <span className={`tag ${isTopicCompleted() ? 'tag-accent' : ''}`}>
+                  <i className="far fa-calendar"></i> {isTopicCompleted() ? 'Завершено:' : 'До:'} {formatDeadline(topic.deadline)}
                 </span>
               )}
-              {!topic.deadline && (
-                <span className="topic-stat">
-                  <i className="far fa-calendar"></i> Без срока
+              {isTopicCompleted() && (
+                <span className="tag tag-warning">
+                  <i className="fas fa-lock"></i> Только чтение
                 </span>
               )}
               {topic.createdBy && (
@@ -596,13 +603,16 @@ const TopicDetail: React.FC = () => {
             </div>
           </div>
 
-          <div className="add-idea-bar">
-            <button className="btn btn-primary" onClick={() => document.querySelector('.add-idea-section')?.scrollIntoView({ behavior: 'smooth' })}>
-              <i className="fas fa-plus"></i> Предложить идею
-            </button>
-          </div>
+          {!isTopicCompleted() && (
+            <div className="add-idea-bar">
+              <button className="btn btn-primary" onClick={() => document.querySelector('.add-idea-section')?.scrollIntoView({ behavior: 'smooth' })}>
+                <i className="fas fa-plus"></i> Предложить идею
+              </button>
+            </div>
+          )}
 
-          <div className="card add-idea-section">
+          {!isTopicCompleted() && (
+            <div className="card add-idea-section">
             <div className="card-title">
               <h3>Добавить идею</h3>
             </div>
@@ -659,15 +669,16 @@ const TopicDetail: React.FC = () => {
                 />
               </div>
 
-              <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={!newIdeaTitle.trim() || newIdeaTitle.trim().length < 15 || isSubmitting}
-              >
-                {isSubmitting ? 'Добавление...' : 'Добавить идею'}
-              </button>
-            </form>
-          </div>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={!newIdeaTitle.trim() || newIdeaTitle.trim().length < 15 || isSubmitting}
+                >
+                  {isSubmitting ? 'Добавление...' : 'Добавить идею'}
+                </button>
+              </form>
+            </div>
+          )}
 
           <div className="ideas-list-wrapper">
             {ideasLoading ? (
@@ -899,8 +910,8 @@ const TopicDetail: React.FC = () => {
                             </span>
                           </div>
 
-                          {/* Admin actions */}
-                          {(idea.canEdit || idea.canPin) && (
+                          {/* Admin actions - hidden for completed topics */}
+                          {!isTopicCompleted() && (idea.canEdit || idea.canPin) && (
                             <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                               {idea.canEdit && (
                                 <button
@@ -932,7 +943,7 @@ const TopicDetail: React.FC = () => {
                         </>
                       )}
                     </div>
-                    <CommentSection ideaId={idea.id} />
+                    <CommentSection ideaId={idea.id} readOnly={isTopicCompleted()} />
                   </div>
                 ))}
               </div>

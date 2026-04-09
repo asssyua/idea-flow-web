@@ -766,9 +766,48 @@
   font-size: 0.9rem;
 }
 
-.flow-idea-reactions {
+/* Unified Like Button (Heart style) - matching user profile */
+.idea-like-btn {
   display: flex;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 6px;
+  background: #FEF2F2;
+  padding: 6px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #c2410c;
+  border: none;
+  flex-shrink: 0;
+}
+
+.idea-like-btn i {
+  font-size: 0.9rem;
+}
+
+.idea-like-btn:hover {
+  background: #ffe4e4;
+  transform: scale(1.02);
+}
+
+.idea-like-btn.liked {
+  background: #ffdddd;
+}
+
+.idea-like-btn.liked i {
+  color: #c2410c;
+}
+
+/* Likes cell display in ideas table */
+.idea-likes-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #c2410c;
+  font-weight: 600;
+  font-size: 0.9rem;
 }
 
 .flow-idea-images {
@@ -1193,9 +1232,12 @@
   table-layout: fixed;
 }
 
-.topics-table-wrapper .users-table,
-.ideas-table-wrapper .users-table {
+.topics-table-wrapper .users-table {
   min-width: 1280px;
+}
+
+.ideas-table-wrapper .users-table {
+  min-width: 1024px;
 }
 
 .topics-table-wrapper .users-table thead,
@@ -1264,48 +1306,44 @@
   line-height: 1.4;
 }
 
-/* Фиксированные ширины колонок таблицы идей */
+/* Фиксированные ширины колонок таблицы идей (7 columns) */
 .ideas-table-wrapper .users-table th:nth-child(1),
 .ideas-table-wrapper .users-table td:nth-child(1) {
-  width: 16%;
+  width: 20%;
 }
 
 .ideas-table-wrapper .users-table th:nth-child(2),
 .ideas-table-wrapper .users-table td:nth-child(2) {
-  width: 11%;
+  width: 12%;
 }
 
 .ideas-table-wrapper .users-table th:nth-child(3),
 .ideas-table-wrapper .users-table td:nth-child(3) {
-  width: 14%;
+  width: 16%;
 }
 
 .ideas-table-wrapper .users-table th:nth-child(4),
-.ideas-table-wrapper .users-table td:nth-child(4),
+.ideas-table-wrapper .users-table td:nth-child(4) {
+  width: 8%;
+  text-align: center;
+}
+
 .ideas-table-wrapper .users-table th:nth-child(5),
-.ideas-table-wrapper .users-table td:nth-child(5),
+.ideas-table-wrapper .users-table td:nth-child(5) {
+  width: 12%;
+  min-width: 120px;
+}
+
 .ideas-table-wrapper .users-table th:nth-child(6),
 .ideas-table-wrapper .users-table td:nth-child(6) {
-  width: 6%;
-  text-align: center;
+  width: 14%;
+  min-width: 140px;
 }
 
 .ideas-table-wrapper .users-table th:nth-child(7),
 .ideas-table-wrapper .users-table td:nth-child(7) {
-  width: 12%;
-  min-width: 150px;
-}
-
-.ideas-table-wrapper .users-table th:nth-child(8),
-.ideas-table-wrapper .users-table td:nth-child(8) {
-  width: 15%;
-  min-width: 150px;
-}
-
-.ideas-table-wrapper .users-table th:nth-child(9),
-.ideas-table-wrapper .users-table td:nth-child(9) {
-  width: 14%;
-  min-width: 170px;
+  width: 18%;
+  min-width: 160px;
 }
 
 .ideas-table-wrapper .users-table td {
@@ -1313,14 +1351,19 @@
   text-overflow: ellipsis;
 }
 
-.ideas-table-wrapper .users-table td:first-child strong,
-.ideas-table-wrapper .users-table td:nth-child(2),
-.ideas-table-wrapper .users-table td:nth-child(8) {
+.ideas-table-wrapper .users-table td:first-child strong {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   width: 100%;
+}
+
+.ideas-table-wrapper .users-table td:nth-child(2),
+.ideas-table-wrapper .users-table td:nth-child(6) {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .users-table thead {

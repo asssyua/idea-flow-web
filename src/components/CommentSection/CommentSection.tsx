@@ -16,9 +16,10 @@ interface Comment {
 
 interface CommentSectionProps {
   ideaId: string;
+  readOnly?: boolean;
 }
 
-const CommentSection: React.FC<CommentSectionProps> = ({ ideaId }) => {
+const CommentSection: React.FC<CommentSectionProps> = ({ ideaId, readOnly = false }) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState('');
@@ -145,23 +146,25 @@ const CommentSection: React.FC<CommentSectionProps> = ({ ideaId }) => {
         <i className="far fa-message"></i> {comments.length} комментариев
       </div>
 
-      <form onSubmit={handleSubmitComment} className="comment-form">
-        <textarea
-          value={newComment}
-          onChange={(e) => setNewComment(e.target.value)}
-          placeholder="Напишите комментарий..."
-          className="comment-input"
-          rows={3}
-          disabled={isSubmitting}
-        />
-        <button
-          type="submit"
-          className="cta-button primary"
-          disabled={!newComment.trim() || isSubmitting}
-        >
-          {isSubmitting ? 'Отправка...' : 'Отправить комментарий'}
-        </button>
-      </form>
+      {!readOnly && (
+        <form onSubmit={handleSubmitComment} className="comment-form">
+          <textarea
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            placeholder="Напишите комментарий..."
+            className="comment-input"
+            rows={3}
+            disabled={isSubmitting}
+          />
+          <button
+            type="submit"
+            className="cta-button primary"
+            disabled={!newComment.trim() || isSubmitting}
+          >
+            {isSubmitting ? 'Отправка...' : 'Отправить комментарий'}
+          </button>
+        </form>
+      )}
 
       <div className="comment-thread comments-list">
         {comments.length === 0 ? (
@@ -195,6 +198,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ ideaId }) => {
               }}
               isSubmitting={isSubmitting}
               formatDate={formatDate}
+              readOnly={readOnly}
             />
           ))
         )}
@@ -213,6 +217,7 @@ interface CommentItemProps {
   onCancelReply: () => void;
   isSubmitting: boolean;
   formatDate: (date: string) => string;
+  readOnly?: boolean;
 }
 
 const CommentItem: React.FC<CommentItemProps> = ({
@@ -225,6 +230,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
   onCancelReply,
   isSubmitting,
   formatDate,
+  readOnly = false,
 }) => {
   const isReplying = replyingTo === comment.id;
 
@@ -239,17 +245,18 @@ const CommentItem: React.FC<CommentItemProps> = ({
         </div>
         <p className="comment-text">{comment.content}</p>
         <div className="comment-actions">
-          <button
-            type="button"
-            className="comment-action reply-button"
-            onClick={(e) => {
-              e.preventDefault();
-              onReply(comment.id);
-            }}
-            disabled={isReplying || isSubmitting}
-          >
-            <i className="far fa-reply"></i> Ответить
-          </button>
+          {!readOnly && (
+            <button
+              className="reply-btn"
+              onClick={(e) => {
+                e.preventDefault();
+                onReply(comment.id);
+              }}
+              disabled={isReplying || isSubmitting}
+            >
+              <i className="far fa-reply"></i> Ответить
+            </button>
+          )}
         </div>
       </div>
 
@@ -303,17 +310,18 @@ const CommentItem: React.FC<CommentItemProps> = ({
                 </div>
                 <p className="comment-text">{reply.content}</p>
                 <div className="comment-actions">
-                  <button
-                    type="button"
-                    className="comment-action reply-button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      onReply(comment.id);
-                    }}
-                    disabled={isReplying || isSubmitting}
-                  >
-                    <i className="far fa-reply"></i> Ответить
-                  </button>
+                  {!readOnly && (
+                    <button
+                      className="reply-btn"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        onReply(comment.id);
+                      }}
+                      disabled={isReplying || isSubmitting}
+                    >
+                      <i className="far fa-reply"></i> Ответить
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
