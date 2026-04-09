@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IdeaFlow | Админ-панель</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8FAFC;
+            color: #334155;
+            line-height: 1.5;
+        }
+
+        /* Header */
+        .admin-header {
+            background: white;
+            border-bottom: 1px solid #E2E8F0;
+            padding: 0.75rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: #334155;
+            cursor: pointer;
+        }
+
+        .admin-nav {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .admin-nav a {
+            text-decoration: none;
+            color: #64748B;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 4px 0;
+        }
+
+        .admin-nav a:hover, .admin-nav a.active {
+            color: #7E99A3;
+            border-bottom: 2px solid #7E99A3;
+        }
+
+        .profile-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #F1F5F9;
+            padding: 4px 12px 4px 4px;
+            border-radius: 6px;
+            border: 1px solid #E2E8F0;
+            cursor: pointer;
+        }
+
+        .avatar-sq {
+            width: 32px;
+            height: 32px;
+            background: #7E99A3;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        /* Main container */
+        .admin-container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+
+        /* Таблицы */
+        .admin-table {
+            width: 100%;
+            background: white;
+            border-collapse: collapse;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            margin-top: 1rem;
+        }
+
+        .admin-table th, .admin-table td {
+            border: 1px solid #E2E8F0;
+            padding: 12px 16px;
+            text-align: left;
+            vertical-align: top;
+            font-size: 0.85rem;
+        }
+
+        .admin-table th {
+            background: #F8FAFC;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .badge-status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+        .status-active { background: #E6F0EB; color: #2D6A4F; }
+        .status-blocked { background: #FEF2F2; color: #C2410C; }
+
+        .btn-icon {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: 0.2s;
+            color: #64748B;
+        }
+        .btn-icon:hover {
+            background: #F1F5F9;
+        }
+        .btn-danger { color: #E67E7E; }
+        .btn-danger:hover { background: #FEF2F2; }
+
+        .btn-primary-sm {
+            background: #7E99A3;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .btn-outline-sm {
+            background: transparent;
+            border: 1px solid #E2E8F0;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid #E2E8F0;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page {
+            display: none;
+            animation: fadeIn 0.2s ease;
+        }
+        .page.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .comments-row {
+            background: #F8FAFC;
+            padding: 12px;
+            margin-top: 8px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+        }
+        .comment-item {
+            border-bottom: 1px solid #E2E8F0;
+            padding: 8px 0;
+        }
+        .comment-item:last-child { border-bottom: none; }
+
+        .support-message {
+            background: #FEFCE8;
+            border-left: 3px solid #EAB308;
+            padding: 12px;
+            margin-bottom: 12px;
+            border-radius: 6px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: #64748B;
+            font-size: 0.8rem;
+            border-top: 1px solid #E2E8F0;
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="admin-header">
+        <div class="logo-box" onclick="showPage('ideaflow')">
+            <i class="fa-solid fa-layer-group" style="color: #7E99A3;"></i>
+            IdeaFlow Admin
+        </div>
+        <div class="admin-nav">
+            <a onclick="showPage('users')" id="link-users" class="active">Пользователи</a>
+            <a onclick="showPage('support')" id="link-support">Поддержка</a>
+            <a onclick="showPage('topics')" id="link-topics">Темы</a>
+            <a onclick="showPage('ideas')" id="link-ideas">Идеи</a>
+            <a onclick="showPage('ideaflow')" id="link-ideaflow">IdeaFlow</a>
+            <div class="profile-pill">
+                <div class="avatar-sq">AD</div>
+                <div style="font-size: 0.8rem;">
+                    <strong>Администратор</strong>
+                    <div style="font-size: 0.7rem; color: #64748B;">admin@ideaflow.com</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="admin-container">
+        <!-- Страница Пользователи -->
+        <section id="users" class="page active">
+            <div class="card">
+                <div class="card-title">
+                    <h3><i class="fa-solid fa-users"></i> Управление пользователями</h3>
+                </div>
+                <table class="admin-table" id="users-table">
+                    <thead>
+                        <tr><th>Email</th><th>Имя</th><th>Статус</th><th>Причина блокировки</th><th>Действия</th></tr>
+                    </thead>
+                    <tbody id="users-tbody">
+                        <!-- динамически из JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Страница Поддержка (сообщения от заблокированных) -->
+        <section id="support" class="page">
+            <div class="card">
+                <div class="card-title">
+                    <h3><i class="fa-solid fa-headset"></i> Обращения заблокированных пользователей</h3>
+                </div>
+                <div id="support-messages-list"></div>
+            </div>
+        </section>
+
+        <!-- Страница Темы -->
+        <section id="topics" class="page">
+            <div class="card">
+                <div class="card-title">
+                    <h3><i class="fa-regular fa-folder-open"></i> Темы обсуждений</h3>
+                    <button class="btn-primary-sm" onclick="createNewTopic()"><i class="fa-solid fa-plus"></i> Создать тему</button>
+                </div>
+                <table class="admin-table" id="topics-table">
+                    <thead><tr><th>Название</th><th>Описание</th><th>Статус</th><th>Приватность</th><th>Дедлайн</th><th>Идей</th><th>Автор</th><th>Действия</th></tr></thead>
+                    <tbody id="topics-tbody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Страница Идеи -->
+        <section id="ideas" class="page">
+            <div class="card">
+                <div class="card-title">
+                    <h3><i class="fa-regular fa-lightbulb"></i> Идеи и комментарии</h3>
+                </div>
+                <table class="admin-table" id="ideas-table">
+                    <thead><tr><th>Название</th><th>Автор</th><th>Тема</th><th>Лайки</th><th>Дизлайки</th><th>Рейтинг</th><th>Комментарии</th><th>Дата создания</th><th>Действия</th></tr></thead>
+                    <tbody id="ideas-tbody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Страница IdeaFlow (обычный пользовательский вид) -->
+        <section id="ideaflow" class="page">
+            <div class="welcome-card" style="background:white; border:1px solid #E2E8F0; border-radius:8px; padding:2rem; text-align:center; margin-bottom:1.5rem;">
+                <h1 style="font-size:1.8rem;">Пространство ваших инициатив</h1>
+                <p style="color:#64748B; margin-top:0.5rem;">Предлагайте идеи, обсуждайте проекты коллег и помогайте компании расти.</p>
+                <button class="btn-primary-sm" style="margin-top:1rem;" onclick="alert('Форма создания идеи')">+ Предложить идею</button>
+            </div>
+            <div class="card">
+                <h3>Активные темы</h3>
+                <div style="display:flex; gap:1rem; margin-top:1rem; flex-wrap:wrap;">
+                    <div style="border:1px solid #E2E8F0; padding:1rem; border-radius:8px; width:250px;"><strong>Оптимизация офиса</strong><p style="font-size:0.8rem; margin-top:4px;">42 идеи, до 24.03</p></div>
+                    <div style="border:1px solid #E2E8F0; padding:1rem; border-radius:8px; width:250px;"><strong>Цифровая трансформация</strong><p style="font-size:0.8rem;">24 идеи, до 15.04</p></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        &copy; 2026 IdeaFlow. Административная панель.
+    </footer>
+
+    <script>
+        // ---------- ДЕМО-ДАННЫЕ ----------
+        let users = [
+            { id: 1, email: "telitsa.anna2005@gmail.com", name: "Аня Телица", status: "active", banReason: "", isAdmin: false },
+            { id: 2, email: "admin@ideaflow.com", name: "System Administrator", status: "active", banReason: "", isAdmin: true },
+            { id: 3, email: "blocked.user@example.com", name: "Заблокированный", status: "blocked", banReason: "Спам в комментариях", isAdmin: false }
+        ];
+
+        let supportMessages = [
+            { id: 1, fromUser: "blocked.user@example.com", userName: "Заблокированный", message: "Пожалуйста, разблокируйте меня, я больше не буду нарушать правила.", date: "2026-04-01" },
+            { id: 2, fromUser: "spammer@mail.com", userName: "Спамер", message: "Почему меня заблокировали? Я ничего плохого не делал.", date: "2026-04-02" }
+        ];
+
+        let topics = [
+            { id: 1, name: "Тестовая тема", description: "описание тестовой темы", status: "approved", privacy: "Публичный", deadline: "2026-04-10", ideasCount: 0, author: "System Administrator" },
+            { id: 2, name: "Экология в офисе", description: "Раздельный сбор и озеленение", status: "active", privacy: "Публичный", deadline: "2026-05-01", ideasCount: 12, author: "Аня Телица" }
+        ];
+
+        let ideasList = [
+            { id: 1, name: "мяумяумяумяумяу", author: "System Administrator", topic: "Тестовая тема", likes: 0, dislikes: 0, rating: "+0", comments: [], createdAt: "2026-04-03T13:55:00", commentsVisible: false },
+            { id: 2, name: "Установить кофе-машину", author: "Аня Телица", topic: "Оптимизация офиса", likes: 5, dislikes: 1, rating: "+4", comments: [{ id:1, user:"Иван", text:"Отличная идея!", date:"2026-04-01"}], createdAt: "2026-04-01T10:30:00", commentsVisible: false }
+        ];
+
+        // Функции рендеринга
+        function renderUsers() {
+            const tbody = document.getElementById('users-tbody');
+            tbody.innerHTML = users.map(user => `
+                <tr>
+                    <td>${escapeHtml(user.email)}</td>
+                    <td>${escapeHtml(user.name)}</td>
+                    <td><span class="badge-status ${user.status === 'active' ? 'status-active' : 'status-blocked'}">${user.status === 'active' ? 'Активен' : 'Заблокирован'}</span></td>
+                    <td>${user.banReason ? escapeHtml(user.banReason) : '—'}</td>
+                    <td>
+                        ${!user.isAdmin ? `
+                            <button class="btn-icon" onclick="toggleUserBlock(${user.id})" title="${user.status === 'active' ? 'Заблокировать' : 'Разблокировать'}">
+                                <i class="fa-solid ${user.status === 'active' ? 'fa-ban' : 'fa-check-circle'}"></i>
+                            </button>
+                        ` : '<span class="badge-status" style="background:#E2E8F0;">Администратор</span>'}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function toggleUserBlock(userId) {
+            const user = users.find(u => u.id === userId);
+            if (!user || user.isAdmin) {
+                alert("Нельзя блокировать администратора");
+                return;
+            }
+            if (user.status === 'active') {
+                const reason = prompt("Укажите причину блокировки:");
+                if (reason && reason.trim()) {
+                    user.status = 'blocked';
+                    user.banReason = reason;
+                    alert(`Пользователь ${user.email} заблокирован. Причина: ${reason}`);
+                } else if (reason === "") {
+                    alert("Причина блокировки не указана");
+                }
+            } else {
+                user.status = 'active';
+                user.banReason = '';
+                alert(`Пользователь ${user.email} разблокирован`);
+            }
+            renderUsers();
+        }
+
+        function renderSupport() {
+            const container = document.getElementById('support-messages-list');
+            if (supportMessages.length === 0) {
+                container.innerHTML = '<p>Нет обращений от заблокированных пользователей.</p>';
+                return;
+            }
+            container.innerHTML = supportMessages.map(msg => `
+                <div class="support-message">
+                    <div><strong>${escapeHtml(msg.userName)}</strong> (${escapeHtml(msg.fromUser)}) - ${msg.date}</div>
+                    <div style="margin-top: 6px;">${escapeHtml(msg.message)}</div>
+                    <div style="margin-top: 8px;">
+                        <button class="btn-outline-sm" onclick="resolveSupportMessage(${msg.id})"><i class="fa-solid fa-check"></i> Отметить как решенное</button>
+                        <button class="btn-outline-sm" style="margin-left:8px;" onclick="contactUser('${msg.fromUser}')"><i class="fa-regular fa-envelope"></i> Ответить</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function resolveSupportMessage(id) {
+            supportMessages = supportMessages.filter(m => m.id !== id);
+            renderSupport();
+            alert("Обращение закрыто");
+        }
+
+        function contactUser(email) {
+            alert(`Написать пользователю ${email} (функция отправки сообщения)`);
+        }
+
+        function renderTopics() {
+            const tbody = document.getElementById('topics-tbody');
+            tbody.innerHTML = topics.map(topic => `
+                <tr>
+                    <td>${escapeHtml(topic.name)}</td>
+                    <td>${escapeHtml(topic.description)}</td>
+                    <td>${escapeHtml(topic.status)}</td>
+                    <td>${escapeHtml(topic.privacy)}</td>
+                    <td>${topic.deadline}</td>
+                    <td>${topic.ideasCount}</td>
+                    <td>${escapeHtml(topic.author)}</td>
+                    <td>
+                        <button class="btn-icon" onclick="editTopic(${topic.id})" title="Редактировать"><i class="fa-regular fa-pen-to-square"></i></button>
+                        <button class="btn-icon btn-danger" onclick="deleteTopic(${topic.id})" title="Удалить"><i class="fa-regular fa-trash-can"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function createNewTopic() {
+            const name = prompt("Название темы:");
+            if (!name) return;
+            const desc = prompt("Описание:");
+            if (!desc) return;
+            const deadline = prompt("Дедлайн (ГГГГ-ММ-ДД):", "2026-05-01");
+            const newId = Math.max(...topics.map(t => t.id), 0) + 1;
+            topics.push({
+                id: newId,
+                name: name,
+                description: desc,
+                status: "active",
+                privacy: "Публичный",
+                deadline: deadline || "2026-12-31",
+                ideasCount: 0,
+                author: "System Administrator"
+            });
+            renderTopics();
+            alert("Тема создана");
+        }
+
+        function editTopic(id) {
+            const topic = topics.find(t => t.id === id);
+            if (!topic) return;
+            const newName = prompt("Новое название:", topic.name);
+            if (newName) topic.name = newName;
+            const newDesc = prompt("Новое описание:", topic.description);
+            if (newDesc) topic.description = newDesc;
+            const newStatus = prompt("Статус (active/approved/closed):", topic.status);
+            if (newStatus) topic.status = newStatus;
+            renderTopics();
+            alert("Тема обновлена");
+        }
+
+        function deleteTopic(id) {
+            if (confirm("Удалить тему? Все идеи в ней также будут удалены.")) {
+                topics = topics.filter(t => t.id !== id);
+                // также удаляем идеи этой темы
+                const topicName = topics.find(t => t.id === id)?.name;
+                if (topicName) {
+                    ideasList = ideasList.filter(idea => idea.topic !== topicName);
+                }
+                renderTopics();
+                renderIdeas();
+                alert("Тема удалена");
+            }
+        }
+
+        function renderIdeas() {
+            const tbody = document.getElementById('ideas-tbody');
+            tbody.innerHTML = ideasList.map(idea => `
+                <tr>
+                    <td>${escapeHtml(idea.name)}</td>
+                    <td>${escapeHtml(idea.author)}</td>
+                    <td>${escapeHtml(idea.topic)}</td>
+                    <td>${idea.likes}</td>
+                    <td>${idea.dislikes}</td>
+                    <td>${idea.rating}</td>
+                    <td>
+                        <button class="btn-outline-sm" onclick="toggleComments(${idea.id})">Показать (${idea.comments.length})</button>
+                        <div id="comments-${idea.id}" style="display: ${idea.commentsVisible ? 'block' : 'none'}; margin-top: 8px;">
+                            ${idea.comments.map(c => `<div class="comment-item"><strong>${escapeHtml(c.user)}</strong>: ${escapeHtml(c.text)} <span style="color:#94A3B8; font-size:0.7rem;">${c.date}</span></div>`).join('')}
+                        </div>
+                    </td>
+                    <td>${new Date(idea.createdAt).toLocaleString()}</td>
+                    <td><button class="btn-icon btn-danger" onclick="deleteIdea(${idea.id})"><i class="fa-regular fa-trash-can"></i> Удалить</button></td>
+                </tr>
+            `).join('');
+        }
+
+        function toggleComments(ideaId) {
+            const idea = ideasList.find(i => i.id === ideaId);
+            if (idea) {
+                idea.commentsVisible = !idea.commentsVisible;
+                renderIdeas();
+            }
+        }
+
+        function deleteIdea(ideaId) {
+            if (confirm("Удалить идею?")) {
+                ideasList = ideasList.filter(i => i.id !== ideaId);
+                renderIdeas();
+                alert("Идея удалена");
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+
+        // Навигация
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            document.querySelectorAll('.admin-nav a').forEach(link => link.classList.remove('active'));
+            const activeLink = document.getElementById(`link-${pageId}`);
+            if (activeLink) activeLink.classList.add('active');
+            
+            // Обновляем таблицы при переключении (для актуальности)
+            if (pageId === 'users') renderUsers();
+            if (pageId === 'support') renderSupport();
+            if (pageId === 'topics') renderTopics();
+            if (pageId === 'ideas') renderIdeas();
+        }
+
+        // Инициализация
+        renderUsers();
+        renderSupport();
+        renderTopics();
+        renderIdeas();
+
+        // Для совместимости с кнопками в таблице
+        window.toggleUserBlock = toggleUserBlock;
+        window.resolveSupportMessage = resolveSupportMessage;
+        window.contactUser = contactUser;
+        window.createNewTopic = createNewTopic;
+        window.editTopic = editTopic;
+        window.deleteTopic = deleteTopic;
+        window.toggleComments = toggleComments;
+        window.deleteIdea = deleteIdea;
+        window.showPage = showPage;
+    </script>
+</body>
+</html>

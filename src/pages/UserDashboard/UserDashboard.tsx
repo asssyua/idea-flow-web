@@ -7,6 +7,7 @@ import TopicModal from '../../components/Modals/TopicModal';
 import StatisticsModal from '../../components/Modals/StatisticsModal';
 import { BadgeItem } from '../../components/BadgeList/BadgeList';
 import Header from '../../components/Header/Header';
+import TopicsListView from '../../components/Topics/TopicsListView';
 import './UserDashboard.css';
 
 interface UserProfile {
@@ -339,90 +340,44 @@ const UserDashboard: React.FC = () => {
           )}
 
           {activeTab === 'topics' && (
-            <div className="topics-section-full">
-              <div className="card topics-header-card">
-                <div className="card-title topics-main-card-title">
-                  <h2>Активные темы обсуждения</h2>
-                  <button 
-                    className="btn btn-primary" 
-                    onClick={() => setTopicModalOpen(true)}
-                  >
-                    + Предложить тему
-                  </button>
-                </div>
-              </div>
-             
-              {topicsLoading ? (
-                <div className="loading-container">
-                  <div className="loading-spinner"></div>
-                  <p>Загрузка тем для обсуждения...</p>
-                </div>
-              ) : topics.length === 0 ? (
-                <div className="empty-state">
-                  <p>Пока нет доступных тем для обсуждения.</p>
-                </div>
-              ) : (
-                <div className="topics-grid">
-                  {Array.isArray(topics) && topics.length > 0 ? (
-                    topics.map((topic) => {
-                      if (!topic || !topic.id) {
-                        return null;
+            <TopicsListView<Topic>
+              topics={topics}
+              loading={topicsLoading}
+              title="Активные темы обсуждения"
+              actionLabel="+ Предложить тему"
+              onActionClick={() => setTopicModalOpen(true)}
+              onTopicClick={(topic) => navigate(`/topic/${topic.id}`)}
+              getTopicTagLabel={getTopicTagLabel}
+              formatDeadline={formatDeadline}
+              emptyText="Пока нет доступных тем для обсуждения."
+              renderTopicAction={(topic) => {
+                const isFav = favoriteTopics.some((ft) => ft.id === topic.id);
+                return (
+                  <i
+                    className={`${isFav ? 'fas' : 'far'} fa-star fav-btn`}
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      try {
+                        if (isFav) {
+                          await topicAPI.removeTopicFromFavorites(topic.id);
+                        } else {
+                          await topicAPI.addTopicToFavorites(topic.id);
+                        }
+                        fetchFavoriteTopics();
+                      } catch (err) {
+                        console.error('Failed to toggle favorite:', err);
                       }
-                      const isFav = favoriteTopics.some(ft => ft.id === topic.id);
-                      return (
-                        <div 
-                          key={topic.id} 
-                          className="card topic-card"
-                          onClick={() => navigate(`/topic/${topic.id}`)}
-                        >
-                          <div className="flex-between">
-                            <h3>{topic.title || 'Без названия'}</h3>
-                            <i 
-                              className={`${isFav ? 'fas' : 'far'} fa-star fav-btn`}
-                              onClick={async (e) => {
-                                e.stopPropagation();
-                                try {
-                                  if (isFav) {
-                                    await topicAPI.removeTopicFromFavorites(topic.id);
-                                  } else {
-                                    await topicAPI.addTopicToFavorites(topic.id);
-                                  }
-                                  fetchFavoriteTopics();
-                                } catch (err) {
-                                  console.error('Failed to toggle favorite:', err);
-                                }
-                              }}
-                            ></i>
-                          </div>
-                          <p>{topic.description || 'Нет описания'}</p>
-                          <div className="tag">{getTopicTagLabel(topic)}</div>
-                          <div className="topic-meta">
-                            <span>
-                              <i className="far fa-lightbulb"></i> 
-                              {topic.ideaCount || 0} идей
-                            </span>
-                            <span>
-                              <i className="far fa-calendar"></i> 
-                              {topic.deadline ? `До ${formatDeadline(topic.deadline)}` : 'Без срока'}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <div className="empty-state">
-                      <p>Ошибка: topics не является массивом или пуст</p>
-                    </div>
-                  )}
-                </div>
+                    }}
+                  ></i>
+                );
+              }}
+              footerHint={(
+                <>
+                  <i className="far fa-comment-dots"></i> Выберите интересующую тему, чтобы изучить идеи коллег.
+                  <br />Чтобы добавить тему в избранное, нажмите на звездочку.
+                </>
               )}
-
-              {/* Info hint */}
-              <div style={{ marginTop: '2rem', textAlign: 'center', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                <i className="far fa-comment-dots"></i> Выберите интересующую тему, чтобы изучить идеи коллег.
-                <br />Чтобы добавить тему в избранное, нажмите на звездочку.
-              </div>
-            </div>
+            />
           )}
 
           {activeTab === 'profile' && (

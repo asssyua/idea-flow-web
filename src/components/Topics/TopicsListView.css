@@ -1,0 +1,18 @@
+.shared-topics-view {
+  width: 100%;
+}
+
+.shared-topics-loading {
+  min-height: 220px;
+}
+
+.topic-card-header-row {
+  gap: 0.75rem;
+}
+
+.shared-topics-footer-hint {
+  margin-top: 2rem;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}

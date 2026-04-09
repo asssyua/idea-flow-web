@@ -7,101 +7,11 @@ import BlockUserModal from '../../components/Modals/BlockUserModal';
 import ConfirmModal from '../../components/Modals/ConfirmModal';
 import TopicModal from '../../components/Modals/TopicModal';
 import CommentSection from '../../components/CommentSection/CommentSection';
+import TopicsListView from '../../components/Topics/TopicsListView';
+import SupportTab from './SupportTab';
+import UsersTab from './UsersTab';
+import { AdminTab, AdminUser, Comment, Idea, SupportMessage, Topic, UserProfile } from './types';
 import './Dashboard.css';
-
-interface UserProfile {
-  firstName: string;
-  lastName: string;
-  status: string;
-  email?: string;
-  role?: string;
-}
-
-interface AdminUser {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  status: string;
-  role: string;
-  blockInfo?: {
-    blockedAt: string;
-    blockReason: string;
-  };
-}
-
-interface SupportMessage {
-  id: string;
-  userEmail: string;
-  userName: string;
-  message: string;
-  blockReason: string | null;
-  isRead: boolean;
-  createdAt: string;
-}
-
-interface Topic {
-  id: string;
-  title: string;
-  description: string;
-  status: string;
-  privacy: string;
-  deadline: string | null;
-  ideaCount: number;
-  createdBy?: {
-    firstName: string;
-    lastName: string;
-  } | null;
-  author?: {
-    firstName: string;
-    lastName: string;
-  };
-  createdAt?: string;
-}
-
-interface Idea {
-  id: string;
-  title: string;
-  description: string;
-  images?: string[];
-  likes: number;
-  dislikes: number;
-  rating: number;
-  commentCount: number;
-  createdAt: string;
-  author: {
-    firstName: string;
-    lastName: string;
-  };
-  topic: {
-    title: string;
-    status: string;
-  };
-  topicId?: string;
-  authorId?: string;
-}
-
-interface Comment {
-  id: string;
-  content: string;
-  author: {
-    firstName: string;
-    lastName: string;
-    id: string;
-  };
-  idea: {
-    id: string;
-    title: string;
-    topic: {
-      id: string;
-      title: string;
-    };
-  };
-  parentId: string | null;
-  createdAt: string;
-}
-
-type AdminTab = 'users' | 'topics' | 'ideas' | 'support' | 'ideaflow';
 
 const Dashboard: React.FC = () => {
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -530,150 +440,21 @@ const Dashboard: React.FC = () => {
     return filtered;
   };
 
-  const renderUsersTab = () => (
-    <div className="admin-section">
-      <div className="admin-section__header">
-        <h2>Пользователи</h2>
-      </div>
-
-      {usersLoading ? (
-        <div className="loading-container" style={{ minHeight: '200px' }}>
-          <div className="loading-spinner"></div>
-          <p>Загружаем пользователей...</p>
-        </div>
-      ) : users.length === 0 ? (
-        <p>Пользователи пока не найдены.</p>
-      ) : (
-        <div className="table-wrapper">
-          <table className="users-table">
-            <thead>
-              <tr>
-                <th>Email</th>
-                <th>Имя</th>
-                <th>Статус</th>
-                <th>Причина блокировки</th>
-                <th>Действия</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((u) => (
-                <tr key={u.id}>
-                  <td>{u.email}</td>
-                  <td>{u.firstName} {u.lastName}</td>
-                  <td>
-                    <span className={`status-badge status-${u.status.toLowerCase()}`}>
-                      {u.status}
-                    </span>
-                  </td>
-                  <td>
-                    {u.blockInfo?.blockReason ? (
-                      <span className="block-reason-text">{u.blockInfo.blockReason}</span>
-                    ) : (
-                      <span className="text-muted">—</span>
-                    )}
-                  </td>
-                  <td className="users-table__actions">
-                    {u.status === 'blocked' || u.status === 'BLOCKED' ? (
-                      <button
-                        className="cta-button secondary"
-                        onClick={() => handleUnblockClick(u.id, `${u.firstName} ${u.lastName}`)}
-                      >
-                        Разблокировать
-                      </button>
-                    ) : u.role === 'admin' || u.role === 'ADMIN' ? (
-                      <span className="admin-protected-badge">Администратор</span>
-                    ) : (
-                      <button
-                        className="cta-button danger"
-                        onClick={() => handleBlockClick(u.id, `${u.firstName} ${u.lastName}`)}
-                      >
-                        Заблокировать
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  );
-
-  const renderSupportTab = () => (
-    <div className="admin-section">
-      <div className="admin-section__header">
-        <h2>Сообщения поддержки</h2>
-      </div>
-
-      {supportLoading ? (
-        <div className="loading-container" style={{ minHeight: '200px' }}>
-          <div className="loading-spinner"></div>
-          <p>Загружаем сообщения...</p>
-        </div>
-      ) : supportMessages.length === 0 ? (
-        <p>Сообщений пока нет.</p>
-      ) : (
-        <div className="support-messages-list">
-          {supportMessages.map((msg) => (
-            <div key={msg.id} className={`support-message-card ${msg.isRead ? 'read' : 'unread'}`}>
-              <div className="support-message-header">
-                <div>
-                  <strong>{msg.userName}</strong>
-                  <span className="support-message-email">{msg.userEmail}</span>
-                </div>
-                <div className="support-message-meta">
-                  <span className="support-message-date">
-                    {new Date(msg.createdAt).toLocaleString('ru-RU')}
-                  </span>
-                  {!msg.isRead && (
-                    <span className="unread-badge">Новое</span>
-                  )}
-                </div>
-              </div>
-              
-              {msg.blockReason && (
-                <div className="support-block-reason">
-                  <strong>Причина блокировки:</strong> {msg.blockReason}
-                </div>
-              )}
-              
-              <div className="support-message-content">
-                {msg.message}
-              </div>
-              
-              {!msg.isRead && (
-                <button
-                  className="cta-button secondary"
-                  onClick={() => handleMarkAsRead(msg.id)}
-                  style={{ marginTop: '1rem' }}
-                >
-                  Отметить как прочитанное
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-
   const renderTopicsTab = () => (
     <div className="admin-section">
       <div className="admin-section__header">
         <h2>Темы для обсуждения</h2>
        
         <button
-          className="cta-button"
           onClick={handleCreateTopic}
-          style={{ marginTop: '1rem' }}
+          className="cta-button admin-create-topic-btn"
         >
           + Создать тему для обсуждения
         </button>
       </div>
 
       {topicsLoading ? (
-        <div className="loading-container" style={{ minHeight: '200px' }}>
+        <div className="loading-container admin-loading-block">
           <div className="loading-spinner"></div>
           <p>Загружаем темы...</p>
         </div>
@@ -735,18 +516,16 @@ const Dashboard: React.FC = () => {
                         : 'Неизвестен'}
                   </td>
                   <td className="users-table__actions">
-                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <div className="admin-action-row">
                       <button
-                        className="cta-button secondary"
                         onClick={() => handleEditTopic(topic)}
-                        style={{ fontSize: '0.85rem', padding: '0.4rem 0.8rem' }}
+                        className="cta-button secondary admin-btn-compact"
                       >
                         Редактировать
                       </button>
                       <button
-                        className="cta-button danger"
                         onClick={() => handleDeleteTopic(topic)}
-                        style={{ fontSize: '0.85rem', padding: '0.4rem 0.8rem' }}
+                        className="cta-button danger admin-btn-compact"
                       >
                         Удалить
                       </button>
@@ -780,6 +559,16 @@ const Dashboard: React.FC = () => {
     }
     
     return formatDate(deadline);
+  };
+
+  const getTopicTagLabel = (topic: Topic) => {
+    if (topic.status?.toLowerCase() === 'approved') {
+      return 'Активна';
+    }
+    if (topic.deadline && new Date(topic.deadline) < new Date()) {
+      return 'Завершена';
+    }
+    return 'Обсуждение';
   };
 
   const fetchFlowIdeas = async (topicId: string) => {
@@ -1032,7 +821,7 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
     if (selectedTopicForFlow) {
       return (
         <div className="admin-section">
-          <div className="admin-section__header" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div className="admin-section__header admin-section-header-row">
             <button
               onClick={() => {
                 setSelectedTopicForFlow(null);
@@ -1042,26 +831,19 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
                 setImagePreviews([]);
               }}
               className="cta-button secondary"
-              style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}
             >
               ← Назад к темам
             </button>
             <div>
               <h2>{selectedTopicForFlow.title}</h2>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.5rem' }}>
+              <p className="admin-section-description">
                 {selectedTopicForFlow.description}
               </p>
             </div>
           </div>
 
-          <div style={{ 
-            background: 'var(--bg-primary)', 
-            border: '1px solid var(--border-color)', 
-            borderRadius: 'var(--border-radius)', 
-            padding: '1.5rem', 
-            marginTop: '1.5rem' 
-          }}>
-            <h3 style={{ marginTop: 0, marginBottom: '1rem' }}>Добавить идею</h3>
+          <div className="flow-composer-card">
+            <h3 className="flow-composer-title">Добавить идею</h3>
            <form onSubmit={handleFlowCreateIdea}>
   <input
     type="text"
@@ -1293,10 +1075,10 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
 </form>
           </div>
 
-          <div style={{ marginTop: '2rem' }}>
+          <div className="flow-ideas-section">
             <h3>Идеи ({flowIdeas.length})</h3>
             {flowIdeasLoading ? (
-              <div className="loading-container" style={{ minHeight: '200px' }}>
+              <div className="loading-container admin-loading-block">
                 <div className="loading-spinner"></div>
                 <p>Загрузка идей...</p>
               </div>
@@ -1305,38 +1087,28 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
                 <p>Пока нет идей. Будьте первым, кто предложит идею!</p>
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginTop: '1rem' }}>
+              <div className="flow-ideas-list">
                 {flowIdeas
                   .filter((idea) => idea.id)
                   .map((idea) => (
-                    <div 
-                      key={idea.id} 
-                      style={{
-                        background: 'var(--bg-primary)',
-                        border: '1px solid var(--border-color)',
-                        borderRadius: 'var(--border-radius)',
-                        padding: '1.5rem'
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: '1rem' }}>
-                        <div style={{ flex: 1 }}>
-                          <h4 style={{ margin: 0, marginBottom: '0.5rem' }}>{idea.title}</h4>
-                          <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.9rem' }}>
+                    <div key={idea.id} className="flow-idea-card">
+                      <div className="flow-idea-header">
+                        <div className="flow-idea-main">
+                          <h4 className="flow-idea-title">{idea.title}</h4>
+                          <p className="flow-idea-meta">
                             {idea.author?.firstName} {idea.author?.lastName} • {formatDate(idea.createdAt)}
                           </p>
                         </div>
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <div className="flow-idea-reactions">
                           <button
-                            className={`cta-button ${flowUserReactions[idea.id] === 'like' ? 'primary' : 'secondary'}`}
                             onClick={() => handleFlowLike(idea.id)}
-                            style={{ fontSize: '0.85rem', padding: '0.4rem 0.8rem' }}
+                            className={`cta-button ${flowUserReactions[idea.id] === 'like' ? 'primary' : 'secondary'} admin-btn-compact`}
                           >
                             👍 {idea.likes}
                           </button>
                           <button
-                            className={`cta-button ${flowUserReactions[idea.id] === 'dislike' ? 'primary' : 'secondary'}`}
                             onClick={() => handleFlowDislike(idea.id)}
-                            style={{ fontSize: '0.85rem', padding: '0.4rem 0.8rem' }}
+                            className={`cta-button ${flowUserReactions[idea.id] === 'dislike' ? 'primary' : 'secondary'} admin-btn-compact`}
                           >
                             👎 {idea.dislikes}
                           </button>
@@ -1344,7 +1116,7 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
                       </div>
                       
                       {idea.images && idea.images.length > 0 && (
-                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+                        <div className="flow-idea-images">
                           {idea.images
                             .filter((image) => image && typeof image === 'string' && image.length > 100)
                             .map((image, index) => {
@@ -1361,12 +1133,7 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
                                   key={index}
                                   src={imageSrc}
                                   alt={`${idea.title} - изображение ${index + 1}`}
-                                  style={{
-                                    maxWidth: '200px',
-                                    maxHeight: '200px',
-                                    borderRadius: 'var(--border-radius)',
-                                    objectFit: 'cover'
-                                  }}
+                                  className="flow-idea-image"
                                   onError={(e) => {
                                     e.currentTarget.style.display = 'none';
                                   }}
@@ -1393,157 +1160,19 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
         
         </div>
 
-        {topicsLoading ? (
-          <div className="loading-container" style={{ minHeight: '200px' }}>
-            <div className="loading-spinner"></div>
-            <p>Загружаем темы...</p>
-          </div>
-        ) : topics.length === 0 ? (
-          <div className="empty-state">
-            <p>Тем для обсуждения пока нет.</p>
-          </div>
-        ) : (
-          <div className="topics-grid" style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', 
-            gap: '1.5rem',
-            marginTop: '1rem'
-          }}>
-            {topics.map((topic) => (
-              <div 
-                key={topic.id} 
-                className="topic-card"
-                style={{
-                  background: 'var(--bg-primary)',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: 'var(--border-radius)',
-                  padding: '1.5rem',
-                  transition: 'all var(--transition-fast)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '1rem',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-                  minHeight: '220px',
-                  position: 'relative',
-                  cursor: 'pointer'
-                }}
-                onClick={() => {
-                  setSelectedTopicForFlow(topic);
-                  fetchFlowIdeas(topic.id);
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-4px)';
-                  e.currentTarget.style.boxShadow = 'var(--shadow-md)';
-                  e.currentTarget.style.borderColor = 'var(--primary-color)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.08)';
-                  e.currentTarget.style.borderColor = 'var(--border-color)';
-                }}
-              >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
-                <h3 style={{ 
-                  fontSize: '1.25rem', 
-                  fontWeight: 600, 
-                  color: 'var(--text-primary)', 
-                  margin: 0, 
-                  flex: 1,
-                  lineHeight: 1.4,
-                  wordWrap: 'break-word'
-                }}>
-                  {topic.title}
-                </h3>
-                {topic.deadline && (
-                  <span style={{
-                    fontSize: '0.85rem',
-                    padding: '0.25rem 0.75rem',
-                    borderRadius: 'var(--border-radius-sm)',
-                    backgroundColor: new Date(topic.deadline) < new Date() ? '#f8d7da' : '#fff3cd',
-                    color: new Date(topic.deadline) < new Date() ? '#721c24' : '#856404',
-                    whiteSpace: 'nowrap',
-                    fontWeight: 500
-                  }}>
-                    {formatDeadline(topic.deadline) || 'Истек'}
-                  </span>
-                )}
-              </div>
-              <p style={{ 
-                color: 'var(--text-secondary)', 
-                lineHeight: 1.6, 
-                margin: 0,
-                display: '-webkit-box',
-                WebkitLineClamp: 4,
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden',
-                flex: 1,
-                minHeight: '80px'
-              }}>
-                {topic.description}
-              </p>
-              <div style={{ 
-                marginTop: 'auto', 
-                paddingTop: '1rem', 
-                borderTop: '1px solid var(--border-color)'
-              }}>
-                <div style={{ 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  gap: '0.5rem', 
-                  fontSize: '0.9rem',
-                  marginTop: '0.5rem'
-                }}>
-                  <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>
-                    Автор: {topic.createdBy 
-                      ? `${topic.createdBy.firstName} ${topic.createdBy.lastName}`
-                      : topic.author 
-                        ? `${topic.author.firstName} ${topic.author.lastName}`
-                        : 'Неизвестен'}
-                  </span>
-                  {topic.createdAt && (
-                    <span style={{ color: 'var(--text-secondary)' }}>
-                      Создан: {formatDate(topic.createdAt)}
-                    </span>
-                  )}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-                    <span style={{ fontWeight: 600, color: 'var(--primary-color)' }}>
-                      Идей: {topic.ideaCount || 0}
-                    </span>
-                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                      <span style={{
-                        padding: '0.25rem 0.75rem',
-                        borderRadius: 'var(--border-radius-sm)',
-                        fontSize: '0.85rem',
-                        fontWeight: 500,
-                        backgroundColor: topic.status === 'approved' ? '#d4edda' : 
-                                       topic.status === 'pending' ? '#fff3cd' : 
-                                       topic.status === 'rejected' ? '#f8d7da' : '#e2e3e5',
-                        color: topic.status === 'approved' ? '#155724' : 
-                               topic.status === 'pending' ? '#856404' : 
-                               topic.status === 'rejected' ? '#721c24' : '#383d41'
-                      }}>
-                        {topic.status === 'approved' ? 'Одобрена' : 
-                         topic.status === 'pending' ? 'Ожидает' : 
-                         topic.status === 'rejected' ? 'Отклонена' : topic.status}
-                      </span>
-                      <span style={{
-                        padding: '0.25rem 0.75rem',
-                        borderRadius: 'var(--border-radius-sm)',
-                        fontSize: '0.85rem',
-                        fontWeight: 500,
-                        backgroundColor: topic.privacy === 'public' ? '#d1ecf1' : '#f8d7da',
-                        color: topic.privacy === 'public' ? '#0c5460' : '#721c24'
-                      }}>
-                        {topic.privacy === 'public' ? 'Публичная' : 'Приватная'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+        <TopicsListView<Topic>
+          topics={topics}
+          loading={topicsLoading}
+          title="Idea Flow"
+          onTopicClick={(topic) => {
+            setSelectedTopicForFlow(topic);
+            fetchFlowIdeas(topic.id);
+          }}
+          getTopicTagLabel={getTopicTagLabel}
+          formatDeadline={formatDeadline}
+          emptyText="Тем для обсуждения пока нет."
+          loadingText="Загружаем темы..."
+        />
     </div>
     );
   };
@@ -1863,8 +1492,21 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
         <div className={`container ${isAdmin ? 'admin-container' : ''}`}>
           {isAdmin ? (
             <>
-              {activeTab === 'users' && renderUsersTab()}
-              {activeTab === 'support' && renderSupportTab()}
+              {activeTab === 'users' && (
+                <UsersTab
+                  users={users}
+                  usersLoading={usersLoading}
+                  onBlockClick={handleBlockClick}
+                  onUnblockClick={handleUnblockClick}
+                />
+              )}
+              {activeTab === 'support' && (
+                <SupportTab
+                  supportMessages={supportMessages}
+                  supportLoading={supportLoading}
+                  onMarkAsRead={handleMarkAsRead}
+                />
+              )}
               {activeTab === 'topics' && renderTopicsTab()}
               {activeTab === 'ideas' && renderIdeasTab()}
               {activeTab === 'ideaflow' && renderIdeaFlowTab()}
