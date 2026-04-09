@@ -46,6 +46,18 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLoginSuccess
     try {
       const response = await authAPI.login(data);
       localStorage.setItem('access_token', response.data.access_token);
+
+      try {
+        const { profileAPI } = await import('../../api');
+        const profileResponse = await profileAPI.getProfile();
+        const userData = profileResponse.data?.user;
+        if (userData) {
+          localStorage.setItem('user', JSON.stringify(userData));
+        }
+      } catch (profileErr) {
+        console.error('Failed to fetch profile after login:', profileErr);
+      }
+
       onLoginSuccess();
       onClose();
     } catch (err: any) {

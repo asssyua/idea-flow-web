@@ -42,8 +42,14 @@ const LoginPage: React.FC = () => {
       
       try {
         const profileResponse = await profileAPI.getProfile();
-        const userRole = profileResponse.data?.user?.role;
-        
+        const userData = profileResponse.data?.user;
+
+        if (userData) {
+          localStorage.setItem('user', JSON.stringify(userData));
+        }
+
+        const userRole = userData?.role;
+
         if (userRole === 'admin') {
           navigate('/dashboard');
         } else {

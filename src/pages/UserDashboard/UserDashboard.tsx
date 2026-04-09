@@ -284,11 +284,11 @@ const UserDashboard: React.FC = () => {
                 </button>
               </div>
 
-              <h2 className="section-title">Итоги завершенного обсуждения</h2>
+              <h2 className="section-title">Популярные темы сообщества</h2>
               <div className="card">
                 <div className="card-title report-card-title">
                   <h3><i className="fas fa-square-poll-vertical"></i> Популярные темы сообщества</h3>
-                  <span className="tag">Обновлено: {new Date().toLocaleDateString('ru-RU')}</span>
+                  
                 </div>
                 <div className="stats-row">
                   <div className="stat-item"><span className="stat-val">{topics.length}</span><span className="stat-lab">Темы</span></div>
@@ -371,12 +371,7 @@ const UserDashboard: React.FC = () => {
                   ></i>
                 );
               }}
-              footerHint={(
-                <>
-                  <i className="far fa-comment-dots"></i> Выберите интересующую тему, чтобы изучить идеи коллег.
-                  <br />Чтобы добавить тему в избранное, нажмите на звездочку.
-                </>
-              )}
+            
             />
           )}
 

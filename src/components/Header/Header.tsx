@@ -92,19 +92,7 @@ const Header: React.FC = () => {
             </a>
             {user && (
               <>
-                <div
-                  className="profile-pill"
-                  onClick={() => navigate(profilePath)}
-                  title="Перейти в профиль"
-                >
-                  <div className="avatar-sq">{getInitials()}</div>
-                  <div className="profile-pill-text">
-                    <strong>{getShortName()}</strong>
-                    <div className="profile-pill-subtitle">
-                      <i className="fas fa-medal"></i> Участник
-                    </div>
-                  </div>
-                </div>
+
                 <button onClick={handleLogout} className="header-logout-btn">
                   Выйти
                 </button>
