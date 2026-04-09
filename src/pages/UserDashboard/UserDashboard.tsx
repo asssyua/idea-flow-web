@@ -435,10 +435,10 @@ const UserDashboard: React.FC = () => {
                   <h2>{user.firstName} {user.lastName}</h2>
                   <p className="profile-subtitle">{user.email || 'Участник платформы IdeaFlow'}</p>
                   <div className="stat-grid">
-                    <div className="stat-box"><label>Идей</label><span>{stats.ideasCount}</span></div>
-                    <div className="stat-box"><label>Коммент.</label><span>{stats.commentsCount}</span></div>
-                    <div className="stat-box"><label>Лайков</label><span>{stats.likesReceived}</span></div>
-                    <div className="stat-box"><label>Темы</label><span>{stats.topicsCount}</span></div>
+                    <div className="stat-box" data-icon="lightbulb"><label>Идей</label><span>{stats.ideasCount}</span></div>
+                    <div className="stat-box" data-icon="comments"><label>Коммент.</label><span>{stats.commentsCount}</span></div>
+                    <div className="stat-box" data-icon="heart"><label>Лайков</label><span>{stats.likesReceived}</span></div>
+                    <div className="stat-box" data-icon="folder"><label>Темы</label><span>{stats.topicsCount}</span></div>
                   </div>
                 </div>
               </div>
@@ -446,15 +446,15 @@ const UserDashboard: React.FC = () => {
               <div className="card">
                 <div className="card-title"><h3>Достижения</h3></div>
                 <div className="badge-grid">
-                  <div className={`badge-card ${stats.ideasCount >= 1 ? 'unlocked' : ''}`}>
+                  <div className={`badge-card ${stats.ideasCount >= 1 ? 'unlocked' : ''}`} title="Опубликовать первую идею (1 идея)">
                     <i className="fas fa-pen-nib"></i>
                     <div>Первый автор</div>
                   </div>
-                  <div className={`badge-card ${stats.commentsCount >= 50 ? 'unlocked' : ''}`}>
+                  <div className={`badge-card ${stats.commentsCount >= 50 ? 'unlocked' : ''}`} title="Написать 50+ комментариев">
                     <i className="fas fa-comments"></i>
-                    <div>Гуру комм. (50)</div>
+                    <div>Гуру комм.</div>
                   </div>
-                  <div className={`badge-card ${stats.topicsCount >= 5 ? 'unlocked' : ''}`}>
+                  <div className={`badge-card ${stats.topicsCount >= 5 ? 'unlocked' : ''}`} title="Создать 5+ тем">
                     <i className="fas fa-crown"></i>
                     <div>Мастер тем</div>
                   </div>

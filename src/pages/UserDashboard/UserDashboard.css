@@ -716,6 +716,41 @@
   letter-spacing: 0.5px;
 }
 
+/* Background icons for stat boxes */
+.stat-box {
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-box::before {
+  content: '';
+  font-family: 'Font Awesome 6 Free';
+  font-weight: 900;
+  position: absolute;
+  right: -5px;
+  bottom: -10px;
+  font-size: 3rem;
+  color: var(--primary);
+  opacity: 0.08;
+  line-height: 1;
+}
+
+.stat-box[data-icon="lightbulb"]::before {
+  content: '\f0eb';
+}
+
+.stat-box[data-icon="comments"]::before {
+  content: '\f086';
+}
+
+.stat-box[data-icon="heart"]::before {
+  content: '\f004';
+}
+
+.stat-box[data-icon="folder"]::before {
+  content: '\f07b';
+}
+
 /* Badges Section */
 .badges-section {
   margin-bottom: 1.5rem;

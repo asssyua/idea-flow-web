@@ -7,7 +7,6 @@ import BlockUserModal from '../../components/Modals/BlockUserModal';
 import ConfirmModal from '../../components/Modals/ConfirmModal';
 import TopicModal from '../../components/Modals/TopicModal';
 import CommentSection from '../../components/CommentSection/CommentSection';
-import Header from '../../components/Header/Header';
 import './Dashboard.css';
 
 interface UserProfile {
@@ -148,6 +147,19 @@ const Dashboard: React.FC = () => {
   const [isSubmittingIdea, setIsSubmittingIdea] = useState(false);
   const [ideaValidationError, setIdeaValidationError] = useState('');
   const navigate = useNavigate();
+
+  const getInitials = () => {
+    if (!user) return 'AD';
+    return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
+  };
+
+  const getAdminTabs = () => [
+    { id: 'users' as AdminTab, label: 'Пользователи' },
+    { id: 'support' as AdminTab, label: 'Поддержка' },
+    { id: 'topics' as AdminTab, label: 'Темы' },
+    { id: 'ideas' as AdminTab, label: 'Идеи' },
+    { id: 'ideaflow' as AdminTab, label: 'IdeaFlow' },
+  ];
 
   const startAdminEditingIdea = (idea: Idea) => {
     setEditingAdminIdeaId(idea.id);
@@ -1814,7 +1826,38 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
 
   return (
     <div className="dashboard">
-      <Header />
+      <header className="admin-header-bar">
+        <div className="admin-header-inner container">
+          <div className="logo-box" onClick={() => setActiveTab('ideaflow')}>
+            <i className="fas fa-layer-group" style={{ color: 'var(--primary)' }}></i>
+            IdeaFlow Admin
+          </div>
+
+          <div className="admin-nav">
+            {getAdminTabs().map((tab) => (
+              <a
+                key={tab.id}
+                className={activeTab === tab.id ? 'active' : ''}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                {tab.label}
+              </a>
+            ))}
+
+            <div className="profile-pill admin-profile-pill" title="Администратор">
+              <div className="avatar-sq">{getInitials()}</div>
+              <div className="admin-profile-text">
+                <strong>Администратор</strong>
+                <div>{user.email || 'admin@ideaflow.com'}</div>
+              </div>
+            </div>
+
+            <button onClick={handleLogout} className="header-logout-btn admin-logout-btn">
+              Выйти
+            </button>
+          </div>
+        </div>
+      </header>
 
       <main className="dashboard-content">
         <div className={`container ${isAdmin ? 'admin-container' : ''}`}>
