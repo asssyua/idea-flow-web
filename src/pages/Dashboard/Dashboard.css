@@ -214,9 +214,9 @@
 }
 
 .dashboard-content .container.admin-container {
-  max-width: 1100px;
-  padding-left: 1.5rem;
-  padding-right: 1.5rem;
+  max-width: 1440px;
+  padding-left: 2rem;
+  padding-right: 2rem;
   width: 100%;
 }
 
@@ -519,6 +519,28 @@
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+}
+
+.topics-table-wrapper .users-table__actions,
+.ideas-table-wrapper .users-table__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.topics-table-wrapper .admin-action-row,
+.ideas-table-wrapper .admin-action-row {
+  width: 100%;
+}
+
+.topics-table-wrapper .admin-btn-compact,
+.ideas-table-wrapper .admin-btn-compact {
+  width: 100%;
+  justify-content: center;
+  min-height: 32px;
+  white-space: nowrap;
 }
 
 .cta-button {
@@ -1089,6 +1111,7 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  min-width: 0;
 }
 
 /* .admin-section__header {
@@ -1109,12 +1132,39 @@
 /* Table Wrapper */
 .table-wrapper {
   width: 100%;
-  overflow-x: auto;
-  overflow-y: visible;
+  overflow-x: hidden;
+  overflow-y: auto;
   margin: 1rem 0;
   min-width: 0;
   display: block;
   border-radius: var(--radius-md);
+  max-height: calc(100vh - 260px);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  padding: 0;
+}
+
+/* Topics Table Wrapper - фиксированная горизонтальная раскладка с вертикальной прокруткой */
+.topics-table-wrapper {
+  width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  max-height: calc(100vh - 260px);
+  min-height: min(400px, calc(100vh - 320px));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  max-width: 100%;
+}
+
+.ideas-table-wrapper {
+  width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  max-height: calc(100vh - 260px);
+  min-height: min(400px, calc(100vh - 320px));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  max-width: 100%;
 }
 
 /* Users Table */
@@ -1123,25 +1173,153 @@
   min-width: 100%;
   border-collapse: collapse;
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: none;
   table-layout: auto;
   display: table;
   border-radius: var(--radius-md);
   overflow: hidden;
 }
 
-/* Topics Table - больше колонок */
+/* Topics Table - фиксированная ширина колонок без горизонтальной прокрутки */
 .topics-table-wrapper .users-table {
   width: 100%;
-  min-width: 100%;
+  min-width: auto;
+  table-layout: fixed;
 }
 
-/* Убеждаемся, что таблица занимает всю ширину контейнера */
-.table-wrapper {
+.ideas-table-wrapper .users-table {
   width: 100%;
+  min-width: auto;
+  table-layout: fixed;
 }
 
-.admin-section .table-wrapper {
+.topics-table-wrapper .users-table,
+.ideas-table-wrapper .users-table {
+  min-width: 1280px;
+}
+
+.topics-table-wrapper .users-table thead,
+.ideas-table-wrapper .users-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+/* Фиксированные ширины колонок таблицы тем */
+.topics-table-wrapper .users-table th:nth-child(1),
+.topics-table-wrapper .users-table td:nth-child(1) {
+  width: 16%;
+}
+
+.topics-table-wrapper .users-table th:nth-child(2),
+.topics-table-wrapper .users-table td:nth-child(2) {
+  width: 23%;
+}
+
+.topics-table-wrapper .users-table th:nth-child(3),
+.topics-table-wrapper .users-table td:nth-child(3) {
+  width: 9%;
+}
+
+.topics-table-wrapper .users-table th:nth-child(4),
+.topics-table-wrapper .users-table td:nth-child(4) {
+  width: 10%;
+}
+
+.topics-table-wrapper .users-table th:nth-child(5),
+.topics-table-wrapper .users-table td:nth-child(5) {
+  width: 11%;
+}
+
+.topics-table-wrapper .users-table th:nth-child(6),
+.topics-table-wrapper .users-table td:nth-child(6) {
+  width: 7%;
+  text-align: center;
+}
+
+.topics-table-wrapper .users-table th:nth-child(7),
+.topics-table-wrapper .users-table td:nth-child(7) {
+  width: 10%;
+}
+
+.topics-table-wrapper .users-table th:nth-child(8),
+.topics-table-wrapper .users-table td:nth-child(8) {
+  width: 14%;
+  min-width: 160px;
+}
+
+/* Ограничение текста в ячейках таблицы тем */
+.topics-table-wrapper .users-table td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topics-table-wrapper .users-table td .topic-description {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  line-clamp: 3;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  line-height: 1.4;
+}
+
+/* Фиксированные ширины колонок таблицы идей */
+.ideas-table-wrapper .users-table th:nth-child(1),
+.ideas-table-wrapper .users-table td:nth-child(1) {
+  width: 16%;
+}
+
+.ideas-table-wrapper .users-table th:nth-child(2),
+.ideas-table-wrapper .users-table td:nth-child(2) {
+  width: 11%;
+}
+
+.ideas-table-wrapper .users-table th:nth-child(3),
+.ideas-table-wrapper .users-table td:nth-child(3) {
+  width: 14%;
+}
+
+.ideas-table-wrapper .users-table th:nth-child(4),
+.ideas-table-wrapper .users-table td:nth-child(4),
+.ideas-table-wrapper .users-table th:nth-child(5),
+.ideas-table-wrapper .users-table td:nth-child(5),
+.ideas-table-wrapper .users-table th:nth-child(6),
+.ideas-table-wrapper .users-table td:nth-child(6) {
+  width: 6%;
+  text-align: center;
+}
+
+.ideas-table-wrapper .users-table th:nth-child(7),
+.ideas-table-wrapper .users-table td:nth-child(7) {
+  width: 12%;
+  min-width: 150px;
+}
+
+.ideas-table-wrapper .users-table th:nth-child(8),
+.ideas-table-wrapper .users-table td:nth-child(8) {
+  width: 15%;
+  min-width: 150px;
+}
+
+.ideas-table-wrapper .users-table th:nth-child(9),
+.ideas-table-wrapper .users-table td:nth-child(9) {
+  width: 14%;
+  min-width: 170px;
+}
+
+.ideas-table-wrapper .users-table td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ideas-table-wrapper .users-table td:first-child strong,
+.ideas-table-wrapper .users-table td:nth-child(2),
+.ideas-table-wrapper .users-table td:nth-child(8) {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   width: 100%;
 }
 
@@ -1172,6 +1350,30 @@
 }
 
 .users-table td:last-child {
+  white-space: nowrap;
+}
+
+.topics-table-wrapper .users-table td:last-child,
+.ideas-table-wrapper .users-table td:last-child {
+  white-space: normal;
+  overflow: visible;
+}
+
+.idea-actions-cell {
+  white-space: normal;
+  vertical-align: top;
+}
+
+.idea-actions-cell .users-table__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: stretch;
+  width: 100%;
+}
+
+.topics-table-wrapper .users-table th:last-child,
+.ideas-table-wrapper .users-table th:last-child {
   white-space: nowrap;
 }
 

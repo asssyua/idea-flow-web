@@ -1272,9 +1272,9 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
                           minute: '2-digit'
                         })}
                       </td>
-                      <td className="users-table__actions">
+                      <td className="idea-actions-cell">
                         {editingAdminIdeaId === idea.id ? (
-                          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                          <div className="users-table__actions admin-action-row">
                             <button
                               className="cta-button primary"
                               onClick={() => handleAdminUpdateIdea(idea.id)}
@@ -1293,7 +1293,7 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
                             </button>
                           </div>
                         ) : (
-                          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                          <div className="users-table__actions admin-action-row">
                             <button
                               className="cta-button secondary"
                               onClick={() => startAdminEditingIdea(idea)}
