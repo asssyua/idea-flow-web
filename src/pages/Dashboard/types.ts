@@ -37,6 +37,7 @@ export interface Topic {
   privacy: string;
   deadline: string | null;
   ideaCount: number;
+  commentCount?: number;
   createdBy?: {
     firstName: string;
     lastName: string;

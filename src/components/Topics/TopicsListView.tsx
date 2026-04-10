@@ -9,6 +9,7 @@ export interface TopicsListItem {
   privacy?: string;
   deadline: string | null;
   ideaCount: number;
+  commentCount?: number;
   createdAt?: string;
   createdBy?: {
     firstName: string;
@@ -19,6 +20,45 @@ export interface TopicsListItem {
     lastName: string;
   };
 }
+
+// Helper functions for Russian pluralization
+const pluralizeIdeas = (count: number): string => {
+  const lastDigit = count % 10;
+  const lastTwoDigits = count % 100;
+
+  if (lastTwoDigits >= 11 && lastTwoDigits <= 19) {
+    return `${count} идей`;
+  }
+
+  if (lastDigit === 1) {
+    return `${count} идея`;
+  }
+
+  if (lastDigit >= 2 && lastDigit <= 4) {
+    return `${count} идеи`;
+  }
+
+  return `${count} идей`;
+};
+
+const pluralizeComments = (count: number): string => {
+  const lastDigit = count % 10;
+  const lastTwoDigits = count % 100;
+
+  if (lastTwoDigits >= 11 && lastTwoDigits <= 19) {
+    return `${count} комментариев`;
+  }
+
+  if (lastDigit === 1) {
+    return `${count} комментарий`;
+  }
+
+  if (lastDigit >= 2 && lastDigit <= 4) {
+    return `${count} комментария`;
+  }
+
+  return `${count} комментариев`;
+};
 
 interface TopicsListViewProps<T extends TopicsListItem> {
   topics: T[];
@@ -95,8 +135,14 @@ const TopicsListView = <T extends TopicsListItem>({
               <div className="topic-meta">
                 <span>
                   <i className="far fa-lightbulb"></i>
-                  {topic.ideaCount || 0} идей
+                  {pluralizeIdeas(topic.ideaCount || 0)}
                 </span>
+                {topic.commentCount !== undefined && topic.commentCount > 0 && (
+                  <span>
+                    <i className="far fa-comment"></i>
+                    {pluralizeComments(topic.commentCount)}
+                  </span>
+                )}
                 {topic.deadline && (
                   <span>
                     <i className="far fa-calendar"></i>

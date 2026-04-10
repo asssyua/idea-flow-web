@@ -31,6 +31,7 @@ interface Topic {
   description: string;
   deadline: string | null;
   ideaCount: number;
+  commentCount?: number;
   createdAt: string;
   status?: string;
   createdBy?: {

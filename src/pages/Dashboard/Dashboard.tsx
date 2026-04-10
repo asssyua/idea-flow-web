@@ -577,6 +577,16 @@ const Dashboard: React.FC = () => {
     return 'Обсуждение';
   };
 
+  const isTopicCompleted = (topic: Topic): boolean => {
+    if (!topic.deadline) return false;
+    const deadlineDate = new Date(topic.deadline);
+    const now = new Date();
+    return deadlineDate < now;
+  };
+
+  const activeTopics = topics.filter((t) => !isTopicCompleted(t));
+  const completedTopics = topics.filter((t) => isTopicCompleted(t));
+
   const fetchFlowIdeas = async (topicId: string) => {
     try {
       setFlowIdeasLoading(true);
@@ -806,6 +816,8 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
 
   const renderIdeaFlowTab = () => {
     if (selectedTopicForFlow) {
+      const isCompleted = isTopicCompleted(selectedTopicForFlow);
+
       return (
         <div className="admin-section">
           <div className="admin-section__header admin-section-header-row">
@@ -825,13 +837,19 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
               <h2>{selectedTopicForFlow.title}</h2>
               <p className="admin-section-description">
                 {selectedTopicForFlow.description}
+                {isCompleted && (
+                  <span className="status-badge status-private" style={{ marginLeft: '0.5rem' }}>
+                    <i className="fas fa-lock"></i> Только чтение
+                  </span>
+                )}
               </p>
             </div>
           </div>
 
-          <div className="flow-composer-card">
-            <h3 className="flow-composer-title">Добавить идею</h3>
-           <form onSubmit={handleFlowCreateIdea} className="add-idea-form">
+          {!isCompleted && (
+            <div className="flow-composer-card">
+              <h3 className="flow-composer-title">Добавить идею</h3>
+             <form onSubmit={handleFlowCreateIdea} className="add-idea-form">
   <input
     type="text"
     value={newIdeaTitle}
@@ -921,41 +939,41 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
     />
   </div>
 
-  <button
-    type="submit"
-    className="cta-button primary"
-    disabled={!newIdeaTitle.trim() || newIdeaTitle.trim().length < 15 || isSubmittingIdea}
-    style={{
-      opacity: (!newIdeaTitle.trim() || newIdeaTitle.trim().length < 15) ? 0.6 : 1,
-      cursor: (!newIdeaTitle.trim() || newIdeaTitle.trim().length < 15) ? 'not-allowed' : 'pointer',
-      position: 'relative'
-    }}
-    onClick={(e) => {
-      // Принудительно показываем ошибку при клике, если валидация не пройдена
-      if (!newIdeaTitle.trim()) {
-        e.preventDefault();
-        setIdeaValidationError('Поле "идея" не может быть пустым');
-        // Прокручиваем к полю ввода
-        document.querySelector('input[type="text"]')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      } else if (newIdeaTitle.trim().length < 15) {
-        e.preventDefault();
-        setIdeaValidationError('Идея должна содержать минимум 15 символов');
-        document.querySelector('input[type="text"]')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }}
-  >
-    {isSubmittingIdea ? (
-      <>
-        <span style={{ opacity: 0.7 }}>Добавление...</span>
-      </>
-    ) : (
-      'Добавить идею'
-    )}
-  </button>
-  
+    <button
+      type="submit"
+      className="cta-button primary"
+      disabled={!newIdeaTitle.trim() || newIdeaTitle.trim().length < 15 || isSubmittingIdea}
+      style={{
+        opacity: (!newIdeaTitle.trim() || newIdeaTitle.trim().length < 15) ? 0.6 : 1,
+        cursor: (!newIdeaTitle.trim() || newIdeaTitle.trim().length < 15) ? 'not-allowed' : 'pointer',
+        position: 'relative'
+      }}
+      onClick={(e) => {
+        // Принудительно показываем ошибку при клике, если валидация не пройдена
+        if (!newIdeaTitle.trim()) {
+          e.preventDefault();
+          setIdeaValidationError('Поле "идея" не может быть пустым');
+          // Прокручиваем к полю ввода
+          document.querySelector('input[type="text"]')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else if (newIdeaTitle.trim().length < 15) {
+          e.preventDefault();
+          setIdeaValidationError('Идея должна содержать минимум 15 символов');
+          document.querySelector('input[type="text"]')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }}
+    >
+      {isSubmittingIdea ? (
+        <>
+          <span style={{ opacity: 0.7 }}>Добавление...</span>
+        </>
+      ) : (
+        'Добавить идею'
+      )}
+    </button>
 
-</form>
-          </div>
+  </form>
+            </div>
+          )}
 
           <div className="flow-ideas-section">
             <h3>Идеи ({flowIdeas.length})</h3>
@@ -1018,7 +1036,7 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
                         </div>
                       )}
                       
-                      <CommentSection ideaId={idea.id} />
+                      <CommentSection ideaId={idea.id} readOnly={isCompleted} />
                     </div>
                   ))}
               </div>
@@ -1030,22 +1048,36 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
 
     return (
       <div className="admin-section">
-     
-
         <TopicsListView<Topic>
-          topics={topics}
+          topics={activeTopics}
           loading={topicsLoading}
-          title=""
+          title="Активные темы обсуждения"
           onTopicClick={(topic) => {
             setSelectedTopicForFlow(topic);
             fetchFlowIdeas(topic.id);
           }}
           getTopicTagLabel={getTopicTagLabel}
           formatDeadline={formatDeadline}
-          emptyText="Тем для обсуждения пока нет."
+          emptyText="Пока нет активных тем для обсуждения."
           loadingText="Загружаем темы..."
         />
-    </div>
+
+        {completedTopics.length > 0 && (
+          <TopicsListView<Topic>
+            topics={completedTopics}
+            loading={topicsLoading}
+            title="Завершённые темы"
+            onTopicClick={(topic) => {
+              setSelectedTopicForFlow(topic);
+              fetchFlowIdeas(topic.id);
+            }}
+            getTopicTagLabel={getTopicTagLabel}
+            formatDeadline={formatDeadline}
+            emptyText=""
+            loadingText="Загружаем темы..."
+          />
+        )}
+      </div>
     );
   };
 
@@ -1279,16 +1311,6 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
     </div>
   );
 
-  const renderPlaceholder = (title: string, description: string) => (
-    <div className="admin-section">
-      <div className="admin-section__header">
-        <h2>{title}</h2>
-        <p>{description}</p>
-      </div>
-      <div className="dashboard-message">
-      </div>
-    </div>
-  );
 
   if (loading) {
     return (
