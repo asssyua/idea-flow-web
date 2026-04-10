@@ -13,6 +13,7 @@ import SupportTab from './SupportTab';
 import UsersTab from './UsersTab';
 import { AdminTab, AdminUser, Comment, Idea, SupportMessage, Topic, UserProfile } from './types';
 import './Dashboard.css';
+import '../TopicDetail/TopicDetail.css';
 
 const Dashboard: React.FC = () => {
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -57,6 +58,7 @@ const Dashboard: React.FC = () => {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [isSubmittingIdea, setIsSubmittingIdea] = useState(false);
   const [ideaValidationError, setIdeaValidationError] = useState('');
+  const [viewingImage, setViewingImage] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const getInitials = () => {
@@ -97,6 +99,30 @@ const Dashboard: React.FC = () => {
       console.error('Failed to update idea as admin:', err);
     } finally {
       setIsUpdatingAdminIdea(false);
+    }
+  };
+
+  const handleAdminPinIdea = async (ideaId: string) => {
+    try {
+      await ideaAPI.pinIdea(ideaId);
+      if (selectedTopicForFlow) {
+        await fetchFlowIdeas(selectedTopicForFlow.id);
+      }
+      await loadIdeas();
+    } catch (err: any) {
+      console.error('Failed to pin idea:', err);
+    }
+  };
+
+  const handleAdminUnpinIdea = async (ideaId: string) => {
+    try {
+      await ideaAPI.unpinIdea(ideaId);
+      if (selectedTopicForFlow) {
+        await fetchFlowIdeas(selectedTopicForFlow.id);
+      }
+      await loadIdeas();
+    } catch (err: any) {
+      console.error('Failed to unpin idea:', err);
     }
   };
 
@@ -546,42 +572,45 @@ const Dashboard: React.FC = () => {
     </div>
   );
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('ru-RU', {
+  const isTopicCompleted = (topic: Topic): boolean => {
+    if (!topic.deadline) return false;
+    const deadlineDate = new Date(topic.deadline);
+    const now = new Date();
+    return deadlineDate < now;
+  };
+
+  const formatDate = (date: string): string => {
+    return new Date(date).toLocaleDateString('ru-RU', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
     });
   };
 
-  const formatDeadline = (deadline: string | null) => {
+  const formatDeadline = (deadline: string | null): string | null => {
     if (!deadline) return null;
     const deadlineDate = new Date(deadline);
-    const now = new Date();
-    
-    if (deadlineDate < now) {
-      return 'Истек';
-    }
-    
-    return formatDate(deadline);
+    return deadlineDate.toLocaleDateString('ru-RU');
   };
 
-  const getTopicTagLabel = (topic: Topic) => {
+  const getTopicTagLabel = (topic: Topic): string => {
     if (topic.status?.toLowerCase() === 'approved') {
       return 'Активна';
     }
-    if (topic.deadline && new Date(topic.deadline) < new Date()) {
-      return 'Завершена';
-    }
-    return 'Обсуждение';
-  };
 
-  const isTopicCompleted = (topic: Topic): boolean => {
-    if (!topic.deadline) return false;
+    if (!topic.deadline) {
+      return '';
+    }
+
     const deadlineDate = new Date(topic.deadline);
     const now = new Date();
-    return deadlineDate < now;
+    const formattedDate = formatDeadline(topic.deadline) || '';
+
+    if (deadlineDate < now) {
+      return `Завершено: ${formattedDate}`;
+    }
+
+    return formattedDate;
   };
 
   const activeTopics = topics.filter((t) => !isTopicCompleted(t));
@@ -819,229 +848,408 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
       const isCompleted = isTopicCompleted(selectedTopicForFlow);
 
       return (
-        <div className="admin-section">
-          <div className="admin-section__header admin-section-header-row">
-            <button
-              onClick={() => {
-                setSelectedTopicForFlow(null);
-                setFlowIdeas([]);
-                setNewIdeaTitle('');
-                setSelectedImages([]);
-                setImagePreviews([]);
-              }}
-              className="cta-button secondary"
-            >
-              ← Назад к темам
-            </button>
-            <div>
-              <h2>{selectedTopicForFlow.title}</h2>
-              <p className="admin-section-description">
-                {selectedTopicForFlow.description}
-                {isCompleted && (
-                  <span className="status-badge status-private" style={{ marginLeft: '0.5rem' }}>
-                    <i className="fas fa-lock"></i> Только чтение
+        <div className="topic-detail" style={{ padding: 0, background: 'transparent' }}>
+          <div className="topic-detail-content" style={{ padding: 0 }}>
+            <div className="container" style={{ maxWidth: '100%', padding: 0 }}>
+              <div className="back-nav">
+                <span
+                  className="back-link"
+                  onClick={() => {
+                    setSelectedTopicForFlow(null);
+                    setFlowIdeas([]);
+                    setNewIdeaTitle('');
+                    setSelectedImages([]);
+                    setImagePreviews([]);
+                  }}
+                >
+                  <i className="fas fa-arrow-left"></i> Ко всем темам
+                </span>
+              </div>
+
+              <div className="card topic-header">
+                <div className="topic-title">{selectedTopicForFlow.title}</div>
+                <div className="topic-description">{selectedTopicForFlow.description}</div>
+                <div className="topic-stats">
+                  <span className="topic-stat">
+                    <i className="far fa-lightbulb"></i> {selectedTopicForFlow.ideaCount || 0} идей
                   </span>
-                )}
-              </p>
-            </div>
-          </div>
-
-          {!isCompleted && (
-            <div className="flow-composer-card">
-              <h3 className="flow-composer-title">Добавить идею</h3>
-             <form onSubmit={handleFlowCreateIdea} className="add-idea-form">
-  <input
-    type="text"
-    value={newIdeaTitle}
-    onChange={(e) => {
-      setNewIdeaTitle(e.target.value);
-      // Сбрасываем ошибку при вводе текста
-      if (ideaValidationError) {
-        setIdeaValidationError('');
-      }
-    }}
-    onBlur={() => {
-      // Показываем ошибку при потере фокуса, если текста недостаточно
-      if (newIdeaTitle.trim().length > 0 && newIdeaTitle.trim().length < 15) {
-        setIdeaValidationError('Идея должна содержать минимум 15 символов');
-      }
-    }}
-    placeholder="Введите вашу идею (минимум 15 символов)..."
-    style={{
-      width: '100%',
-      padding: '0.75rem',
-      borderRadius: 'var(--border-radius)',
-      border: ideaValidationError 
-        ? '1px solid #dc3545' 
-        : '1px solid var(--border-color)',
-      fontSize: '1rem',
-      marginBottom: ideaValidationError ? '0.5rem' : '1rem',
-      boxShadow: ideaValidationError ? '0 0 0 0.2rem rgba(220, 53, 69, 0.25)' : 'none'
-    }}
-    disabled={isSubmittingIdea}
-  />
-  
-  {/* Сообщение об ошибке */}
-  {ideaValidationError && (
-    <div style={{
-      color: '#dc3545',
-      fontSize: '0.875rem',
-      marginBottom: '1rem',
-      padding: '0.5rem',
-      backgroundColor: '#f8d7da',
-      borderRadius: 'var(--border-radius)',
-      border: '1px solid #f5c6cb',
-      animation: 'fadeIn 0.3s ease-in'
-    }}>
-      {ideaValidationError}
-    </div>
-  )}
-  
-  {/* Счетчик символов с визуальной индикацией */}
-  <div style={{
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '1rem'
-  }}>
-    <div style={{ 
-      color: newIdeaTitle.length >= 15 ? 'var(--success-color, #28a745)' : 
-             newIdeaTitle.length > 0 ? 'var(--warning-color, #ffc107)' : 
-             'var(--text-secondary)', 
-      fontSize: '0.85rem',
-      fontWeight: newIdeaTitle.length < 15 && newIdeaTitle.length > 0 ? 600 : 'normal'
-    }}>
-      {newIdeaTitle.length}/15 символов
-      {newIdeaTitle.length >= 15 && ' ✓'}
-    </div>
-    {newIdeaTitle.length < 15 && newIdeaTitle.length > 0 && (
-      <div style={{ 
-        color: '#dc3545', 
-        fontSize: '0.85rem',
-        fontWeight: 600 
-      }}>
-        Осталось {15 - newIdeaTitle.length} симв.
-      </div>
-    )}
-  </div>
-  
-  {/* Загрузка изображений - DragDropUpload как у пользователя */}
-  <div style={{ marginBottom: '1rem' }}>
-    <DragDropUpload
-      maxFiles={5}
-      maxFileSize={10 * 1024 * 1024}
-      acceptedFormats={['image/jpeg', 'image/png', 'image/jpg']}
-      onFilesSelected={handleFlowFilesSelected}
-      onFileRemove={handleFlowFileRemove}
-      disabled={isSubmittingIdea || selectedImages.length >= 5}
-      label="Перетащите изображения сюда или нажмите для выбора"
-      key={selectedImages.length === 0 ? 'empty' : 'filled'}
-    />
-  </div>
-
-    <button
-      type="submit"
-      className="cta-button primary"
-      disabled={!newIdeaTitle.trim() || newIdeaTitle.trim().length < 15 || isSubmittingIdea}
-      style={{
-        opacity: (!newIdeaTitle.trim() || newIdeaTitle.trim().length < 15) ? 0.6 : 1,
-        cursor: (!newIdeaTitle.trim() || newIdeaTitle.trim().length < 15) ? 'not-allowed' : 'pointer',
-        position: 'relative'
-      }}
-      onClick={(e) => {
-        // Принудительно показываем ошибку при клике, если валидация не пройдена
-        if (!newIdeaTitle.trim()) {
-          e.preventDefault();
-          setIdeaValidationError('Поле "идея" не может быть пустым');
-          // Прокручиваем к полю ввода
-          document.querySelector('input[type="text"]')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        } else if (newIdeaTitle.trim().length < 15) {
-          e.preventDefault();
-          setIdeaValidationError('Идея должна содержать минимум 15 символов');
-          document.querySelector('input[type="text"]')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      }}
-    >
-      {isSubmittingIdea ? (
-        <>
-          <span style={{ opacity: 0.7 }}>Добавление...</span>
-        </>
-      ) : (
-        'Добавить идею'
-      )}
-    </button>
-
-  </form>
-            </div>
-          )}
-
-          <div className="flow-ideas-section">
-            <h3>Идеи ({flowIdeas.length})</h3>
-            {flowIdeasLoading ? (
-              <div className="loading-container admin-loading-block">
-                <div className="loading-spinner"></div>
-                <p>Загрузка идей...</p>
+                  {selectedTopicForFlow.deadline && (
+                    <span className="tag">
+                      <i className="far fa-calendar"></i>{' '}
+                      {isCompleted
+                        ? `Завершено: ${formatDeadline(selectedTopicForFlow.deadline)}`
+                        : `До: ${formatDeadline(selectedTopicForFlow.deadline)}`}
+                    </span>
+                  )}
+                  {selectedTopicForFlow.createdBy && (
+                    <span className="topic-stat">
+                      <i className="far fa-user"></i> {selectedTopicForFlow.createdBy.firstName}{' '}
+                      {selectedTopicForFlow.createdBy.lastName}
+                    </span>
+                  )}
+                </div>
               </div>
-            ) : flowIdeas.length === 0 ? (
-              <div className="empty-state">
-                <p>Пока нет идей. Будьте первым, кто предложит идею!</p>
-              </div>
-            ) : (
-              <div className="flow-ideas-list">
-                {flowIdeas
-                  .filter((idea) => idea.id)
-                  .map((idea) => (
-                    <div key={idea.id} className="flow-idea-card">
-                      <div className="flow-idea-header">
-                        <div className="flow-idea-main">
-                          <h4 className="flow-idea-title">{idea.title}</h4>
-                          <p className="flow-idea-meta">
-                            {idea.author?.firstName} {idea.author?.lastName} • {formatDate(idea.createdAt)}
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => handleFlowLike(idea.id)}
-                          className={`idea-like-btn ${flowUserReactions[idea.id] === 'like' ? 'liked' : ''}`}
-                        >
-                          <i className={flowUserReactions[idea.id] === 'like' ? 'fas fa-heart' : 'far fa-heart'}></i>
-                          <span>{idea.likes}</span>
-                        </button>
+
+              {!isCompleted && (
+                <div className="add-idea-bar">
+                  <button
+                    className="btn btn-primary"
+                    onClick={() =>
+                      document.querySelector('.add-idea-section')?.scrollIntoView({ behavior: 'smooth' })
+                    }
+                  >
+                    <i className="fas fa-plus"></i> Предложить идею
+                  </button>
+                </div>
+              )}
+
+              {!isCompleted && (
+                <div className="card add-idea-section">
+                  <div className="card-title">
+                    <h3>Добавить идею</h3>
+                  </div>
+                  <form onSubmit={handleFlowCreateIdea} className="add-idea-form">
+                    <input
+                      type="text"
+                      value={newIdeaTitle}
+                      onChange={(e) => {
+                        setNewIdeaTitle(e.target.value);
+                        if (ideaValidationError) {
+                          setIdeaValidationError('');
+                        }
+                      }}
+                      onBlur={() => {
+                        if (newIdeaTitle.trim().length > 0 && newIdeaTitle.trim().length < 15) {
+                          setIdeaValidationError('Поле не может быть пустым (минимум 15 символов)');
+                        }
+                      }}
+                      placeholder="Введите вашу идею (минимум 15 символов)..."
+                      className="comment-input"
+                      disabled={isSubmittingIdea}
+                      style={{
+                        border: ideaValidationError
+                          ? '1px solid #dc3545'
+                          : '1px solid var(--border)',
+                        marginBottom: ideaValidationError ? '0.5rem' : '1rem',
+                      }}
+                    />
+
+                    {ideaValidationError && (
+                      <div
+                        style={{
+                          color: '#dc3545',
+                          fontSize: '0.875rem',
+                          marginBottom: '1rem',
+                          padding: '0.5rem',
+                          backgroundColor: '#f8d7da',
+                          border: '1px solid #f5c6cb',
+                          borderRadius: '4px',
+                        }}
+                      >
+                        {ideaValidationError}
                       </div>
-                      
-                      {idea.images && idea.images.length > 0 && (
-                        <div className="flow-idea-images">
-                          {idea.images
-                            .filter((image) => image && typeof image === 'string' && image.length > 100)
-                            .map((image, index) => {
-                              let imageSrc = image.trim();
-                              if (!imageSrc.startsWith('data:image')) {
-                                const cleanBase64 = imageSrc.replace(/\s/g, '');
-                                let mimeType = 'jpeg';
-                                if (cleanBase64.startsWith('iVBOR')) mimeType = 'png';
-                                else if (cleanBase64.startsWith('/9j/')) mimeType = 'jpeg';
-                                imageSrc = `data:image/${mimeType};base64,${cleanBase64}`;
-                              }
-                              return (
-                                <img
-                                  key={index}
-                                  src={imageSrc}
-                                  alt={`${idea.title} - изображение ${index + 1}`}
-                                  className="flow-idea-image"
-                                  onError={(e) => {
-                                    e.currentTarget.style.display = 'none';
+                    )}
+
+                    <div className="image-upload-section">
+                      <DragDropUpload
+                        maxFiles={5}
+                        maxFileSize={10 * 1024 * 1024}
+                        acceptedFormats={['image/jpeg', 'image/png', 'image/jpg']}
+                        onFilesSelected={handleFlowFilesSelected}
+                        onFileRemove={handleFlowFileRemove}
+                        disabled={isSubmittingIdea || selectedImages.length >= 5}
+                        label="Перетащите изображения сюда или нажмите для выбора"
+                        key={selectedImages.length === 0 ? 'empty' : 'filled'}
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="btn btn-primary"
+                      disabled={
+                        !newIdeaTitle.trim() ||
+                        newIdeaTitle.trim().length < 15 ||
+                        isSubmittingIdea
+                      }
+                    >
+                      {isSubmittingIdea ? 'Добавление...' : 'Добавить идею'}
+                    </button>
+                  </form>
+                </div>
+              )}
+
+              <div className="ideas-list-wrapper">
+                {flowIdeasLoading ? (
+                  <div className="loading-container">
+                    <div className="loading-spinner"></div>
+                    <p>Загрузка идей...</p>
+                  </div>
+                ) : flowIdeas.length === 0 ? (
+                  <div className="empty-state">
+                    <p>Пока нет идей. Будьте первым, кто предложит идею!</p>
+                  </div>
+                ) : (
+                  <div className="ideas-list" id="ideas-list">
+                    {flowIdeas
+                      .filter((idea) => idea.id)
+                      .map((idea) => (
+                        <div key={idea.id} className="idea-card-full">
+                          <div className="idea-main">
+                            {editingAdminIdeaId === idea.id ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                <input
+                                  type="text"
+                                  value={adminEditTitle}
+                                  onChange={(e) => setAdminEditTitle(e.target.value)}
+                                  className="idea-input"
+                                  disabled={isUpdatingAdminIdea}
+                                />
+                                <textarea
+                                  value={adminEditDescription}
+                                  onChange={(e) => setAdminEditDescription(e.target.value)}
+                                  disabled={isUpdatingAdminIdea}
+                                  style={{
+                                    width: '100%',
+                                    minHeight: '90px',
+                                    padding: '0.75rem',
+                                    borderRadius: 'var(--radius-sm)',
+                                    border: '1px solid var(--border)',
+                                    backgroundColor: 'var(--surface)',
+                                    color: 'var(--text-main)',
+                                    resize: 'vertical',
+                                    fontFamily: 'inherit',
                                   }}
                                 />
-                              );
-                            })}
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                  <button
+                                    className="btn btn-primary btn-sm"
+                                    onClick={() => handleAdminUpdateIdea(idea.id)}
+                                    disabled={
+                                      isUpdatingAdminIdea ||
+                                      !adminEditTitle.trim() ||
+                                      adminEditTitle.trim().length < 15
+                                    }
+                                  >
+                                    {isUpdatingAdminIdea ? 'Сохранение...' : 'Сохранить'}
+                                  </button>
+                                  <button
+                                    className="btn btn-outline btn-sm"
+                                    onClick={cancelAdminEditingIdea}
+                                    disabled={isUpdatingAdminIdea}
+                                  >
+                                    Отмена
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <>
+                                <div className="idea-header-row">
+                                  <div className="idea-name">
+                                    {idea.isPinned ? <span title="Закреплено">📌 </span> : null}
+                                    {idea.title}
+                                  </div>
+                                  <button
+                                    className={`idea-like-right ${
+                                      flowUserReactions[idea.id] === 'like' ? 'liked' : ''
+                                    }`}
+                                    onClick={() => handleFlowLike(idea.id)}
+                                  >
+                                    <i
+                                      className={
+                                        flowUserReactions[idea.id] === 'like'
+                                          ? 'fas fa-heart'
+                                          : 'far fa-heart'
+                                      }
+                                    ></i>
+                                    <span>{idea.likes}</span>
+                                  </button>
+                                </div>
+
+                                {idea.description && (
+                                  <p className="idea-description">{idea.description}</p>
+                                )}
+
+                                {idea.images && idea.images.length > 0 && (
+                                  <div className="idea-images">
+                                    {idea.images
+                                      .filter((image) => {
+                                        if (!image || typeof image !== 'string' || image.length < 100) {
+                                          return false;
+                                        }
+                                        return (
+                                          image.startsWith('data:image') ||
+                                          /^[A-Za-z0-9+/=]+$/.test(image.substring(0, 100)) ||
+                                          image.startsWith('/9j/') ||
+                                          image.startsWith('iVBORw0KGgo')
+                                        );
+                                      })
+                                      .map((image, index) => {
+                                        let imageSrc = image.trim();
+
+                                        try {
+                                          if (imageSrc.startsWith('data:image')) {
+                                            const correctFormat =
+                                              /^data:image\/([a-zA-Z]+);base64,([A-Za-z0-9+/=\s]+)$/;
+                                            const match = imageSrc.match(correctFormat);
+
+                                            if (match && match[2] && match[2].trim().length > 100) {
+                                              imageSrc = `data:image/${match[1]};base64,${match[2].replace(/\s/g, '')}`;
+                                            } else {
+                                              const patterns = [
+                                                /base64[,:]\s*([A-Za-z0-9+/=\s]+)$/,
+                                                /base64\s*([A-Za-z0-9+/=\s]+)$/,
+                                                /:\s*([A-Za-z0-9+/=\s]+)$/,
+                                              ];
+
+                                              let base64Data = null;
+                                              for (const pattern of patterns) {
+                                                const m = imageSrc.match(pattern);
+                                                if (m && m[1] && m[1].trim().length > 100) {
+                                                  base64Data = m[1].trim().replace(/\s/g, '');
+                                                  break;
+                                                }
+                                              }
+
+                                              if (base64Data) {
+                                                let mimeType = 'jpeg';
+                                                const lowerSrc = imageSrc.toLowerCase();
+                                                if (lowerSrc.includes('png') || base64Data.startsWith('iVBOR')) {
+                                                  mimeType = 'png';
+                                                } else if (
+                                                  lowerSrc.includes('jpeg') ||
+                                                  lowerSrc.includes('jpg') ||
+                                                  base64Data.startsWith('/9j/') ||
+                                                  base64Data.startsWith('FFD8')
+                                                ) {
+                                                  mimeType = 'jpeg';
+                                                } else if (lowerSrc.includes('gif') || base64Data.startsWith('R0lGOD')) {
+                                                  mimeType = 'gif';
+                                                } else if (lowerSrc.includes('webp') || base64Data.startsWith('UklGR')) {
+                                                  mimeType = 'webp';
+                                                }
+                                                imageSrc = `data:image/${mimeType};base64,${base64Data}`;
+                                              } else {
+                                                return null;
+                                              }
+                                            }
+                                          } else {
+                                            const cleanBase64 = imageSrc.replace(/\s/g, '');
+
+                                            let mimeType = 'jpeg';
+                                            if (cleanBase64.startsWith('iVBORw0KGgo') || cleanBase64.startsWith('iVBOR')) {
+                                              mimeType = 'png';
+                                            } else if (cleanBase64.startsWith('/9j/') || cleanBase64.startsWith('FFD8')) {
+                                              mimeType = 'jpeg';
+                                            } else if (cleanBase64.startsWith('R0lGOD')) {
+                                              mimeType = 'gif';
+                                            } else if (cleanBase64.startsWith('UklGR')) {
+                                              mimeType = 'webp';
+                                            }
+                                            imageSrc = `data:image/${mimeType};base64,${cleanBase64}`;
+                                          }
+
+                                          const base64Data = imageSrc.split(',')[1];
+                                          if (!base64Data || base64Data.length < 100) {
+                                            return null;
+                                          }
+
+                                          if (!/^[A-Za-z0-9+/=]+$/.test(base64Data)) {
+                                            return null;
+                                          }
+                                        } catch (error) {
+                                          console.error('Error processing image:', error);
+                                          return null;
+                                        }
+
+                                        return (
+                                          <div key={`${idea.id}-img-${index}`} className="idea-image-wrapper">
+                                            <img
+                                              src={imageSrc}
+                                              alt={`${idea.title} - изображение ${index + 1}`}
+                                              className="idea-image"
+                                              onClick={() => setViewingImage(imageSrc)}
+                                              onError={(e) => {
+                                                console.error(
+                                                  'Failed to load image at index',
+                                                  index,
+                                                  'Length:',
+                                                  imageSrc.length
+                                                );
+                                                console.error(
+                                                  'Image preview (first 100 chars):',
+                                                  imageSrc.substring(0, 100)
+                                                );
+                                                e.currentTarget.style.display = 'none';
+                                              }}
+                                            />
+                                          </div>
+                                        );
+                                      })
+                                      .filter(Boolean)}
+                                  </div>
+                                )}
+
+                                <div className="idea-meta">
+                                  <span>
+                                    <i className="far fa-user"></i> Автор: {idea.author.firstName}{' '}
+                                    {idea.author.lastName}
+                                  </span>
+                                  <span>
+                                    <i className="far fa-calendar"></i> {formatDate(idea.createdAt)}
+                                  </span>
+                                </div>
+
+                                {/* Admin actions - hidden for completed topics */}
+                                {!isCompleted && (idea.canEdit || idea.canPin) && (
+                                  <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                    {idea.canEdit && (
+                                      <button
+                                        className="btn btn-outline btn-sm"
+                                        onClick={() => startAdminEditingIdea(idea)}
+                                      >
+                                        Редактировать
+                                      </button>
+                                    )}
+                                    {idea.canPin &&
+                                      (idea.isPinned ? (
+                                        <button
+                                          className="btn btn-outline btn-sm"
+                                          onClick={() => handleAdminUnpinIdea(idea.id)}
+                                        >
+                                          Открепить
+                                        </button>
+                                      ) : (
+                                        <button
+                                          className="btn btn-outline btn-sm"
+                                          onClick={() => handleAdminPinIdea(idea.id)}
+                                        >
+                                          Закрепить
+                                        </button>
+                                      ))}
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                          <CommentSection ideaId={idea.id} readOnly={isCompleted} />
                         </div>
-                      )}
-                      
-                      <CommentSection ideaId={idea.id} readOnly={isCompleted} />
-                    </div>
-                  ))}
+                      ))}
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
+
+          {viewingImage && (
+            <div className="image-viewer-overlay" onClick={() => setViewingImage(null)}>
+              <div className="image-viewer-content" onClick={(e) => e.stopPropagation()}>
+                <button className="image-viewer-close" onClick={() => setViewingImage(null)}>
+                  ×
+                </button>
+                <img src={viewingImage} alt="Просмотр изображения" className="image-viewer-image" />
+              </div>
+            </div>
+          )}
         </div>
       );
     }

@@ -58,6 +58,9 @@ export interface Idea {
   dislikes: number;
   rating: number;
   commentCount: number;
+  isPinned?: boolean;
+  canPin?: boolean;
+  canEdit?: boolean;
   createdAt: string;
   author: {
     firstName: string;

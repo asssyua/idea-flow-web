@@ -576,9 +576,9 @@
 }
 
 .cta-button.danger:hover {
-  background: #FEF2F2;
-  color: #C2410C;
-  border-color: #FCA5A5;
+  background: var(--danger);
+  color: white;
+  border-color: var(--danger);
   transform: translateY(-1px);
 }
 
@@ -1453,9 +1453,9 @@
 }
 
 .cta-button.danger:hover {
-  background: #FEF2F2;
-  color: #C2410C;
-  border-color: #FCA5A5;
+  background: var(--danger);
+  color: white;
+  border-color: var(--danger);
   transform: translateY(-1px);
 }
 
