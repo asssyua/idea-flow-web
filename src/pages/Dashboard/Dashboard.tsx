@@ -8,6 +8,7 @@ import ConfirmModal from '../../components/Modals/ConfirmModal';
 import TopicModal from '../../components/Modals/TopicModal';
 import CommentSection from '../../components/CommentSection/CommentSection';
 import TopicsListView from '../../components/Topics/TopicsListView';
+import DragDropUpload from '../../components/DragDropUpload/DragDropUpload';
 import SupportTab from './SupportTab';
 import UsersTab from './UsersTab';
 import { AdminTab, AdminUser, Comment, Idea, SupportMessage, Topic, UserProfile } from './types';
@@ -314,14 +315,21 @@ const Dashboard: React.FC = () => {
       if (selectedTopic) {
         await topicAPI.updateTopic(selectedTopic.id, topicData);
       } else {
-        await topicAPI.createTopic(topicData);
+        const response = await topicAPI.createTopic(topicData);
+        // Оптимистичное обновление: добавляем новую тему в список немедленно
+        if (response.data) {
+          setTopics(prev => [response.data, ...prev]);
+        }
       }
+      // Загружаем актуальный список для синхронизации
       await loadTopics();
       setTopicModalOpen(false);
       setSelectedTopic(null);
     } catch (err: any) {
       console.error('Failed to save topic', err);
       const errorMessage = err.response?.data?.message || 'Не удалось сохранить тему для обсуждения';
+      setError(errorMessage);
+      throw err;
     }
   };
 
@@ -640,42 +648,23 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const handleFlowImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    const imageFiles = files.filter(file => file.type.startsWith('image/'));
-    
-    if (imageFiles.length === 0) {
-      return;
-    }
+  const handleFlowFilesSelected = (files: File[]) => {
+    const maxFileSize = 10 * 1024 * 1024; // 10 MB
+    const validFiles = files.filter(file => file.size <= maxFileSize);
 
-    const maxFileSize = 5 * 1024 * 1024;
-    const validFiles = imageFiles.filter(file => {
-      if (file.size > maxFileSize) {
-        return false;
-      }
-      return true;
-    });
-
-    if (validFiles.length === 0) return;
-
-    const maxImages = 5;
-    const filesToAdd = validFiles.slice(0, maxImages - selectedImages.length);
-    
-    if (validFiles.length > filesToAdd.length) {
-    }
-
-    setSelectedImages(prev => [...prev, ...filesToAdd]);
-
-    filesToAdd.forEach(file => {
+    validFiles.forEach(file => {
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreviews(prev => [...prev, reader.result as string]);
       };
       reader.readAsDataURL(file);
     });
+
+    setSelectedImages(prev => [...prev, ...validFiles]);
   };
 
-  const removeFlowImage = (index: number) => {
+  const handleFlowFileRemove = (fileId: string) => {
+    const index = parseInt(fileId, 10) || 0;
     setSelectedImages(prev => prev.filter((_, i) => i !== index));
     setImagePreviews(prev => prev.filter((_, i) => i !== index));
   };
@@ -842,7 +831,7 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
 
           <div className="flow-composer-card">
             <h3 className="flow-composer-title">Добавить идею</h3>
-           <form onSubmit={handleFlowCreateIdea}>
+           <form onSubmit={handleFlowCreateIdea} className="add-idea-form">
   <input
     type="text"
     value={newIdeaTitle}
@@ -918,103 +907,18 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
     )}
   </div>
   
-  {/* Загрузка изображений */}
+  {/* Загрузка изображений - DragDropUpload как у пользователя */}
   <div style={{ marginBottom: '1rem' }}>
-    <label htmlFor="flow-idea-images" style={{ 
-      display: 'inline-flex', 
-      alignItems: 'center', 
-      gap: '0.5rem',
-      cursor: selectedImages.length >= 5 ? 'not-allowed' : 'pointer',
-      padding: '0.5rem 1rem',
-      background: 'var(--bg-secondary)',
-      borderRadius: 'var(--border-radius)',
-      border: '1px solid var(--border-color)',
-      opacity: selectedImages.length >= 5 ? 0.6 : 1,
-      transition: 'all 0.2s ease'
-    }}>
-      <span>📷</span>
-      <span>Добавить изображения (макс. 5) {selectedImages.length > 0 ? `(${selectedImages.length} добавлено)` : ''}</span>
-      <input
-        id="flow-idea-images"
-        type="file"
-        accept="image/*"
-        multiple
-        onChange={handleFlowImageSelect}
-        disabled={isSubmittingIdea || selectedImages.length >= 5}
-        style={{ display: 'none' }}
-      />
-    </label>
-    
-    {/* Сообщение о максимальном количестве изображений */}
-    {selectedImages.length >= 5 && (
-      <div style={{
-        color: '#856404',
-        fontSize: '0.875rem',
-        marginTop: '0.5rem',
-        padding: '0.5rem',
-        backgroundColor: '#fff3cd',
-        borderRadius: 'var(--border-radius)',
-        border: '1px solid #ffeaa7'
-      }}>
-        Достигнуто максимальное количество изображений (5)
-      </div>
-    )}
-    
-    {/* Превью изображений */}
-    {imagePreviews.length > 0 && (
-      <div style={{ 
-        display: 'flex', 
-        gap: '0.5rem', 
-        flexWrap: 'wrap', 
-        marginTop: '1rem',
-        borderTop: imagePreviews.length > 0 ? '1px solid var(--border-color)' : 'none',
-        paddingTop: imagePreviews.length > 0 ? '1rem' : '0'
-      }}>
-        {imagePreviews.map((preview, index) => (
-          <div key={index} style={{ position: 'relative' }}>
-            <img 
-              src={preview} 
-              alt={`Preview ${index + 1}`} 
-              style={{ 
-                width: '100px', 
-                height: '100px', 
-                objectFit: 'cover', 
-                borderRadius: 'var(--border-radius)',
-                border: '2px solid var(--border-color)'
-              }} 
-            />
-            <button
-              type="button"
-              onClick={() => removeFlowImage(index)}
-              disabled={isSubmittingIdea}
-              style={{
-                position: 'absolute',
-                top: '-8px',
-                right: '-8px',
-                background: '#dc3545',
-                color: 'white',
-                border: 'none',
-                borderRadius: '50%',
-                width: '24px',
-                height: '24px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                lineHeight: '1',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                transition: 'transform 0.2s ease'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-            >
-              ×
-            </button>
-          </div>
-        ))}
-      </div>
-    )}
+    <DragDropUpload
+      maxFiles={5}
+      maxFileSize={10 * 1024 * 1024}
+      acceptedFormats={['image/jpeg', 'image/png', 'image/jpg']}
+      onFilesSelected={handleFlowFilesSelected}
+      onFileRemove={handleFlowFileRemove}
+      disabled={isSubmittingIdea || selectedImages.length >= 5}
+      label="Перетащите изображения сюда или нажмите для выбора"
+      key={selectedImages.length === 0 ? 'empty' : 'filled'}
+    />
   </div>
 
   <button

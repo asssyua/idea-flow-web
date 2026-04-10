@@ -72,25 +72,30 @@ const TopicModal: React.FC<TopicModalProps> = ({ isOpen, onClose, onSave, topic,
 
     try {
       const deadlineValue = deadline ? new Date(deadline).toISOString() : null;
-      
+
       const saveData: any = {
         title: title.trim(),
         description: description.trim(),
       };
-      
- 
+
+
       if (!isUserMode || topic) {
         saveData.privacy = privacy;
         saveData.deadline = deadlineValue;
       }
-      
+
       if (topic) {
         saveData.status = status;
       }
-      
+
       await onSave(saveData);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error saving topic', err);
+      // Отображаем ошибку в модальном окне вместо закрытия
+      const errorMessage = err?.response?.data?.message || err?.message || 'Не удалось сохранить тему';
+      setError(errorMessage);
+      // Не закрываем модал при ошибке
+      return;
     } finally {
       setIsLoading(false);
     }
