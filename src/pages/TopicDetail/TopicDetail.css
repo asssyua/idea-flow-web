@@ -195,13 +195,14 @@
 }
 
 .tag-accent {
-  background: #FFF4E0;
-  color: #B28C32;
+  background: transparent;
+  color: var(--text-muted);
+ 
 }
 
 .tag-warning {
-  background: #FEE2E2;
-  color: #991B1B;
+  background: transparent;
+  color:  var(--text-muted);
 }
 
 /* ===== Topic Header ===== */

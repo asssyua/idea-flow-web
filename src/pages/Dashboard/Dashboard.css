@@ -546,10 +546,14 @@
 .cta-button {
   border: none;
   border-radius: 4px;
-  padding: 6px 12px;
-  font-size: 0.75rem;
+  padding: 8px 16px;
+  font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .cta-button.primary,
@@ -570,9 +574,13 @@
   color: var(--danger);
   border: 1px solid #FECACA;
   font-weight: 500;
-  padding: 6px 12px;
-  font-size: 0.75rem;
+  padding: 8px 16px;
+  font-size: 0.9rem;
   border-radius: var(--radius-sm);
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .cta-button.danger:hover {
@@ -586,9 +594,13 @@
   background: transparent;
   color: var(--text-muted);
   border: 1px solid var(--border);
-  padding: 6px 12px;
-  font-size: 0.75rem;
+  padding: 8px 16px;
+  font-size: 0.9rem;
   font-weight: 500;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .cta-button.secondary:hover {
@@ -1446,10 +1458,14 @@
   background: transparent;
   color: var(--danger);
   border: 1px solid #FECACA;
-  padding: 6px 12px;
-  font-size: 0.75rem;
+  padding: 8px 16px;
+  font-size: 0.9rem;
   font-weight: 500;
   border-radius: var(--radius-sm);
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .cta-button.danger:hover {
@@ -1463,9 +1479,13 @@
   background: transparent;
   color: var(--text-muted);
   border: 1px solid var(--border);
-  padding: 6px 12px;
-  font-size: 0.75rem;
+  padding: 8px 16px;
+  font-size: 0.9rem;
   font-weight: 500;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .cta-button.secondary:hover {
