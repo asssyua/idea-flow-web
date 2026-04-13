@@ -17,7 +17,6 @@
   color: var(--text-muted);
 }
 
-/* Completed topic card styling */
 .topic-card--completed {
   opacity: 0.75;
   background: var(--surface-elevated);
@@ -26,4 +25,14 @@
 
 .topic-card--completed:hover {
   opacity: 0.9;
+}
+
+.topic-meta i {
+  margin-right: 0.4rem;
+}
+
+
+.topic-card .tag {
+  align-self: center;
+  text-align: center;
 }
