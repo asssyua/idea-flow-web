@@ -48,23 +48,31 @@ const CommentSection: React.FC<CommentSectionProps> = ({ ideaId, readOnly = fals
   };
 
   const organizeComments = (commentsData: Comment[]): Comment[] => {
-    const parentComments = commentsData.filter(c => !c.parentId);
-    const childComments = commentsData.filter(c => c.parentId);
-
-    const repliesMap = new Map<string, Comment[]>();
-    childComments.forEach(reply => {
-      if (reply.parentId) {
-        if (!repliesMap.has(reply.parentId)) {
-          repliesMap.set(reply.parentId, []);
-        }
-        repliesMap.get(reply.parentId)!.push(reply);
-      }
+    // Создаем Map для быстрого доступа к комментариям по id
+    const commentMap = new Map<string, Comment>();
+    commentsData.forEach(c => {
+      commentMap.set(c.id, { ...c, replies: [] });
     });
 
-    return parentComments.map(comment => ({
-      ...comment,
-      replies: repliesMap.get(comment.id) || []
-    }));
+    // Рекурсивно строим дерево комментариев
+    const buildReplies = (commentId: string): Comment[] => {
+      return commentsData
+        .filter(c => c.parentId === commentId)
+        .map(reply => {
+          const comment = commentMap.get(reply.id);
+          if (!comment) return reply;
+          return { ...comment, replies: buildReplies(reply.id) };
+        });
+    };
+
+    // Возвращаем только корневые комментарии (без parentId) с рекурсивно построенными replies
+    return commentsData
+      .filter(c => !c.parentId)
+      .map(c => {
+        const comment = commentMap.get(c.id);
+        if (!comment) return c;
+        return { ...comment, replies: buildReplies(c.id) };
+      });
   };
 
   const handleSubmitComment = async (e: React.FormEvent) => {
@@ -182,7 +190,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ ideaId, readOnly = fals
                   setReplyContent(prev => ({ ...prev, [parentId]: '' }));
                 }
               }}
-              replyContent={replyContent[comment.id] || ''}
+              replyContent={replyContent}
               onReplyContentChange={(parentId, content) => {
                 setReplyContent(prev => ({ ...prev, [parentId]: content }));
               }}
@@ -210,7 +218,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ ideaId, readOnly = fals
 interface CommentItemProps {
   comment: Comment;
   onReply: (parentId: string) => void;
-  replyContent: string;
+  replyContent: Record<string, string>;
   onReplyContentChange: (parentId: string, content: string) => void;
   onSubmitReply: (parentId: string) => void;
   replyingTo: string | null;
@@ -254,7 +262,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
               }}
               disabled={isReplying || isSubmitting}
             >
-              <i className="far fa-reply"></i> Ответить
+              <i className="far fa-comment"></i> Ответить
             </button>
           )}
         </div>
@@ -263,7 +271,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
       {isReplying && (
         <div className="reply-form">
           <textarea
-            value={replyContent}
+            value={replyContent[comment.id] || ''}
             onChange={(e) => onReplyContentChange(comment.id, e.target.value)}
             placeholder="Напишите ответ..."
             className="comment-input"
@@ -278,7 +286,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
                 e.preventDefault();
                 onSubmitReply(comment.id);
               }}
-              disabled={!replyContent.trim() || isSubmitting}
+              disabled={!(replyContent[comment.id] || '').trim() || isSubmitting}
             >
               {isSubmitting ? 'Отправка...' : 'Отправить'}
             </button>
@@ -300,31 +308,19 @@ const CommentItem: React.FC<CommentItemProps> = ({
       {comment.replies && comment.replies.length > 0 && (
         <div className="comment-replies">
           {comment.replies.map((reply) => (
-            <div key={reply.id} className="comment-item reply-item">
-              <div className="reply-main comment-content">
-                <div className="comment-header">
-                  <span className="comment-author">
-                    {reply.author.firstName} {reply.author.lastName}
-                  </span>
-                  <span className="comment-date">{formatDate(reply.createdAt)}</span>
-                </div>
-                <p className="comment-text">{reply.content}</p>
-                <div className="comment-actions">
-                  {!readOnly && (
-                    <button
-                      className="reply-btn"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        onReply(comment.id);
-                      }}
-                      disabled={isReplying || isSubmitting}
-                    >
-                      <i className="far fa-reply"></i> Ответить
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
+            <CommentItem
+              key={reply.id}
+              comment={reply}
+              onReply={onReply}
+              replyContent={replyContent}
+              onReplyContentChange={onReplyContentChange}
+              onSubmitReply={onSubmitReply}
+              replyingTo={replyingTo}
+              onCancelReply={onCancelReply}
+              isSubmitting={isSubmitting}
+              formatDate={formatDate}
+              readOnly={readOnly}
+            />
           ))}
         </div>
       )}

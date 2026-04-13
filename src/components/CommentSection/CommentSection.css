@@ -183,6 +183,37 @@
   cursor: not-allowed;
 }
 
+.reply-btn {
+  align-self: flex-start;
+  background: var(--primary-soft);
+  border: none;
+  color: var(--primary);
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: var(--radius-sm);
+  margin-top: 4px;
+}
+
+.reply-btn:hover:not(:disabled) {
+  color: white;
+  background: var(--primary);
+}
+
+.reply-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.reply-btn i {
+  font-size: 0.9rem;
+}
+
 .reply-form {
   margin-top: 0.75rem;
   margin-left: 2rem;
