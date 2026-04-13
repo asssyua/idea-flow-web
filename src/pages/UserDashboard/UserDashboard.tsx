@@ -40,6 +40,18 @@ interface Topic {
   } | null;
 }
 
+interface Idea {
+  id: string;
+  title: string;
+  description: string;
+  likes: number;
+  dislikes: number;
+  author?: {
+    firstName: string;
+    lastName: string;
+  };
+}
+
 type UserTab = 'home' | 'topics' | 'profile';
 
 const getActiveTabByPath = (pathname: string): UserTab => {
@@ -79,6 +91,7 @@ const UserDashboard: React.FC = () => {
   const [badges, setBadges] = useState<BadgeItem[]>([]);
   const [topics, setTopics] = useState<Topic[]>([]);
   const [favoriteTopics, setFavoriteTopics] = useState<Topic[]>([]);
+  const [topIdeasByTopic, setTopIdeasByTopic] = useState<Record<string, Idea | null>>({});
   const [loading, setLoading] = useState(true);
   const [topicsLoading, setTopicsLoading] = useState(true);
   const [favoritesLoading, setFavoritesLoading] = useState(true);
@@ -102,6 +115,12 @@ const UserDashboard: React.FC = () => {
     fetchFavoriteTopics();
     fetchStatistics();
   }, []);
+
+  useEffect(() => {
+    if (topics.length > 0) {
+      fetchTopIdeasForTopics();
+    }
+  }, [topics]);
 
   const fetchProfile = async () => {
     try {
@@ -177,7 +196,6 @@ const UserDashboard: React.FC = () => {
     try {
       console.log('Fetching user statistics...');
       const response = await ideaAPI.getUserStatistics();
-      console.log('Statistics response:', response.data);
       const data = response.data;
       setStats({
         ideasCount: data.totalIdeas ?? 0,
@@ -188,10 +206,40 @@ const UserDashboard: React.FC = () => {
       });
     } catch (err: any) {
       console.error('Failed to fetch statistics:', err);
-      console.error('Error response:', err.response?.data);
     }
   };
 
+  const fetchTopIdeasForTopics = async () => {
+    const topTopicsList = [...topics]
+      .sort((a, b) => (b.ideaCount || 0) - (a.ideaCount || 0))
+      .slice(0, 3);
+    
+    const ideasMap: Record<string, Idea | null> = {};
+    
+    await Promise.all(
+      topTopicsList.map(async (topic) => {
+        try {
+          const response = await ideaAPI.getIdeasByTopic(topic.id);
+          const ideas = Array.isArray(response.data) ? response.data : response.data?.ideas || [];
+          
+          if (ideas.length > 0) {
+            // Find idea with most likes
+            const topIdea = ideas.reduce((max: Idea, idea: Idea) => 
+              (idea.likes || 0) > (max.likes || 0) ? idea : max
+            );
+            ideasMap[topic.id] = topIdea;
+          } else {
+            ideasMap[topic.id] = null;
+          }
+        } catch (err) {
+          console.error(`Failed to fetch ideas for topic ${topic.id}:`, err);
+          ideasMap[topic.id] = null;
+        }
+      })
+    );
+    
+    setTopIdeasByTopic(ideasMap);
+  };
 
   useEffect(() => {
     if (activeTab === 'profile') {
@@ -332,13 +380,23 @@ const UserDashboard: React.FC = () => {
                             </div>
                           </div>
                           <div className="top-comment-box">
-                            <div>
+                            <div className="comment-text-wrapper">
                               <i className="fas fa-quote-left comment-quote-icon"></i>
-                              <span className="comment-text-preview">Откройте тему, чтобы изучить идеи участников и обсуждение коллег.</span>
+                              <span className="comment-text-preview">
+                                {topIdeasByTopic[topic.id]
+                                  ? topIdeasByTopic[topic.id]!.title
+                                  : 'В этой теме пока нет идей.'}
+                              </span>
                             </div>
                             <div className="comment-footer">
-                              <div className="comment-likes"><i className="fas fa-heart"></i> {topic.ideaCount || 0}</div>
-                              <div className="comment-author">{getTopicTagLabel(topic)}</div>
+                              <div className="comment-likes">
+                                <i className="fas fa-heart"></i> {topIdeasByTopic[topic.id]?.likes || 0}
+                              </div>
+                              {topIdeasByTopic[topic.id]?.author && (
+                                <div className="comment-author">
+                                  {topIdeasByTopic[topic.id]!.author!.firstName} {topIdeasByTopic[topic.id]!.author!.lastName}
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>

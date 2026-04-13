@@ -602,6 +602,23 @@
 .comment-text-preview {
   font-size: 0.75rem;
   margin-bottom: 8px;
+  display: block;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  line-height: 1.4;
+}
+
+.comment-text-wrapper {
+  display: flex;
+  align-items: flex-start;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+
+.comment-text-wrapper .comment-quote-icon {
+  flex-shrink: 0;
 }
 
 .comment-footer {
@@ -621,8 +638,9 @@
 }
 
 .comment-author {
-  font-weight: 600;
+  font-weight: 500;
   color: #7C3AED;
+  font-size: 0.6rem;
 }
 
 .profile-content {
