@@ -177,7 +177,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ ideaId, readOnly = fals
       <div className="comment-thread comments-list">
         {comments.length === 0 ? (
           <div className="empty-comments">
-            <p>Пока нет комментариев. Будьте первым!</p>
+            <p>{readOnly ? 'Нет комментариев' : 'Пока нет комментариев. Будьте первым!'}</p>
           </div>
         ) : (
           comments.map((comment) => (

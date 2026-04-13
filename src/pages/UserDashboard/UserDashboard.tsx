@@ -282,7 +282,7 @@ const UserDashboard: React.FC = () => {
     const now = new Date();
 
     if (deadlineDate < now) {
-      return 'Истек';
+      return ` ${formatDate(deadline)}`;
     }
 
     return formatDate(deadline);

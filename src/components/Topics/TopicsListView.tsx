@@ -146,7 +146,7 @@ const TopicsListView = <T extends TopicsListItem>({
                 {topic.deadline && (
                   <span>
                     <i className="far fa-calendar"></i>
-                    До {formatDeadline(topic.deadline)}
+                    {isTopicCompleted(topic) ? 'Завершена' : 'До'} {formatDeadline(topic.deadline)}
                   </span>
                 )}
               </div>

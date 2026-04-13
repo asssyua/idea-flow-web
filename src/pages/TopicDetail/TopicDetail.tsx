@@ -508,7 +508,7 @@ const TopicDetail: React.FC = () => {
     const now = new Date();
 
     if (deadlineDate < now) {
-      return 'Истек';
+      return `Завершено: ${formatDate(deadline)}`;
     }
 
     return formatDate(deadline);
