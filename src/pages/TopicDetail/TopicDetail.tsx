@@ -593,20 +593,28 @@ const TopicDetail: React.FC = () => {
             </div>
           </div>
 
-          {!isTopicCompleted() && (
-            <div className="add-idea-bar">
-              <button className="btn btn-primary" onClick={() => document.querySelector('.add-idea-section')?.scrollIntoView({ behavior: 'smooth' })}>
-                <i className="fas fa-plus"></i> Предложить идею
-              </button>
-            </div>
-          )}
+      
 
           {!isTopicCompleted() && (
             <div className="card add-idea-section">
-            <div className="card-title">
+            <div className="card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
               <h3>Добавить идею</h3>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => {
+                  const form = document.querySelector('.add-idea-form') as HTMLFormElement;
+                  if (form) {
+                    form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                    handleCreateIdea({ preventDefault: () => {} } as React.FormEvent);
+                  }
+                }}
+                disabled={!newIdeaTitle.trim() || newIdeaTitle.trim().length < 15 || isSubmitting}
+              >
+                {isSubmitting ? 'Добавление...' : 'Добавить идею'}
+              </button>
             </div>
-            <form onSubmit={handleCreateIdea} className="add-idea-form">
+            <form onSubmit={handleCreateIdea} className="add-idea-form" id="add-idea-form">
               <input
                 type="text"
                 value={newIdeaTitle}
@@ -658,15 +666,7 @@ const TopicDetail: React.FC = () => {
                   key={selectedImages.length === 0 ? 'empty' : 'filled'}
                 />
               </div>
-
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  disabled={!newIdeaTitle.trim() || newIdeaTitle.trim().length < 15 || isSubmitting}
-                >
-                  {isSubmitting ? 'Добавление...' : 'Добавить идею'}
-                </button>
-              </form>
+            </form>
             </div>
           )}
 
