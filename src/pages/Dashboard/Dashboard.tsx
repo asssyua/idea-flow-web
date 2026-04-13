@@ -83,7 +83,7 @@ const Dashboard: React.FC = () => {
     { id: 'topics' as AdminTab, label: 'Темы' },
     { id: 'ideas' as AdminTab, label: 'Идеи' },
     { id: 'ideaflow' as AdminTab, label: 'IdeaFlow' },
-    { id: 'profile' as AdminTab, label: 'Профиль' },
+    { id: 'profile' as AdminTab, label: 'Личный кабинет' },
   ];
 
   const startAdminEditingIdea = (idea: Idea) => {
@@ -1676,7 +1676,12 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
               </a>
             ))}
 
-            <div className="profile-pill admin-profile-pill" title="Администратор">
+            <div
+              className="profile-pill admin-profile-pill"
+              title="Администратор"
+              onClick={() => setActiveTab('profile')}
+              style={{ cursor: 'pointer' }}
+            >
               <div className="avatar-sq">{getInitials()}</div>
               <div className="admin-profile-text">
                 <strong>Администратор</strong>
