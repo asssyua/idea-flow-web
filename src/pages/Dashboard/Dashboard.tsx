@@ -8,7 +8,7 @@ import ConfirmModal from '../../components/Modals/ConfirmModal';
 import TopicModal from '../../components/Modals/TopicModal';
 import CommentSection from '../../components/CommentSection/CommentSection';
 import TopicsListView from '../../components/Topics/TopicsListView';
-import DragDropUpload from '../../components/DragDropUpload/DragDropUpload';
+import DragDropUpload, { UploadFile } from '../../components/DragDropUpload/DragDropUpload';
 import SupportTab from './SupportTab';
 import UsersTab from './UsersTab';
 import { AdminTab, AdminUser, Comment, Idea, SupportMessage, Topic, UserProfile } from './types';
@@ -54,8 +54,7 @@ const Dashboard: React.FC = () => {
   const [flowIdeasLoading, setFlowIdeasLoading] = useState(false);
   const [flowUserReactions, setFlowUserReactions] = useState<Record<string, 'like' | 'dislike' | null>>({});
   const [newIdeaTitle, setNewIdeaTitle] = useState('');
-  const [selectedImages, setSelectedImages] = useState<File[]>([]);
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [uploadFiles, setUploadFiles] = useState<UploadFile[]>([]);
   const [isSubmittingIdea, setIsSubmittingIdea] = useState(false);
   const [ideaValidationError, setIdeaValidationError] = useState('');
   const [viewingImage, setViewingImage] = useState<string | null>(null);
@@ -687,25 +686,18 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const handleFlowFilesSelected = (files: File[]) => {
-    const maxFileSize = 10 * 1024 * 1024; // 10 MB
-    const validFiles = files.filter(file => file.size <= maxFileSize);
-
-    validFiles.forEach(file => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreviews(prev => [...prev, reader.result as string]);
-      };
-      reader.readAsDataURL(file);
+  const handleFlowFilesSelected = (files: UploadFile[]) => {
+    // Files come from DragDropUpload with previews already generated
+    // Just merge them with existing files, ensuring no duplicates by id
+    setUploadFiles(prev => {
+      const existingIds = new Set(prev.map(f => f.id));
+      const newFiles = files.filter(f => !existingIds.has(f.id));
+      return [...prev, ...newFiles].slice(0, 5);
     });
-
-    setSelectedImages(prev => [...prev, ...validFiles]);
   };
 
   const handleFlowFileRemove = (fileId: string) => {
-    const index = parseInt(fileId, 10) || 0;
-    setSelectedImages(prev => prev.filter((_, i) => i !== index));
-    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+    setUploadFiles(prev => prev.filter(f => f.id !== fileId));
   };
 
   const compressImage = (file: File, maxWidth: number = 1920, maxHeight: number = 1920, quality: number = 0.8): Promise<File> => {
@@ -816,8 +808,8 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
   setIdeaValidationError('');
   
   try {
-    const imageBase64 = selectedImages.length > 0 
-      ? await convertImagesToBase64(selectedImages)
+    const imageBase64 = uploadFiles.length > 0 
+      ? await convertImagesToBase64(uploadFiles.map(uf => uf.file))
       : undefined;
 
     await ideaAPI.createIdea({
@@ -827,12 +819,7 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
       images: imageBase64,
     });
     setNewIdeaTitle('');
-    setSelectedImages([]);
-    setImagePreviews([]);
-    const fileInput = document.getElementById('flow-idea-images') as HTMLInputElement;
-    if (fileInput) {
-      fileInput.value = '';
-    }
+    setUploadFiles([]);
     await fetchFlowIdeas(selectedTopicForFlow.id);
     await loadTopics();
   } catch (err: any) {
@@ -858,8 +845,7 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
                     setSelectedTopicForFlow(null);
                     setFlowIdeas([]);
                     setNewIdeaTitle('');
-                    setSelectedImages([]);
-                    setImagePreviews([]);
+                    setUploadFiles([]);
                   }}
                 >
                   <i className="fas fa-arrow-left"></i> Ко всем темам
@@ -957,9 +943,10 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
                         acceptedFormats={['image/jpeg', 'image/png', 'image/jpg']}
                         onFilesSelected={handleFlowFilesSelected}
                         onFileRemove={handleFlowFileRemove}
-                        disabled={isSubmittingIdea || selectedImages.length >= 5}
+                        existingFiles={uploadFiles}
+                        disabled={isSubmittingIdea || uploadFiles.length >= 5}
                         label="Перетащите изображения сюда или нажмите для выбора"
-                        key={selectedImages.length === 0 ? 'empty' : 'filled'}
+                        key={uploadFiles.length === 0 ? 'empty' : 'filled'}
                       />
                     </div>
 

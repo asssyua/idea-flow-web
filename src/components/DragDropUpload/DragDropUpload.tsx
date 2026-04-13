@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import './DragDropUpload.css';
 
 export interface UploadFile {
@@ -14,7 +14,7 @@ interface DragDropUploadProps {
   maxFiles?: number;
   maxFileSize?: number; // in bytes
   acceptedFormats?: string[];
-  onFilesSelected: (files: File[]) => void;
+  onFilesSelected: (files: UploadFile[]) => void;
   onFileRemove?: (fileId: string) => void;
   existingFiles?: UploadFile[];
   disabled?: boolean;
@@ -34,6 +34,11 @@ const DragDropUpload: React.FC<DragDropUploadProps> = ({
   const [isDragOver, setIsDragOver] = useState(false);
   const [files, setFiles] = useState<UploadFile[]>(existingFiles);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync external files with internal state
+  useEffect(() => {
+    setFiles(existingFiles);
+  }, [existingFiles]);
 
   const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
@@ -92,11 +97,12 @@ const DragDropUpload: React.FC<DragDropUploadProps> = ({
     }
 
     if (newFiles.length > 0) {
+      const pendingFiles = newFiles.filter(f => f.status === 'pending');
       setFiles(prev => [...prev, ...newFiles]);
-      if (validFiles.length > 0) {
-        onFilesSelected(validFiles);
+      if (pendingFiles.length > 0) {
+        onFilesSelected(pendingFiles);
         // Simulate progress for visual feedback
-        simulateProgress(newFiles.filter(f => f.status === 'pending').map(f => f.id));
+        simulateProgress(pendingFiles.map(f => f.id));
       }
     }
   }, [files.length, maxFiles, disabled, onFilesSelected]);

@@ -4,7 +4,7 @@ import { topicAPI, ideaAPI } from '../../api';
 import '../../styles/globals.css';
 import '../../styles/animations.css';
 import CommentSection from '../../components/CommentSection/CommentSection';
-import DragDropUpload from '../../components/DragDropUpload/DragDropUpload';
+import DragDropUpload, { UploadFile } from '../../components/DragDropUpload/DragDropUpload';
 import Header from '../../components/Header/Header';
 import './TopicDetail.css';
 
@@ -179,26 +179,16 @@ const TopicDetail: React.FC = () => {
     }
   };
 
-  const handleFilesSelected = (files: File[]) => {
-    const maxFileSize = 10 * 1024 * 1024; // 10 MB
-    const validFiles = files.filter(file => file.size <= maxFileSize);
-    
+  const handleFilesSelected = (files: UploadFile[]) => {
+    // Files come from DragDropUpload with previews already generated
     setSelectedImages(prev => {
-      const combined = [...prev, ...validFiles];
+      const combined = [...prev, ...files.map(f => f.file)];
       return combined.slice(0, 5); // max 5 files
     });
 
-    files.forEach(file => {
-      if (file.size <= maxFileSize) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setImagePreviews(prev => {
-            const combined = [...prev, reader.result as string];
-            return combined.slice(0, 5);
-          });
-        };
-        reader.readAsDataURL(file);
-      }
+    setImagePreviews(prev => {
+      const combined = [...prev, ...files.map(f => f.preview || '').filter(Boolean)];
+      return combined.slice(0, 5);
     });
   };
 

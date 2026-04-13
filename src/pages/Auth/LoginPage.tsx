@@ -21,11 +21,19 @@ const loginSchema = yup.object({
 const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [email, setEmail] = useState('');
+  const [isVerificationStep, setIsVerificationStep] = useState(false);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [verificationError, setVerificationError] = useState('');
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState('');
   const navigate = useNavigate();
 
-  const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
+  const { register, handleSubmit, formState: { errors }, watch } = useForm<LoginFormData>({
     resolver: yupResolver(loginSchema),
   });
+
+  const watchedEmail = watch('email');
 
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
@@ -62,9 +70,58 @@ const LoginPage: React.FC = () => {
     } catch (err: any) {
       console.error('Login error:', err);
       const errorMessage = err.response?.data?.message || err.message || 'Ошибка при входе. Проверьте правильность данных.';
-      setError(errorMessage);
+
+      // Проверяем, связана ли ошибка с неподтверждённым email
+      if (errorMessage.toLowerCase().includes('подтвердите') ||
+          errorMessage.toLowerCase().includes('вериф') ||
+          errorMessage.toLowerCase().includes('verify') ||
+          err.response?.status === 403) {
+        setEmail(data.email);
+        setIsVerificationStep(true);
+        setError('');
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleVerifyCode = async () => {
+    try {
+      setIsLoading(true);
+      setVerificationError('');
+      setResendSuccess('');
+
+      const response = await authAPI.verifyEmail({
+        email: email || watchedEmail,
+        code: verificationCode.trim(),
+      });
+
+      // После успешной верификации автоматически логиним
+      if (response.data?.access_token) {
+        localStorage.setItem('access_token', response.data.access_token);
+        navigate('/user-dashboard');
+      }
+    } catch (err: any) {
+      setVerificationError(err.response?.data?.message || 'Неверный код подтверждения');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendCode = async () => {
+    try {
+      setResendLoading(true);
+      setResendSuccess('');
+      setVerificationError('');
+
+      await authAPI.resendVerification(email || watchedEmail);
+      setResendSuccess('Код подтверждения отправлен повторно. Проверьте ваш email.');
+    } catch (err: any) {
+      setVerificationError(err.response?.data?.message || 'Не удалось отправить код');
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -86,6 +143,29 @@ const LoginPage: React.FC = () => {
               </div>
             )}
 
+            {isVerificationStep && (
+              <div className="info-message" style={{
+                background: '#e7f3ff',
+                border: '1px solid #0066cc',
+                borderRadius: '8px',
+                padding: '1rem',
+                marginBottom: '1rem',
+                color: '#0066cc'
+              }}>
+                <strong>Требуется подтверждение email</strong>
+                <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.9rem' }}>
+                  На адрес <strong>{email || watchedEmail}</strong> был отправлен код подтверждения.
+                  Введите код ниже для завершения регистрации.
+                </p>
+              </div>
+            )}
+
+            {resendSuccess && (
+              <div className="success-message">
+                {resendSuccess}
+              </div>
+            )}
+
             <div className="form-group">
               <label htmlFor="email">Email</label>
               <input
@@ -100,27 +180,88 @@ const LoginPage: React.FC = () => {
               )}
             </div>
 
-            <div className="form-group">
-              <label htmlFor="password">Пароль</label>
-              <input
-                id="password"
-                type="password"
-                {...register('password')}
-                className={errors.password ? 'error' : ''}
-                placeholder="Ваш пароль"
-              />
-              {errors.password && (
-                <span className="error-text">{errors.password.message}</span>
-              )}
-            </div>
+            {!isVerificationStep && (
+              <div className="form-group">
+                <label htmlFor="password">Пароль</label>
+                <input
+                  id="password"
+                  type="password"
+                  {...register('password')}
+                  className={errors.password ? 'error' : ''}
+                  placeholder="Ваш пароль"
+                />
+                {errors.password && (
+                  <span className="error-text">{errors.password.message}</span>
+                )}
+              </div>
+            )}
 
-            <button
-              type="submit"
-              className="cta-button primary"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Вход...' : 'Войти'}
-            </button>
+            {isVerificationStep && (
+              <>
+                <div className="form-group">
+                  <label htmlFor="verificationCode">Код подтверждения</label>
+                  <input
+                    id="verificationCode"
+                    type="text"
+                    value={verificationCode}
+                    onChange={(e) => {
+                      setVerificationCode(e.target.value);
+                      if (verificationError) setVerificationError('');
+                    }}
+                    placeholder="Введите код из письма"
+                    disabled={isLoading}
+                  />
+                  {verificationError && (
+                    <span className="error-text">{verificationError}</span>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className="cta-button primary"
+                    disabled={isLoading || !verificationCode.trim()}
+                    onClick={handleVerifyCode}
+                  >
+                    {isLoading ? 'Проверка...' : 'Подтвердить email'}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="cta-button secondary"
+                    disabled={resendLoading}
+                    onClick={handleResendCode}
+                  >
+                    {resendLoading ? 'Отправка...' : 'Отправить код повторно'}
+                  </button>
+                </div>
+
+                <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+                  <button
+                    type="button"
+                    className="link-button"
+                    onClick={() => {
+                      setIsVerificationStep(false);
+                      setVerificationCode('');
+                      setVerificationError('');
+                      setResendSuccess('');
+                    }}
+                  >
+                    ← Вернуться к входу
+                  </button>
+                </div>
+              </>
+            )}
+
+            {!isVerificationStep && (
+              <button
+                type="submit"
+                className="cta-button primary"
+                disabled={isLoading}
+              >
+                {isLoading ? 'Вход...' : 'Войти'}
+              </button>
+            )}
 
             <div className="modal-footer" style={{ marginTop: 16 }}>
               <p>
