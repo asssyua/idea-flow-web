@@ -68,7 +68,6 @@ interface TopicsListViewProps<T extends TopicsListItem> {
   onActionClick?: () => void;
   onTopicClick: (topic: T) => void;
   renderTopicAction?: (topic: T) => React.ReactNode;
-  getTopicTagLabel: (topic: T) => string;
   formatDeadline: (deadline: string | null) => string | null;
   emptyText: string;
   footerHint?: React.ReactNode;
@@ -83,7 +82,6 @@ const TopicsListView = <T extends TopicsListItem>({
   onActionClick,
   onTopicClick,
   renderTopicAction,
-  getTopicTagLabel,
   formatDeadline,
   emptyText,
   footerHint,
@@ -131,7 +129,6 @@ const TopicsListView = <T extends TopicsListItem>({
                 {renderTopicAction ? renderTopicAction(topic) : null}
               </div>
               <p>{topic.description || 'Нет описания'}</p>
-              <div className="tag">{getTopicTagLabel(topic)}</div>
               <div className="topic-meta">
                 <span>
                   <i className="far fa-lightbulb"></i>

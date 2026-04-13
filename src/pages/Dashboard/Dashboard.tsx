@@ -716,26 +716,6 @@ const Dashboard: React.FC = () => {
     return deadlineDate.toLocaleDateString('ru-RU');
   };
 
-  const getTopicTagLabel = (topic: Topic): string => {
-    if (topic.status?.toLowerCase() === 'approved') {
-      return 'Активна';
-    }
-
-    if (!topic.deadline) {
-      return '';
-    }
-
-    const deadlineDate = new Date(topic.deadline);
-    const now = new Date();
-    const formattedDate = formatDeadline(topic.deadline) || '';
-
-    if (deadlineDate < now) {
-      return `Завершено: ${formattedDate}`;
-    }
-
-    return formattedDate;
-  };
-
   const activeTopics = topics.filter((t) => !isTopicCompleted(t));
   const completedTopics = topics.filter((t) => isTopicCompleted(t));
 
@@ -1374,7 +1354,6 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
             setSelectedTopicForFlow(topic);
             fetchFlowIdeas(topic.id);
           }}
-          getTopicTagLabel={getTopicTagLabel}
           formatDeadline={formatDeadline}
           emptyText="Пока нет активных тем для обсуждения."
           loadingText="Загружаем темы..."
@@ -1389,7 +1368,6 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
               setSelectedTopicForFlow(topic);
               fetchFlowIdeas(topic.id);
             }}
-            getTopicTagLabel={getTopicTagLabel}
             formatDeadline={formatDeadline}
             emptyText=""
             loadingText="Загружаем темы..."

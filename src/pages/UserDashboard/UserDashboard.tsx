@@ -74,17 +74,7 @@ interface UserStatistics {
   rating: number;
 }
 
-const getTopicTagLabel = (topic: Topic) => {
-  if (topic.status?.toLowerCase() === 'approved') {
-    return 'Активна';
-  }
 
-  if (topic.deadline && new Date(topic.deadline) < new Date()) {
-    return 'Завершена';
-  }
-
-  return 'Обсуждение';
-};
 
 const UserDashboard: React.FC = () => {
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -417,7 +407,7 @@ const UserDashboard: React.FC = () => {
                 actionLabel="+ Предложить тему"
                 onActionClick={() => setTopicModalOpen(true)}
                 onTopicClick={(topic) => navigate(`/topic/${topic.id}`)}
-                getTopicTagLabel={getTopicTagLabel}
+
                 formatDeadline={formatDeadline}
                 emptyText="Пока нет активных тем для обсуждения."
                 renderTopicAction={(topic) => {
@@ -449,7 +439,7 @@ const UserDashboard: React.FC = () => {
                   loading={topicsLoading}
                   title="Завершённые темы"
                   onTopicClick={(topic) => navigate(`/topic/${topic.id}`)}
-                  getTopicTagLabel={getTopicTagLabel}
+
                   formatDeadline={formatDeadline}
                   emptyText=""
                   renderTopicAction={(topic) => {
