@@ -48,13 +48,13 @@ const CommentSection: React.FC<CommentSectionProps> = ({ ideaId, readOnly = fals
   };
 
   const organizeComments = (commentsData: Comment[]): Comment[] => {
-    // Создаем Map для быстрого доступа к комментариям по id
+
     const commentMap = new Map<string, Comment>();
     commentsData.forEach(c => {
       commentMap.set(c.id, { ...c, replies: [] });
     });
 
-    // Рекурсивно строим дерево комментариев
+
     const buildReplies = (commentId: string): Comment[] => {
       return commentsData
         .filter(c => c.parentId === commentId)
@@ -65,7 +65,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ ideaId, readOnly = fals
         });
     };
 
-    // Возвращаем только корневые комментарии (без parentId) с рекурсивно построенными replies
+
     return commentsData
       .filter(c => !c.parentId)
       .map(c => {

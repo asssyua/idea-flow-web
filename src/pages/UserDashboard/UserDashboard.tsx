@@ -192,7 +192,7 @@ const UserDashboard: React.FC = () => {
     }
   };
 
-  // Fetch statistics when profile tab is opened
+
   useEffect(() => {
     if (activeTab === 'profile') {
       fetchStatistics();

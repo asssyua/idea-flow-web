@@ -6,7 +6,7 @@
   background-color: var(--bg-main);
 }
 
-/* Header */
+
 .user-dashboard-header {
   background: var(--surface);
   color: var(--text-main);
@@ -625,7 +625,6 @@
   color: #7C3AED;
 }
 
-/* Profile content area */
 .profile-content {
   flex: 1;
   min-width: 0;
@@ -801,7 +800,6 @@
   color: var(--text-muted);
 }
 
-/* Two Column Layout */
 .two-column-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -809,7 +807,6 @@
   margin-bottom: 1.5rem;
 }
 
-/* Activity Items */
 .activity-item {
   display: flex;
   gap: 12px;
@@ -850,7 +847,6 @@
   margin-top: 4px;
 }
 
-/* Favorite Topics List */
 .favorite-topics-list {
   display: flex;
   flex-direction: column;
@@ -888,7 +884,6 @@
   margin-right: 6px;
 }
 
-/* Best Ideas Section */
 .best-ideas-list {
   display: flex;
   flex-direction: column;
@@ -927,7 +922,6 @@
   font-size: 0.7rem;
 }
 
-/* Card Title with Icon */
 .card-title-with-icon {
   display: flex;
   justify-content: space-between;
@@ -950,8 +944,6 @@
   color: var(--primary);
 }
 
-/* Tag Badge */
-/* Responsive */
 @media (max-width: 900px) {
   .stat-grid {
     grid-template-columns: repeat(2, 1fr);

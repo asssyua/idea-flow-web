@@ -94,4 +94,4 @@ export interface Comment {
   createdAt: string;
 }
 
-export type AdminTab = 'users' | 'topics' | 'ideas' | 'support' | 'ideaflow';
+export type AdminTab = 'users' | 'topics' | 'ideas' | 'support' | 'ideaflow' | 'profile';

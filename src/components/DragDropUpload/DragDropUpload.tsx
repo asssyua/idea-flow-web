@@ -12,7 +12,7 @@ export interface UploadFile {
 
 interface DragDropUploadProps {
   maxFiles?: number;
-  maxFileSize?: number; // in bytes
+  maxFileSize?: number; 
   acceptedFormats?: string[];
   onFilesSelected: (files: UploadFile[]) => void;
   onFileRemove?: (fileId: string) => void;
@@ -23,7 +23,7 @@ interface DragDropUploadProps {
 
 const DragDropUpload: React.FC<DragDropUploadProps> = ({
   maxFiles = 5,
-  maxFileSize = 10 * 1024 * 1024, // 10 MB
+  maxFileSize = 10 * 1024 * 1024, 
   acceptedFormats = ['image/jpeg', 'image/png', 'image/jpg'],
   onFilesSelected,
   onFileRemove,
@@ -35,7 +35,7 @@ const DragDropUpload: React.FC<DragDropUploadProps> = ({
   const [files, setFiles] = useState<UploadFile[]>(existingFiles);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Sync external files with internal state
+
   useEffect(() => {
     setFiles(existingFiles);
   }, [existingFiles]);
@@ -101,7 +101,7 @@ const DragDropUpload: React.FC<DragDropUploadProps> = ({
       setFiles(prev => [...prev, ...newFiles]);
       if (pendingFiles.length > 0) {
         onFilesSelected(pendingFiles);
-        // Simulate progress for visual feedback
+
         simulateProgress(pendingFiles.map(f => f.id));
       }
     }
@@ -156,7 +156,7 @@ const DragDropUpload: React.FC<DragDropUploadProps> = ({
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     processFiles(e.target.files);
-    e.target.value = ''; // Reset input
+    e.target.value = '';
   };
 
   const handleRemoveFile = (fileId: string) => {

@@ -1741,3 +1741,229 @@
     align-self: flex-end;
   }
 }
+
+/* ===== Admin Profile Tab Styles ===== */
+.admin-profile-tab {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.admin-profile-tab .profile-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.admin-profile-tab .profile-header {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.admin-profile-tab .profile-avatar-large {
+  width: 80px;
+  height: 80px;
+  font-size: 2.5rem;
+  background: var(--primary-soft);
+  color: var(--primary);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.admin-profile-tab .profile-main-info {
+  flex: 1;
+}
+
+.admin-profile-tab .profile-main-info h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.admin-profile-tab .profile-subtitle {
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+
+.admin-profile-tab .stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.admin-profile-tab .stat-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 1rem;
+  border-radius: var(--radius-sm);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-profile-tab .stat-box span {
+  display: block;
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: var(--primary);
+}
+
+.admin-profile-tab .stat-box label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+/* Background icons for stat boxes */
+.admin-profile-tab .stat-box::before {
+  content: '';
+  font-family: 'Font Awesome 6 Free';
+  font-weight: 900;
+  position: absolute;
+  right: -5px;
+  bottom: -10px;
+  font-size: 3rem;
+  color: var(--primary);
+  opacity: 0.08;
+  line-height: 1;
+}
+
+.admin-profile-tab .stat-box[data-icon="lightbulb"]::before {
+  content: '\f0eb';
+}
+
+.admin-profile-tab .stat-box[data-icon="comments"]::before {
+  content: '\f086';
+}
+
+.admin-profile-tab .stat-box[data-icon="heart"]::before {
+  content: '\f004';
+}
+
+.admin-profile-tab .stat-box[data-icon="folder"]::before {
+  content: '\f07b';
+}
+
+/* Badge Grid */
+.admin-profile-tab .badge-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1rem;
+}
+
+.admin-profile-tab .badge-card {
+  border: 1px solid var(--border);
+  padding: 1rem;
+  border-radius: var(--radius-sm);
+  text-align: center;
+  filter: grayscale(1);
+  opacity: 0.6;
+  transition: all 0.3s ease;
+  background: var(--surface);
+}
+
+.admin-profile-tab .badge-card.unlocked {
+  filter: grayscale(0);
+  opacity: 1;
+  border-color: var(--accent);
+  background: #F0F7F4;
+}
+
+.admin-profile-tab .badge-card i {
+  font-size: 1.8rem;
+  margin-bottom: 8px;
+  color: var(--primary);
+  display: block;
+}
+
+.admin-profile-tab .badge-card.unlocked i {
+  color: #5B846E;
+}
+
+.admin-profile-tab .badge-card div {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text-main);
+}
+
+/* Favorite Topics List */
+.admin-profile-tab .favorite-topics-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.admin-profile-tab .fav-topic-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: var(--bg-main);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--accent);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-profile-tab .fav-topic-item:hover {
+  background: var(--primary-soft);
+}
+
+.admin-profile-tab .fav-topic-item span {
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: var(--text-main);
+}
+
+.admin-profile-tab .fav-topic-item small {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+}
+
+.admin-profile-tab .fav-topic-item i {
+  margin-right: 6px;
+  color: #F59E0B;
+}
+
+/* Card Title with Action */
+.admin-profile-tab .card-title-with-action {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+/* Responsive for Admin Profile */
+@media (max-width: 900px) {
+  .admin-profile-tab .stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .admin-profile-tab .profile-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+}
+
+@media (max-width: 700px) {
+  .admin-profile-tab .stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .admin-profile-tab .badge-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

@@ -58,6 +58,18 @@ const Dashboard: React.FC = () => {
   const [isSubmittingIdea, setIsSubmittingIdea] = useState(false);
   const [ideaValidationError, setIdeaValidationError] = useState('');
   const [viewingImage, setViewingImage] = useState<string | null>(null);
+  
+  // Admin profile states
+  const [adminStats, setAdminStats] = useState({
+    ideasCount: 0,
+    commentsCount: 0,
+    likesReceived: 0,
+    topicsCount: 0,
+    rating: 0,
+  });
+  const [adminFavoriteTopics, setAdminFavoriteTopics] = useState<Topic[]>([]);
+  const [adminFavoritesLoading, setAdminFavoritesLoading] = useState(false);
+  
   const navigate = useNavigate();
 
   const getInitials = () => {
@@ -71,6 +83,7 @@ const Dashboard: React.FC = () => {
     { id: 'topics' as AdminTab, label: 'Темы' },
     { id: 'ideas' as AdminTab, label: 'Идеи' },
     { id: 'ideaflow' as AdminTab, label: 'IdeaFlow' },
+    { id: 'profile' as AdminTab, label: 'Профиль' },
   ];
 
   const startAdminEditingIdea = (idea: Idea) => {
@@ -145,6 +158,9 @@ const Dashboard: React.FC = () => {
       } else if (activeTab === 'ideas') {
         loadIdeas();
         loadComments();
+      } else if (activeTab === 'profile') {
+        fetchAdminStatistics();
+        fetchAdminFavoriteTopics();
       }
     }
   }, [isAdmin, activeTab]);
@@ -303,6 +319,35 @@ const Dashboard: React.FC = () => {
       setComments([]);
     } finally {
       setCommentsLoading(false);
+    }
+  };
+
+  const fetchAdminStatistics = async () => {
+    try {
+      const response = await ideaAPI.getUserStatistics();
+      const data = response.data;
+      setAdminStats({
+        ideasCount: data.totalIdeas ?? 0,
+        commentsCount: data.totalComments ?? 0,
+        likesReceived: data.totalLikes ?? 0,
+        topicsCount: data.totalTopics ?? Object.keys(data.ideasByTopic || {}).length ?? 0,
+        rating: data.averageRating ?? 0,
+      });
+    } catch (err: any) {
+      console.error('Failed to fetch admin statistics:', err);
+    }
+  };
+
+  const fetchAdminFavoriteTopics = async () => {
+    try {
+      setAdminFavoritesLoading(true);
+      const response = await topicAPI.getFavoriteTopics();
+      const data = Array.isArray(response.data) ? response.data : response.data?.topics || [];
+      setAdminFavoriteTopics(data);
+    } catch (err: any) {
+      setAdminFavoriteTopics([]);
+    } finally {
+      setAdminFavoritesLoading(false);
     }
   };
 
@@ -471,6 +516,85 @@ const Dashboard: React.FC = () => {
     });
     
     return filtered;
+  };
+
+  const renderAdminProfileTab = () => {
+    if (!user) return null;
+
+    return (
+      <div className="admin-profile-tab">
+        <div className="profile-page">
+          <div className="profile-header">
+            <div className="avatar-sq profile-avatar-large">
+              {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+            </div>
+            <div className="profile-main-info">
+              <h2>{user.firstName} {user.lastName}</h2>
+              <p className="profile-subtitle">{user.email || 'Администратор платформы IdeaFlow'}</p>
+              <div className="stat-grid">
+                <div className="stat-box" data-icon="lightbulb"><label>Идей</label><span>{adminStats.ideasCount}</span></div>
+                <div className="stat-box" data-icon="comments"><label>Коммент.</label><span>{adminStats.commentsCount}</span></div>
+                <div className="stat-box" data-icon="heart"><label>Лайков</label><span>{adminStats.likesReceived}</span></div>
+                <div className="stat-box" data-icon="folder"><label>Темы</label><span>{adminStats.topicsCount}</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-title"><h3>Достижения</h3></div>
+            <div className="badge-grid">
+              <div className={`badge-card ${adminStats.ideasCount >= 1 ? 'unlocked' : ''}`} title="Опубликовать первую идею (1 идея)">
+                <i className="fas fa-pen-nib"></i>
+                <div>Первый автор</div>
+              </div>
+              <div className={`badge-card ${adminStats.commentsCount >= 50 ? 'unlocked' : ''}`} title="Написать 50+ комментариев">
+                <i className="fas fa-comments"></i>
+                <div>Гуру комм.</div>
+              </div>
+              <div className={`badge-card ${adminStats.topicsCount >= 5 ? 'unlocked' : ''}`} title="Создать 5+ тем">
+                <i className="fas fa-crown"></i>
+                <div>Мастер тем</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-title card-title-with-action">
+              <h3>Избранные темы</h3>
+              <button className="btn btn-outline btn-sm" onClick={() => setActiveTab('topics')}>
+                К темам →
+              </button>
+            </div>
+            {adminFavoritesLoading ? (
+              <div className="loading-container" style={{ padding: '1rem' }}>
+                <div className="loading-spinner"></div>
+                <p>Загрузка...</p>
+              </div>
+            ) : adminFavoriteTopics.length === 0 ? (
+              <div className="empty-state">
+                <p>В избранном пока нет тем.</p>
+              </div>
+            ) : (
+              <div className="favorite-topics-list">
+                {adminFavoriteTopics.slice(0, 5).map((topic) => (
+                  <div 
+                    key={topic.id} 
+                    className="fav-topic-item"
+                    onClick={() => navigate(`/topic/${topic.id}`)}
+                  >
+                    <span>
+                      <i className="fas fa-star"></i>
+                      {topic.title || 'Без названия'}
+                    </span>
+                    <small>{topic.ideaCount || 0} идей</small>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const renderTopicsTab = () => (
@@ -687,8 +811,7 @@ const Dashboard: React.FC = () => {
   };
 
   const handleFlowFilesSelected = (files: UploadFile[]) => {
-    // Files come from DragDropUpload with previews already generated
-    // Just merge them with existing files, ensuring no duplicates by id
+
     setUploadFiles(prev => {
       const existingIds = new Set(prev.map(f => f.id));
       const newFiles = files.filter(f => !existingIds.has(f.id));
@@ -1590,6 +1713,7 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
               {activeTab === 'topics' && renderTopicsTab()}
               {activeTab === 'ideas' && renderIdeasTab()}
               {activeTab === 'ideaflow' && renderIdeaFlowTab()}
+              {activeTab === 'profile' && renderAdminProfileTab()}
             </>
           ) : (
             <div className="card welcome-card">
