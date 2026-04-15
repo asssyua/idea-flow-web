@@ -716,6 +716,26 @@ const Dashboard: React.FC = () => {
     return deadlineDate.toLocaleDateString('ru-RU');
   };
 
+  const getTopicTagLabel = (topic: Topic): string => {
+    if (topic.status?.toLowerCase() === 'approved') {
+      return 'Активна';
+    }
+
+    if (!topic.deadline) {
+      return '';
+    }
+
+    const deadlineDate = new Date(topic.deadline);
+    const now = new Date();
+    const formattedDate = formatDeadline(topic.deadline) || '';
+
+    if (deadlineDate < now) {
+      return `Завершено: ${formattedDate}`;
+    }
+
+    return formattedDate;
+  };
+
   const activeTopics = topics.filter((t) => !isTopicCompleted(t));
   const completedTopics = topics.filter((t) => isTopicCompleted(t));
 

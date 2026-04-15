@@ -74,7 +74,17 @@ interface UserStatistics {
   rating: number;
 }
 
+const getTopicTagLabel = (topic: Topic) => {
+  if (topic.status?.toLowerCase() === 'approved') {
+    return 'Активна';
+  }
 
+  if (topic.deadline && new Date(topic.deadline) < new Date()) {
+    return 'Завершена';
+  }
+
+  return 'Обсуждение';
+};
 
 const UserDashboard: React.FC = () => {
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -407,7 +417,6 @@ const UserDashboard: React.FC = () => {
                 actionLabel="+ Предложить тему"
                 onActionClick={() => setTopicModalOpen(true)}
                 onTopicClick={(topic) => navigate(`/topic/${topic.id}`)}
-
                 formatDeadline={formatDeadline}
                 emptyText="Пока нет активных тем для обсуждения."
                 renderTopicAction={(topic) => {
@@ -439,7 +448,6 @@ const UserDashboard: React.FC = () => {
                   loading={topicsLoading}
                   title="Завершённые темы"
                   onTopicClick={(topic) => navigate(`/topic/${topic.id}`)}
-
                   formatDeadline={formatDeadline}
                   emptyText=""
                   renderTopicAction={(topic) => {
@@ -477,13 +485,15 @@ const UserDashboard: React.FC = () => {
                 <div className="profile-main-info">
                   <h2>{user.firstName} {user.lastName}</h2>
                   <p className="profile-subtitle">{user.email || 'Участник платформы IdeaFlow'}</p>
-                  <div className="stat-grid">
-                    <div className="stat-box" data-icon="lightbulb"><label>Идей</label><span>{stats.ideasCount}</span></div>
-                    <div className="stat-box" data-icon="comments"><label>Коммент.</label><span>{stats.commentsCount}</span></div>
-                    <div className="stat-box" data-icon="heart"><label>Лайков</label><span>{stats.likesReceived}</span></div>
-                    <div className="stat-box" data-icon="folder"><label>Темы</label><span>{stats.topicsCount}</span></div>
                   </div>
-                </div>
+              </div>
+ 
+              <div className="stat-grid">
+                <div className="stat-box" data-icon="lightbulb"><label>Идей</label><span>{stats.ideasCount}</span></div>
+                <div className="stat-box" data-icon="comments"><label>Коммент.</label><span>{stats.commentsCount}</span></div>
+                <div className="stat-box" data-icon="heart"><label>Лайков</label><span>{stats.likesReceived}</span></div>
+                <div className="stat-box" data-icon="folder"><label>Темы</label><span>{stats.topicsCount}</span></div>
+              
               </div>
 
               <div className="card">

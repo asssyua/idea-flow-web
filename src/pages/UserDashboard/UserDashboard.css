@@ -685,7 +685,7 @@
   display: flex;
   gap: 2rem;
   align-items: flex-start;
-  margin-bottom: 2rem;
+  margin-bottom: 0.75rem;
 }
 
 .profile-avatar-large {
@@ -708,7 +708,7 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
-  margin-top: 1rem;
+  margin-top: 0rem;
 }
 
 .stat-box {
