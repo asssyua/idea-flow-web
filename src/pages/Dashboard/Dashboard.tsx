@@ -35,7 +35,6 @@ const Dashboard: React.FC = () => {
 
   const [editingAdminIdeaId, setEditingAdminIdeaId] = useState<string | null>(null);
   const [adminEditTitle, setAdminEditTitle] = useState('');
-  const [adminEditDescription, setAdminEditDescription] = useState('');
   const [isUpdatingAdminIdea, setIsUpdatingAdminIdea] = useState(false);
   const [blockModalOpen, setBlockModalOpen] = useState(false);
   const [unblockModalOpen, setUnblockModalOpen] = useState(false);
@@ -89,13 +88,11 @@ const Dashboard: React.FC = () => {
   const startAdminEditingIdea = (idea: Idea) => {
     setEditingAdminIdeaId(idea.id);
     setAdminEditTitle(idea.title || '');
-    setAdminEditDescription(idea.description || '');
   };
 
   const cancelAdminEditingIdea = () => {
     setEditingAdminIdeaId(null);
     setAdminEditTitle('');
-    setAdminEditDescription('');
   };
 
   const handleAdminUpdateIdea = async (ideaId: string) => {
@@ -103,7 +100,6 @@ const Dashboard: React.FC = () => {
       setIsUpdatingAdminIdea(true);
       await ideaAPI.updateIdea(ideaId, {
         title: adminEditTitle.trim(),
-        description: adminEditDescription.trim(),
       });
       cancelAdminEditingIdea();
       await loadIdeas();
@@ -937,7 +933,6 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
 
     await ideaAPI.createIdea({
       title: newIdeaTitle.trim(),
-      description: newIdeaTitle.trim(),
       topicId: selectedTopicForFlow.id,
       images: imageBase64,
     });
@@ -1114,22 +1109,6 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
                                   className="idea-input"
                                   disabled={isUpdatingAdminIdea}
                                 />
-                                <textarea
-                                  value={adminEditDescription}
-                                  onChange={(e) => setAdminEditDescription(e.target.value)}
-                                  disabled={isUpdatingAdminIdea}
-                                  style={{
-                                    width: '100%',
-                                    minHeight: '90px',
-                                    padding: '0.75rem',
-                                    borderRadius: 'var(--radius-sm)',
-                                    border: '1px solid var(--border)',
-                                    backgroundColor: 'var(--surface)',
-                                    color: 'var(--text-main)',
-                                    resize: 'vertical',
-                                    fontFamily: 'inherit',
-                                  }}
-                                />
                                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                                   <button
                                     className="btn btn-primary btn-sm"
@@ -1170,14 +1149,11 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
                                           ? 'fas fa-heart'
                                           : 'far fa-heart'
                                       }
-                                    ></i>
+                                    >
+                                    </i>
                                     <span>{idea.likes}</span>
                                   </button>
                                 </div>
-
-                                {idea.description && (
-                                  <p className="idea-description">{idea.description}</p>
-                                )}
 
                                 {idea.images && idea.images.length > 0 && (
                                   <div className="idea-images">
@@ -1526,23 +1502,6 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
                     {isExpanded && (
                       <tr>
                         <td colSpan={9} style={{ padding: '1rem', backgroundColor: 'var(--bg-secondary)' }}>
-                          {editingAdminIdeaId === idea.id && (
-                            <div style={{ marginBottom: '1rem' }}>
-                              <textarea
-                                value={adminEditDescription}
-                                onChange={(e) => setAdminEditDescription(e.target.value)}
-                                disabled={isUpdatingAdminIdea}
-                                style={{
-                                  width: '100%',
-                                  minHeight: '90px',
-                                  padding: '0.75rem',
-                                  borderRadius: 'var(--border-radius)',
-                                  border: '1px solid var(--border-color)',
-                                  resize: 'vertical'
-                                }}
-                              />
-                            </div>
-                          )}
                           <div style={{ marginBottom: '1rem' }}>
                             <h4 style={{ marginBottom: '0.5rem', fontSize: '1rem' }}>Комментарии к идее:</h4>
                             {commentsLoading ? (

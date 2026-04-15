@@ -43,7 +43,6 @@ interface Topic {
 interface Idea {
   id: string;
   title: string;
-  description: string;
   likes: number;
   dislikes: number;
   author?: {

@@ -52,7 +52,6 @@ export interface Topic {
 export interface Idea {
   id: string;
   title: string;
-  description: string;
   images?: string[];
   likes: number;
   dislikes: number;

@@ -24,7 +24,6 @@ interface Topic {
 interface Idea {
   id: string;
   title: string;
-  description: string;
   likes: number;
   dislikes: number;
   isPinned?: boolean;
@@ -56,7 +55,6 @@ const TopicDetail: React.FC = () => {
 
   const [editingIdeaId, setEditingIdeaId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
-  const [editDescription, setEditDescription] = useState('');
   const [editSelectedImages, setEditSelectedImages] = useState<File[]>([]);
   const [editImagePreviews, setEditImagePreviews] = useState<string[]>([]);
   const [isUpdatingIdea, setIsUpdatingIdea] = useState(false);
@@ -303,7 +301,6 @@ const TopicDetail: React.FC = () => {
   const startEditingIdea = (idea: Idea) => {
     setEditingIdeaId(idea.id);
     setEditTitle(idea.title || '');
-    setEditDescription(idea.description || '');
     setEditSelectedImages([]);
     setEditImagePreviews([]);
   };
@@ -311,7 +308,6 @@ const TopicDetail: React.FC = () => {
   const cancelEditingIdea = () => {
     setEditingIdeaId(null);
     setEditTitle('');
-    setEditDescription('');
     setEditSelectedImages([]);
     setEditImagePreviews([]);
   };
@@ -322,7 +318,6 @@ const TopicDetail: React.FC = () => {
 
       const payload: any = {
         title: editTitle.trim(),
-        description: editDescription.trim(),
       };
 
       if (editSelectedImages.length > 0) {
@@ -383,7 +378,6 @@ const TopicDetail: React.FC = () => {
 
       await ideaAPI.createIdea({
         title: newIdeaTitle.trim(),
-        description: newIdeaTitle.trim(),
         topicId: topic.id,
         images: imageBase64,
       });
@@ -696,22 +690,6 @@ const TopicDetail: React.FC = () => {
                             className="idea-input"
                             disabled={isUpdatingIdea}
                           />
-                          <textarea
-                            value={editDescription}
-                            onChange={(e) => setEditDescription(e.target.value)}
-                            disabled={isUpdatingIdea}
-                            style={{
-                              width: '100%',
-                              minHeight: '90px',
-                              padding: '0.75rem',
-                              borderRadius: 'var(--radius-sm)',
-                              border: '1px solid var(--border)',
-                              backgroundColor: 'var(--surface)',
-                              color: 'var(--text-main)',
-                              resize: 'vertical',
-                              fontFamily: 'inherit'
-                            }}
-                          />
 
                           <div className="image-upload-section">
                             <label htmlFor={`edit-idea-images-${idea.id}`} className="image-upload-label">
@@ -779,13 +757,7 @@ const TopicDetail: React.FC = () => {
                               <span>{idea.likes}</span>
                             </button>
                           </div>
-                          
-                          {idea.description && (
-                            <p className="idea-description">
-                              {idea.description}
-                            </p>
-                          )}
-                          
+
                           {idea.images && idea.images.length > 0 && (
                             <div className="idea-images">
                               {idea.images
