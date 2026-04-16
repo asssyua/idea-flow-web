@@ -190,6 +190,14 @@ const TopicDetail: React.FC = () => {
     });
   };
 
+  const existingUploadFiles: UploadFile[] = selectedImages.map((file, index) => ({
+    file,
+    id: `${index}`,
+    progress: 100,
+    status: 'completed',
+    preview: imagePreviews[index] || '',
+  }));
+
   const handleFileRemove = (fileId: string) => {
     const index = parseInt(fileId, 10) || 0;
     setSelectedImages(prev => prev.filter((_, i) => i !== index));
@@ -655,6 +663,7 @@ const TopicDetail: React.FC = () => {
                   acceptedFormats={['image/jpeg', 'image/png', 'image/jpg']}
                   onFilesSelected={handleFilesSelected}
                   onFileRemove={handleFileRemove}
+                  existingFiles={existingUploadFiles}
                   disabled={isSubmitting || selectedImages.length >= 5}
                   label="Перетащите изображения сюда или нажмите для выбора"
                   key={selectedImages.length === 0 ? 'empty' : 'filled'}

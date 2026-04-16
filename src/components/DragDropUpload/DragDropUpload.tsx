@@ -35,6 +35,8 @@ const DragDropUpload: React.FC<DragDropUploadProps> = ({
   const [files, setFiles] = useState<UploadFile[]>(existingFiles);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const isAddDisabled = disabled || files.length >= maxFiles;
+
 
   useEffect(() => {
     setFiles(existingFiles);
@@ -61,10 +63,9 @@ const DragDropUpload: React.FC<DragDropUploadProps> = ({
   };
 
   const processFiles = useCallback(async (fileList: FileList | null) => {
-    if (!fileList || disabled) return;
+    if (!fileList || isAddDisabled) return;
 
     const newFiles: UploadFile[] = [];
-    const validFiles: File[] = [];
 
     const remainingSlots = maxFiles - files.length;
     const filesToProcess = Array.from(fileList).slice(0, remainingSlots);
@@ -82,7 +83,6 @@ const DragDropUpload: React.FC<DragDropUploadProps> = ({
           preview
         };
         newFiles.push(uploadFile);
-        validFiles.push(file);
       } else {
         const uploadFile: UploadFile = {
           file,
@@ -97,15 +97,16 @@ const DragDropUpload: React.FC<DragDropUploadProps> = ({
     }
 
     if (newFiles.length > 0) {
-      const pendingFiles = newFiles.filter(f => f.status === 'pending');
       setFiles(prev => [...prev, ...newFiles]);
+      const pendingFiles = newFiles.filter(f => f.status === 'pending');
       if (pendingFiles.length > 0) {
         onFilesSelected(pendingFiles);
-
+        // Simulate progress for visual feedback
         simulateProgress(pendingFiles.map(f => f.id));
       }
     }
-  }, [files.length, maxFiles, disabled, onFilesSelected]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [files.length, maxFiles, isAddDisabled]);
 
   const simulateProgress = (fileIds: string[]) => {
     fileIds.forEach((fileId, index) => {
@@ -130,10 +131,10 @@ const DragDropUpload: React.FC<DragDropUploadProps> = ({
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!disabled) {
+    if (!isAddDisabled) {
       setIsDragOver(true);
     }
-  }, [disabled]);
+  }, [isAddDisabled]);
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -149,7 +150,7 @@ const DragDropUpload: React.FC<DragDropUploadProps> = ({
   }, [processFiles]);
 
   const handleClick = () => {
-    if (!disabled && fileInputRef.current) {
+    if (!isAddDisabled && fileInputRef.current) {
       fileInputRef.current.click();
     }
   };
@@ -173,7 +174,7 @@ const DragDropUpload: React.FC<DragDropUploadProps> = ({
   return (
     <div className="drag-drop-upload">
       <div
-        className={`drop-zone ${isDragOver ? 'drag-over' : ''} ${disabled ? 'disabled' : ''} ${files.length >= maxFiles ? 'full' : ''}`}
+        className={`drop-zone ${isDragOver ? 'drag-over' : ''} ${isAddDisabled ? 'disabled' : ''} ${files.length >= maxFiles ? 'full' : ''}`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
@@ -185,7 +186,7 @@ const DragDropUpload: React.FC<DragDropUploadProps> = ({
           accept={acceptedFormats.join(',')}
           multiple
           onChange={handleFileInputChange}
-          disabled={disabled || files.length >= maxFiles}
+          disabled={isAddDisabled}
           style={{ display: 'none' }}
         />
         
@@ -243,7 +244,7 @@ const DragDropUpload: React.FC<DragDropUploadProps> = ({
               <button
                 className="remove-file-btn"
                 onClick={() => handleRemoveFile(file.id)}
-                disabled={disabled}
+                disabled={false}
                 type="button"
               >
                 ×
