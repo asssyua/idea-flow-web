@@ -399,6 +399,20 @@
   font-size: 1.25rem;
   color: var(--text-main);
   line-height: 1.4;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pin-icon {
+  color: var(--primary);
+  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+}
+
+.pin-icon i {
+  transform: rotate(45deg);
 }
 
 .idea-description {
@@ -579,6 +593,11 @@
 .comments-section .comment-input:focus {
   outline: none;
   border-color: var(--primary);
+}
+
+.empty-comments {
+ margin: 0;
+ padding: 0;
 }
 
 .idea-images {
