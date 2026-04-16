@@ -551,12 +551,18 @@
   align-items: flex-start;
   gap: 12px;
   margin-bottom: 10px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .idea-name {
   font-weight: 600;
   font-size: 1rem;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: wrap;
+  text-align: justify;
 }
 
 .likes-badge {
@@ -569,6 +575,8 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .idea-description {
@@ -602,11 +610,16 @@
 .comment-text-preview {
   font-size: 0.75rem;
   margin-bottom: 8px;
-  display: block;
+  display: -webkit-box;
   white-space: normal;
   word-break: break-word;
   overflow-wrap: anywhere;
   line-height: 1.4;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .comment-text-wrapper {
