@@ -8,6 +8,7 @@ import StatisticsModal from '../../components/Modals/StatisticsModal';
 import { BadgeItem } from '../../components/BadgeList/BadgeList';
 import Header from '../../components/Header/Header';
 import TopicsListView from '../../components/Topics/TopicsListView';
+import { getProfileAchievements } from '../../utils/achievements';
 import './UserDashboard.css';
 
 interface UserProfile {
@@ -69,6 +70,9 @@ interface UserStatistics {
   ideasCount: number;
   commentsCount: number;
   likesReceived: number;
+  likesGiven: number;
+  pinnedIdeasCount: number;
+  commentedTopicsCount: number;
   topicsCount: number;
   rating: number;
 }
@@ -101,12 +105,24 @@ const UserDashboard: React.FC = () => {
     ideasCount: 0,
     commentsCount: 0,
     likesReceived: 0,
+    likesGiven: 0,
+    pinnedIdeasCount: 0,
+    commentedTopicsCount: 0,
     topicsCount: 0,
     rating: 0,
   });
   const navigate = useNavigate();
   const location = useLocation();
   const activeTab = getActiveTabByPath(location.pathname);
+  const achievements = getProfileAchievements({
+    ideasCount: stats.ideasCount,
+    commentsCount: stats.commentsCount,
+    topicsCount: stats.topicsCount,
+    likesReceived: stats.likesReceived,
+    likesGiven: stats.likesGiven,
+    pinnedIdeasCount: stats.pinnedIdeasCount,
+    commentedTopicsCount: stats.commentedTopicsCount,
+  });
 
   useEffect(() => {
     fetchProfile();
@@ -200,6 +216,9 @@ const UserDashboard: React.FC = () => {
         ideasCount: data.totalIdeas ?? 0,
         commentsCount: data.totalComments ?? 0,
         likesReceived: data.totalLikes ?? 0,
+        likesGiven: data.totalGivenLikes ?? data.likesGiven ?? data.givenLikes ?? 0,
+        pinnedIdeasCount: data.totalPinnedIdeas ?? data.pinnedIdeasCount ?? data.pinnedIdeas ?? 0,
+        commentedTopicsCount: data.commentedTopicsCount ?? data.totalCommentedTopics ?? data.distinctCommentedTopics ?? 0,
         topicsCount: data.totalTopics ?? Object.keys(data.ideasByTopic || {}).length ?? 0,
         rating: data.averageRating ?? 0,
       });
@@ -498,18 +517,16 @@ const UserDashboard: React.FC = () => {
               <div className="card">
                 <div className="card-title"><h3>Достижения</h3></div>
                 <div className="badge-grid">
-                  <div className={`badge-card ${stats.ideasCount >= 1 ? 'unlocked' : ''}`} title="Опубликовать первую идею (1 идея)">
-                    <i className="fas fa-pen-nib"></i>
-                    <div>Первый автор</div>
-                  </div>
-                  <div className={`badge-card ${stats.commentsCount >= 50 ? 'unlocked' : ''}`} title="Написать 50+ комментариев">
-                    <i className="fas fa-comments"></i>
-                    <div>Гуру комм.</div>
-                  </div>
-                  <div className={`badge-card ${stats.topicsCount >= 5 ? 'unlocked' : ''}`} title="Создать 5+ тем">
-                    <i className="fas fa-crown"></i>
-                    <div>Мастер тем</div>
-                  </div>
+                  {achievements.map((achievement) => (
+                    <div
+                      key={achievement.key}
+                      className={`badge-card ${achievement.unlocked ? 'unlocked' : ''}`}
+                      title={achievement.description}
+                    >
+                      <i className={achievement.iconClass}></i>
+                      <div>{achievement.title}</div>
+                    </div>
+                  ))}
                 </div>
               </div>
 

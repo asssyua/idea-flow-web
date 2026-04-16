@@ -11,12 +11,14 @@ import TopicsListView from '../../components/Topics/TopicsListView';
 import DragDropUpload, { UploadFile } from '../../components/DragDropUpload/DragDropUpload';
 import SupportTab from './SupportTab';
 import UsersTab from './UsersTab';
+import { getProfileAchievements } from '../../utils/achievements';
 import { AdminTab, AdminUser, Comment, Idea, SupportMessage, Topic, UserProfile } from './types';
 import './Dashboard.css';
 import '../TopicDetail/TopicDetail.css';
 
 const Dashboard: React.FC = () => {
   const [user, setUser] = useState<UserProfile | null>(null);
+
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -27,6 +29,7 @@ const Dashboard: React.FC = () => {
   const [supportLoading, setSupportLoading] = useState(false);
   const [topics, setTopics] = useState<Topic[]>([]);
   const [topicsLoading, setTopicsLoading] = useState(false);
+
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [ideasLoading, setIdeasLoading] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -57,12 +60,13 @@ const Dashboard: React.FC = () => {
   const [isSubmittingIdea, setIsSubmittingIdea] = useState(false);
   const [ideaValidationError, setIdeaValidationError] = useState('');
   const [viewingImage, setViewingImage] = useState<string | null>(null);
-  
+
   // Admin profile states
   const [adminStats, setAdminStats] = useState({
     ideasCount: 0,
     commentsCount: 0,
     likesReceived: 0,
+    likesGiven: 0,
     topicsCount: 0,
     rating: 0,
   });
@@ -70,7 +74,7 @@ const Dashboard: React.FC = () => {
   const [adminFavoritesLoading, setAdminFavoritesLoading] = useState(false);
   const [adminTopicsPreview, setAdminTopicsPreview] = useState<Topic[]>([]);
   const [adminTopicsPreviewLoading, setAdminTopicsPreviewLoading] = useState(false);
-  
+
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -176,6 +180,8 @@ const Dashboard: React.FC = () => {
       } else if (activeTab === 'profile') {
         fetchAdminStatistics();
         fetchAdminFavoriteTopics();
+        loadIdeas();
+        loadComments();
       }
     }
   }, [isAdmin, activeTab]);
@@ -188,13 +194,13 @@ const Dashboard: React.FC = () => {
       console.log('Full response:', response);
       console.log('Response data:', response.data);
       console.log('User data:', response.data.user);
-      
+
       const userData = response.data.user;
       setUser(userData);
       setError('');
 
       let userRole = userData?.role;
-      
+
       if (!userRole) {
         try {
           const token = localStorage.getItem('access_token');
@@ -207,11 +213,11 @@ const Dashboard: React.FC = () => {
           console.error('Failed to decode token:', e);
         }
       }
-      
+
       let isUserAdmin = false;
-      
+
       console.log('Raw userRole:', userRole, 'Type:', typeof userRole);
-      
+
       if (userRole) {
         if (typeof userRole === 'string') {
           isUserAdmin = userRole.toLowerCase() === 'admin';
@@ -220,23 +226,23 @@ const Dashboard: React.FC = () => {
           isUserAdmin = roleValue.toLowerCase() === 'admin';
         }
       }
-      
+
       console.log('User role:', userRole, 'Type:', typeof userRole, 'Is admin:', isUserAdmin);
       console.log('Full userData keys:', userData ? Object.keys(userData) : 'null');
-      
+
       setIsAdmin(isUserAdmin);
-      
+
       if (!isUserAdmin) {
         console.log('User is not admin, redirecting to user-dashboard');
         navigate('/user-dashboard');
         return;
       }
-      
+
       console.log('User is admin, showing admin dashboard');
     } catch (err: any) {
       console.error('Failed to fetch profile:', err);
       setError('Не удалось загрузить профиль');
-      
+
       if (err.response?.status === 401) {
         navigate('/');
       }
@@ -318,7 +324,7 @@ const Dashboard: React.FC = () => {
       console.log('Loaded comments response:', response);
       console.log('Loaded comments data:', response.data);
       console.log('Comments count:', response.data?.length || 0);
-      
+
       if (response.data && Array.isArray(response.data)) {
         setComments(response.data);
         console.log('Comments set successfully:', response.data.length);
@@ -345,6 +351,7 @@ const Dashboard: React.FC = () => {
         ideasCount: data.totalIdeas ?? 0,
         commentsCount: data.totalComments ?? 0,
         likesReceived: data.totalLikes ?? 0,
+        likesGiven: data.totalGivenLikes ?? data.likesGiven ?? data.givenLikes ?? 0,
         topicsCount: data.totalTopics ?? Object.keys(data.ideasByTopic || {}).length ?? 0,
         rating: data.averageRating ?? 0,
       });
@@ -533,7 +540,7 @@ const Dashboard: React.FC = () => {
     if (!comments || comments.length === 0) {
       return [];
     }
-    
+
     const filtered = comments.filter(comment => {
       if (!comment || !comment.idea) {
         return false;
@@ -542,12 +549,34 @@ const Dashboard: React.FC = () => {
       const targetIdeaId = String(ideaId || '').trim();
       return commentIdeaId === targetIdeaId;
     });
-    
+
     return filtered;
   };
 
   const renderAdminProfileTab = () => {
     if (!user) return null;
+
+    const currentUserId = (user as UserProfile & { id?: string }).id;
+    const pinnedIdeasCount = currentUserId
+      ? ideas.filter((idea) => idea.isPinned && idea.authorId === currentUserId).length
+      : 0;
+    const commentedTopicsCount = currentUserId
+      ? new Set(
+          comments
+            .filter((comment) => comment.author?.id === currentUserId)
+            .map((comment) => comment.idea?.topic?.id)
+            .filter(Boolean)
+        ).size
+      : 0;
+    const achievements = getProfileAchievements({
+      ideasCount: adminStats.ideasCount,
+      commentsCount: adminStats.commentsCount,
+      topicsCount: adminStats.topicsCount,
+      likesReceived: adminStats.likesReceived,
+      likesGiven: adminStats.likesGiven,
+      pinnedIdeasCount,
+      commentedTopicsCount,
+    });
 
     return (
       <div className="admin-profile-tab">
@@ -572,18 +601,16 @@ const Dashboard: React.FC = () => {
           <div className="card">
             <div className="card-title"><h3>Достижения</h3></div>
             <div className="badge-grid">
-              <div className={`badge-card ${adminStats.ideasCount >= 1 ? 'unlocked' : ''}`} title="Опубликовать первую идею (1 идея)">
-                <i className="fas fa-pen-nib"></i>
-                <div>Первый автор</div>
-              </div>
-              <div className={`badge-card ${adminStats.commentsCount >= 50 ? 'unlocked' : ''}`} title="Написать 50+ комментариев">
-                <i className="fas fa-comments"></i>
-                <div>Гуру комм.</div>
-              </div>
-              <div className={`badge-card ${adminStats.topicsCount >= 5 ? 'unlocked' : ''}`} title="Создать 5+ тем">
-                <i className="fas fa-crown"></i>
-                <div>Мастер тем</div>
-              </div>
+              {achievements.map((achievement) => (
+                <div
+                  key={achievement.key}
+                  className={`badge-card ${achievement.unlocked ? 'unlocked' : ''}`}
+                  title={achievement.description}
+                >
+                  <i className={achievement.iconClass}></i>
+                  <div>{achievement.title}</div>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -1686,7 +1713,6 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
               <div className="avatar-sq">{getInitials()}</div>
               <div className="admin-profile-text">
                 <strong>Администратор</strong>
-                <div>{user.email || 'admin@ideaflow.com'}</div>
               </div>
             </div>
 
