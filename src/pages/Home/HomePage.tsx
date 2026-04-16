@@ -27,7 +27,6 @@ const HomePage: React.FC = () => {
             IdeaFlow
           </div>
           <div className="nav-links">
-            <a href="/" className="active">Главная</a>
             <a onClick={() => setIsLoginModalOpen(true)} style={{ cursor: 'pointer' }}>Темы</a>
             <button 
               className="login-btn" 

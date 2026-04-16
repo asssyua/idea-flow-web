@@ -746,7 +746,11 @@ const TopicDetail: React.FC = () => {
                         <>
                           <div className="idea-header-row">
                             <div className="idea-name">
-                              {idea.isPinned ? <span title="Закреплено">📌 </span> : null}
+                              {idea.isPinned && (
+                                <span title="Закреплено" className="pin-icon">
+                                  <i className="fas fa-thumbtack"></i>
+                                </span>
+                              )}
                               {idea.title}
                             </div>
                             <button 

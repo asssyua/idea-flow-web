@@ -73,6 +73,8 @@ export const adminAPI = {
   getAllSupportMessages: () => api.get('/admin/support-messages'),
   markSupportMessageAsRead: (id: string) => api.patch(`/admin/support-messages/${id}/read`),
   sendSupportMessage: (data: any) => api.post('/admin/support-message', data),
+  getStatistics: () => api.get('/admin/statistics'),
+  getTopicsPreview: () => api.get('/topics?limit=5'),
 };
 
 export const topicAPI = {

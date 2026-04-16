@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { profileAPI, authAPI, adminAPI, topicAPI, ideaAPI } from '../../api';
 import '../../styles/globals.css';
 import '../../styles/animations.css';
@@ -68,13 +68,11 @@ const Dashboard: React.FC = () => {
   });
   const [adminFavoriteTopics, setAdminFavoriteTopics] = useState<Topic[]>([]);
   const [adminFavoritesLoading, setAdminFavoritesLoading] = useState(false);
+  const [adminTopicsPreview, setAdminTopicsPreview] = useState<Topic[]>([]);
+  const [adminTopicsPreviewLoading, setAdminTopicsPreviewLoading] = useState(false);
   
   const navigate = useNavigate();
-
-  const getInitials = () => {
-    if (!user) return 'AD';
-    return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
-  };
+  const location = useLocation();
 
   const getAdminTabs = () => [
     { id: 'users' as AdminTab, label: 'Пользователи' },
@@ -82,8 +80,20 @@ const Dashboard: React.FC = () => {
     { id: 'topics' as AdminTab, label: 'Темы' },
     { id: 'ideas' as AdminTab, label: 'Идеи' },
     { id: 'ideaflow' as AdminTab, label: 'IdeaFlow' },
-    { id: 'profile' as AdminTab, label: 'Личный кабинет' },
   ];
+
+  const isValidAdminTab = (value: string | null): value is AdminTab => {
+    if (!value) {
+      return false;
+    }
+
+    return [...getAdminTabs().map((tab) => tab.id), 'profile'].includes(value as AdminTab);
+  };
+
+  const getInitials = () => {
+    if (!user) return 'AD';
+    return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
+  };
 
   const startAdminEditingIdea = (idea: Idea) => {
     setEditingAdminIdeaId(idea.id);
@@ -137,6 +147,15 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     fetchProfile();
   }, []);
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const requestedTab = searchParams.get('tab');
+
+    if (isValidAdminTab(requestedTab)) {
+      setActiveTab(requestedTab);
+    }
+  }, [location.search]);
 
   useEffect(() => {
     if (isAdmin) {
@@ -339,11 +358,24 @@ const Dashboard: React.FC = () => {
       setAdminFavoritesLoading(true);
       const response = await topicAPI.getFavoriteTopics();
       const data = Array.isArray(response.data) ? response.data : response.data?.topics || [];
-      setAdminFavoriteTopics(data);
+      setAdminFavoriteTopics(data.slice(0, 5));
     } catch (err: any) {
       setAdminFavoriteTopics([]);
     } finally {
       setAdminFavoritesLoading(false);
+    }
+  };
+
+  const fetchAdminTopicsPreview = async () => {
+    try {
+      setAdminTopicsPreviewLoading(true);
+      const response = await adminAPI.getTopicsPreview();
+      const data = Array.isArray(response.data) ? response.data : response.data?.topics || [];
+      setAdminTopicsPreview(data.slice(0, 5));
+    } catch (err: any) {
+      setAdminTopicsPreview([]);
+    } finally {
+      setAdminTopicsPreviewLoading(false);
     }
   };
 
@@ -527,13 +559,14 @@ const Dashboard: React.FC = () => {
             <div className="profile-main-info">
               <h2>{user.firstName} {user.lastName}</h2>
               <p className="profile-subtitle">{user.email || 'Администратор платформы IdeaFlow'}</p>
-              <div className="stat-grid">
-                <div className="stat-box" data-icon="lightbulb"><label>Идей</label><span>{adminStats.ideasCount}</span></div>
-                <div className="stat-box" data-icon="comments"><label>Коммент.</label><span>{adminStats.commentsCount}</span></div>
-                <div className="stat-box" data-icon="heart"><label>Лайков</label><span>{adminStats.likesReceived}</span></div>
-                <div className="stat-box" data-icon="folder"><label>Темы</label><span>{adminStats.topicsCount}</span></div>
-              </div>
             </div>
+          </div>
+
+          <div className="stat-grid">
+            <div className="stat-box" data-icon="lightbulb"><label>Идей</label><span>{adminStats.ideasCount}</span></div>
+            <div className="stat-box" data-icon="comments"><label>Коммент.</label><span>{adminStats.commentsCount}</span></div>
+            <div className="stat-box" data-icon="heart"><label>Лайков</label><span>{adminStats.likesReceived}</span></div>
+            <div className="stat-box" data-icon="folder"><label>Темы</label><span>{adminStats.topicsCount}</span></div>
           </div>
 
           <div className="card">
@@ -1134,7 +1167,11 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
                               <>
                                 <div className="idea-header-row">
                                   <div className="idea-name">
-                                    {idea.isPinned ? <span title="Закреплено">📌 </span> : null}
+                                    {idea.isPinned && (
+                                      <span title="Закреплено" className="pin-icon">
+                                        <i className="fas fa-thumbtack"></i>
+                                      </span>
+                                    )}
                                     {idea.title}
                                   </div>
                                   <button
@@ -1632,6 +1669,13 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
                 {tab.label}
               </a>
             ))}
+
+            <a
+              className={window.location.pathname === '/analysis' ? 'active' : ''}
+              onClick={() => navigate('/analysis')}
+            >
+              Анализ
+            </a>
 
             <div
               className="profile-pill admin-profile-pill"

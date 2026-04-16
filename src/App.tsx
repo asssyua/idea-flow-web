@@ -3,6 +3,7 @@ import HomePage from './pages/Home/HomePage';
 import Dashboard from './pages/Dashboard/Dashboard';
 import UserDashboard from './pages/UserDashboard/UserDashboard';
 import TopicDetail from './pages/TopicDetail/TopicDetail';
+import AnalysisPage from './pages/Analysis/AnalysisPage';
 import PrivateRoute from './components/Auth/PrivateRoute';
 import LoginPage from './pages/Auth/LoginPage';
 import RegisterPage from './pages/Auth/RegisterPage';
@@ -46,6 +47,12 @@ function App() {
           <Route path="/topic/:id" element={
             <PrivateRoute>
               <TopicDetail />
+            </PrivateRoute>
+          } />
+
+          <Route path="/analysis" element={
+            <PrivateRoute>
+              <AnalysisPage />
             </PrivateRoute>
           } />
           

@@ -6,27 +6,66 @@ import './Header.css';
 interface User {
   firstName: string;
   lastName: string;
+  role?: string;
 }
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
-    if (userData) {
+    if (!userData) {
+      setUser(null);
+      setIsAdmin(false);
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(userData);
+      setUser(parsed);
+      checkAdminRole(parsed);
+    } catch {
+      setUser(null);
+      setIsAdmin(false);
+    }
+  }, [location.pathname]);
+
+  const checkAdminRole = async (userData: User | null) => {
+    if (!userData) {
+      setIsAdmin(false);
+      return;
+    }
+    
+    let userRole: string | undefined = userData?.role;
+    
+    if (!userRole) {
       try {
-        setUser(JSON.parse(userData));
-      } catch {
-        setUser(null);
+        const token = localStorage.getItem('access_token');
+        if (token) {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          userRole = payload.role;
+        }
+      } catch (e) {
+        console.error('Failed to decode token:', e);
       }
     }
-  }, []);
+    
+    let isUserAdmin = false;
+    if (userRole) {
+      isUserAdmin = String(userRole).toLowerCase() === 'admin';
+    }
+    
+    setIsAdmin(isUserAdmin);
+  };
 
-  const homePath = '/user-dashboard';
-  const topicsPath = '/user-dashboard/topics';
-  const profilePath = '/user-dashboard/profile';
+  const homePath = isAdmin ? '/dashboard' : '/user-dashboard';
+  const topicsPath = isAdmin ? '/dashboard' : '/user-dashboard/topics';
+  const profilePath = isAdmin ? '/dashboard' : '/user-dashboard/profile';
+  const analysisPath = '/analysis';
+  const dashboardPath = '/dashboard';
 
   const isActive = (path: string) => {
     if (path === homePath) {
@@ -37,6 +76,12 @@ const Header: React.FC = () => {
     }
     if (path === profilePath) {
       return location.pathname === profilePath;
+    }
+    if (path === analysisPath) {
+      return location.pathname === analysisPath;
+    }
+    if (path === dashboardPath) {
+      return location.pathname === dashboardPath;
     }
     return location.pathname === path;
   };
@@ -84,15 +129,32 @@ const Header: React.FC = () => {
             >
               Темы
             </a>
-            <a
-              className={isActive(profilePath) ? 'active' : ''}
-              onClick={() => navigate(profilePath)}
-            >
-              Мой профиль
-            </a>
+            {isAdmin ? (
+              <a
+                className={isActive(analysisPath) ? 'active' : ''}
+                onClick={() => navigate(analysisPath)}
+              >
+                Анализ
+              </a>
+            ) : (
+              <a
+                className={isActive(profilePath) ? 'active' : ''}
+                onClick={() => navigate(profilePath)}
+              >
+                Мой профиль
+              </a>
+            )}
             {user && (
               <>
-
+                {isAdmin && (
+                  <button 
+                    onClick={() => navigate(dashboardPath)} 
+                    className={`header-admin-btn ${isActive(dashboardPath) ? 'active' : ''}`}
+                  >
+                    <span className="admin-avatar">{getInitials()}</span>
+                    <span className="admin-label">Администратор</span>
+                  </button>
+                )}
                 <button onClick={handleLogout} className="header-logout-btn">
                   Выйти
                 </button>
