@@ -50,6 +50,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLoginSuccess
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
     setError('');
+    setIsVerificationStep(false);
 
     try {
       const response = await authAPI.login(data);
@@ -69,26 +70,32 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLoginSuccess
       onLoginSuccess();
       onClose();
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Ошибка при входе';
+      const errorMessage = err.response?.data?.message || err.response?.data?.error || err.message || 'Ошибка при входе';
+      const errorLower = errorMessage.toLowerCase();
 
+      // Сначала проверяем блокировку (приоритет над верификацией)
+      if (errorLower.includes('заблокирован') ||
+          errorLower.includes('блокировка') ||
+          errorLower.includes('blocked') ||
+          errorLower.includes('обратитесь в поддержку')) {
+        setIsVerificationStep(false);
+        setError(errorMessage);
+        const reasonMatch = errorMessage.match(/Причина: (.+?)\./) || errorMessage.match(/Reason: (.+?)\./);
+        if (reasonMatch) {
+          setBlockReason(reasonMatch[1]);
+        }
+        setBlockedUserEmail(data.email);
+      }
       // Проверяем, связана ли ошибка с неподтверждённым email
-      if (errorMessage.toLowerCase().includes('подтвердите') ||
-          errorMessage.toLowerCase().includes('вериф') ||
-          errorMessage.toLowerCase().includes('verify') ||
-          err.response?.status === 403) {
+      else if (errorLower.includes('подтвердите') ||
+          errorLower.includes('вериф') ||
+          errorLower.includes('verify')) {
         setUserEmail(data.email);
         setIsVerificationStep(true);
         setError('');
       } else {
+        setIsVerificationStep(false);
         setError(errorMessage);
-
-        if (errorMessage.includes('blocked') || errorMessage.includes('заблокирован')) {
-          const reasonMatch = errorMessage.match(/Reason: (.+?)\./);
-          if (reasonMatch) {
-            setBlockReason(reasonMatch[1]);
-          }
-          setBlockedUserEmail(data.email);
-        }
       }
     } finally {
       setIsLoading(false);

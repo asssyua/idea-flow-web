@@ -38,6 +38,7 @@ const LoginPage: React.FC = () => {
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
     setError('');
+    setIsVerificationStep(false);
 
     try {
       const response = await authAPI.login(data);
@@ -68,19 +69,45 @@ const LoginPage: React.FC = () => {
         navigate('/user-dashboard');
       }
     } catch (err: any) {
-      console.error('Login error:', err);
-      const errorMessage = err.response?.data?.message || err.message || 'Ошибка при входе. Проверьте правильность данных.';
+      console.error('Login error full:', err);
+      console.log('Error response data:', err.response?.data);
+      console.log('Error response status:', err.response?.status);
+      
+      // Извлекаем сообщение из всех возможных мест
+      const responseData = err.response?.data;
+      let errorMessage = '';
+      
+      if (typeof responseData === 'string') {
+        errorMessage = responseData;
+      } else if (responseData?.message) {
+        errorMessage = responseData.message;
+      } else if (responseData?.error) {
+        errorMessage = responseData.error;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      const errorLower = errorMessage.toLowerCase();
+      console.log('Extracted error message:', errorMessage);
 
+      // Проверяем, заблокирован ли пользователь (приоритет над верификацией)
+      if (errorLower.includes('заблокирован') ||
+          errorLower.includes('блокировка') ||
+          errorLower.includes('block') ||
+          errorLower.includes('обратитесь в поддержку')) {
+        setIsVerificationStep(false);
+        setError(errorMessage || 'Ваш аккаунт был заблокирован. Пожалуйста, обратитесь в поддержку.');
+      }
       // Проверяем, связана ли ошибка с неподтверждённым email
-      if (errorMessage.toLowerCase().includes('подтвердите') ||
-          errorMessage.toLowerCase().includes('вериф') ||
-          errorMessage.toLowerCase().includes('verify') ||
-          err.response?.status === 403) {
+      else if (errorLower.includes('подтвердите') ||
+          errorLower.includes('вериф') ||
+          errorLower.includes('verify')) {
         setEmail(data.email);
         setIsVerificationStep(true);
         setError('');
       } else {
-        setError(errorMessage);
+        setIsVerificationStep(false);
+        setError(errorMessage || 'Ошибка при входе. Проверьте правильность данных.');
       }
     } finally {
       setIsLoading(false);

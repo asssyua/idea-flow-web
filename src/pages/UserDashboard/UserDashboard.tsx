@@ -114,6 +114,25 @@ const UserDashboard: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const activeTab = getActiveTabByPath(location.pathname);
+
+  // Map backend badges to frontend achievement unlock status
+  const unlockedKeys = new Set(
+    badges.map(b => {
+      const map: Record<string, string> = {
+        'first_author': 'first-author',
+        'comment_guru': 'comment-guru',
+        'topic_master': 'topic-master',
+        'editors_choice': 'editors-choice',
+        'idea_generator': 'idea-generator',
+        'community_heart': 'community-heart',
+        'know_it_all': 'know-it-all',
+        'popular_author': 'inspirer',
+        'total_likes': 'inspirer',
+      };
+      return map[b.type] || b.type;
+    })
+  );
+
   const achievements = getProfileAchievements({
     ideasCount: stats.ideasCount,
     commentsCount: stats.commentsCount,
@@ -122,7 +141,7 @@ const UserDashboard: React.FC = () => {
     likesGiven: stats.likesGiven,
     pinnedIdeasCount: stats.pinnedIdeasCount,
     commentedTopicsCount: stats.commentedTopicsCount,
-  });
+  }).map(a => ({ ...a, unlocked: unlockedKeys.has(a.key) || a.unlocked }));
 
   useEffect(() => {
     fetchProfile();
