@@ -20,6 +20,50 @@
   justify-content: space-between;
   align-items: center;
   gap: 0.5rem;
+  position: relative;
+}
+
+.admin-header-bar .burger-btn {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  width: 40px;
+  height: 40px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.admin-header-bar .burger-btn:hover {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+}
+
+.admin-header-bar .burger-btn span {
+  display: block;
+  width: 20px;
+  height: 2px;
+  background: var(--text-main);
+  border-radius: 2px;
+  transition: all 0.25s ease;
+}
+
+.admin-header-bar .burger-btn.open span:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.admin-header-bar .burger-btn.open span:nth-child(2) {
+  opacity: 0;
+}
+
+.admin-header-bar .burger-btn.open span:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
 }
 
 .admin-nav {
@@ -1689,12 +1733,75 @@
   }
 
   .admin-header-inner {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: nowrap;
+  }
+
+  .admin-header-bar .burger-btn {
+    display: flex;
   }
 
   .admin-nav {
-    gap: 1rem;
+    display: none;
+    position: absolute;
+    top: calc(100% + 0.75rem);
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.25rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 6px 14px rgba(15, 23, 42, 0.06);
+    padding: 0.75rem;
+    z-index: 99;
+  }
+
+  .admin-nav.open {
+    display: flex;
+  }
+
+  .admin-nav a {
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 1rem;
+  }
+
+  .admin-profile-pill,
+  .admin-logout-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .topics-table-wrapper,
+  .ideas-table-wrapper,
+  .table-wrapper {
+    overflow-x: auto;
+  }
+
+  .topics-table-wrapper .users-table {
+    min-width: 900px;
+  }
+
+  .ideas-table-wrapper .users-table {
+    min-width: 800px;
+  }
+
+  .admin-tabs-wrapper {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .admin-tab {
+    flex-shrink: 0;
   }
 
   .dashboard-content .container,

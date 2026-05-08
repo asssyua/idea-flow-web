@@ -74,9 +74,14 @@ const Dashboard: React.FC = () => {
   const [adminFavoritesLoading, setAdminFavoritesLoading] = useState(false);
   const [adminTopicsPreview, setAdminTopicsPreview] = useState<Topic[]>([]);
   const [adminTopicsPreviewLoading, setAdminTopicsPreviewLoading] = useState(false);
+  const [adminMenuOpen, setAdminMenuOpen] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    setAdminMenuOpen(false);
+  }, [activeTab, location.pathname]);
 
   const getAdminTabs = () => [
     { id: 'users' as AdminTab, label: 'Пользователи' },
@@ -1686,7 +1691,19 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
             IdeaFlow Admin
           </div>
 
-          <div className="admin-nav">
+          <button
+            type="button"
+            className={`burger-btn ${adminMenuOpen ? 'open' : ''}`}
+            aria-label="Меню"
+            aria-expanded={adminMenuOpen}
+            onClick={() => setAdminMenuOpen((v) => !v)}
+          >
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+
+          <div className={`admin-nav ${adminMenuOpen ? 'open' : ''}`}>
             {getAdminTabs().map((tab) => (
               <a
                 key={tab.id}
