@@ -1,70 +1,83 @@
-# Getting Started with Create React App
+# IdeaFlow Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+React application for the IdeaFlow platform.
 
-## Available Scripts
+## Requirements
 
-In the project directory, you can run:
+- Node.js 18+ or 20+
+- npm
+- Running IdeaFlow backend
 
-### `npm start`
+## Environment
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Create a local `.env` file from the example:
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+```bash
+cp .env.example .env
+```
 
-### `npm test`
+On Windows PowerShell:
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+```powershell
+Copy-Item .env.example .env
+```
 
-### `npm run build`
+Required variables:
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+- `REACT_APP_API_URL` - public backend API URL.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Local value:
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```env
+REACT_APP_API_URL=http://localhost:3000
+```
 
-### `npm run eject`
+Production value example:
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+```env
+REACT_APP_API_URL=https://your-backend-domain.com
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+Create React App reads `REACT_APP_*` variables during build. After changing production env variables, rebuild/redeploy the frontend.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## Install and run
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+```bash
+npm install
+npm start
+```
 
-## Learn More
+The frontend starts on:
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```text
+http://localhost:3001
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+The backend must allow this origin in `FRONTEND_URLS`.
 
-### Code Splitting
+## Build
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+```bash
+npm run build
+```
 
-### Analyzing the Bundle Size
+The production build is created in:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+```text
+build
+```
 
-### Making a Progressive Web App
+## Deployment notes
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+For Netlify:
 
-### Advanced Configuration
+- Base directory: `idea-flow-web`
+- Build command: `npm run build`
+- Publish directory: `build`
+- Environment variable: `REACT_APP_API_URL=https://your-backend-domain.com`
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+If React Router routes return 404 after refresh, add `public/_redirects` with:
 
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+```text
+/* /index.html 200
+```
