@@ -8,6 +8,19 @@ interface UsersTabProps {
   onUnblockClick: (id: string, userName: string) => void;
 }
 
+const getUserStatusLabel = (status: string): string => {
+  switch (status.toLowerCase()) {
+    case 'active':
+      return 'Активный';
+    case 'blocked':
+      return 'Заблокирован';
+    case 'pending':
+      return 'Ожидает подтверждения';
+    default:
+      return status;
+  }
+};
+
 const UsersTab: React.FC<UsersTabProps> = ({
   users,
   usersLoading,
@@ -46,7 +59,7 @@ const UsersTab: React.FC<UsersTabProps> = ({
                   <td>{u.firstName} {u.lastName}</td>
                   <td>
                     <span className={`status-badge status-${u.status.toLowerCase()}`}>
-                      {u.status}
+                      {getUserStatusLabel(u.status)}
                     </span>
                   </td>
                   <td>
