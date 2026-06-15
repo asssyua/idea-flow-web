@@ -6,7 +6,10 @@ interface UsersTabProps {
   usersLoading: boolean;
   onBlockClick: (id: string, userName: string) => void;
   onUnblockClick: (id: string, userName: string) => void;
+  onDeleteClick: (id: string, userName: string) => void;
 }
+
+const DELETED_USER_EMAIL = 'anonym@ideaflow.by';
 
 const getUserStatusLabel = (status: string): string => {
   switch (status.toLowerCase()) {
@@ -26,6 +29,7 @@ const UsersTab: React.FC<UsersTabProps> = ({
   usersLoading,
   onBlockClick,
   onUnblockClick,
+  onDeleteClick,
 }) => {
   return (
     <div className="admin-section">
@@ -70,22 +74,34 @@ const UsersTab: React.FC<UsersTabProps> = ({
                     )}
                   </td>
                   <td className="users-table__actions">
-                    {u.status === 'blocked' || u.status === 'BLOCKED' ? (
-                      <button
-                        className="cta-button secondary"
-                        onClick={() => onUnblockClick(u.id, `${u.firstName} ${u.lastName}`)}
-                      >
-                        Разблокировать
-                      </button>
+                    {u.email === DELETED_USER_EMAIL ? (
+                      <span className="admin-protected-badge">Системный аккаунт</span>
                     ) : u.role === 'admin' || u.role === 'ADMIN' ? (
                       <span className="admin-protected-badge">Администратор</span>
                     ) : (
-                      <button
-                        className="cta-button danger"
-                        onClick={() => onBlockClick(u.id, `${u.firstName} ${u.lastName}`)}
-                      >
-                        Заблокировать
-                      </button>
+                      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        {u.status === 'blocked' || u.status === 'BLOCKED' ? (
+                          <button
+                            className="cta-button secondary"
+                            onClick={() => onUnblockClick(u.id, `${u.firstName} ${u.lastName}`)}
+                          >
+                            Разблокировать
+                          </button>
+                        ) : (
+                          <button
+                            className="cta-button danger"
+                            onClick={() => onBlockClick(u.id, `${u.firstName} ${u.lastName}`)}
+                          >
+                            Заблокировать
+                          </button>
+                        )}
+                        <button
+                          className="cta-button danger"
+                          onClick={() => onDeleteClick(u.id, `${u.firstName} ${u.lastName}`)}
+                        >
+                          Удалить
+                        </button>
+                      </div>
                     )}
                   </td>
                 </tr>

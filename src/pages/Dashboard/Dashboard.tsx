@@ -71,6 +71,7 @@ const Dashboard: React.FC = () => {
   const [deleteTopicModalOpen, setDeleteTopicModalOpen] = useState(false);
   const [deleteIdeaModalOpen, setDeleteIdeaModalOpen] = useState(false);
   const [deleteCommentModalOpen, setDeleteCommentModalOpen] = useState(false);
+  const [deleteUserModalOpen, setDeleteUserModalOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [selectedUserName, setSelectedUserName] = useState('');
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
@@ -511,6 +512,28 @@ const Dashboard: React.FC = () => {
       setSelectedUserName('');
     } catch (err) {
       console.error('Failed to unblock user', err);
+    }
+  };
+
+  const handleDeleteUserClick = (id: string, userName: string) => {
+    setSelectedUserId(id);
+    setSelectedUserName(userName);
+    setDeleteUserModalOpen(true);
+  };
+
+  const handleDeleteUserConfirm = async () => {
+    if (!selectedUserId) return;
+
+    try {
+      await adminAPI.deleteUser(selectedUserId);
+      await loadUsers();
+      setDeleteUserModalOpen(false);
+      setSelectedUserId(null);
+      setSelectedUserName('');
+    } catch (err: any) {
+      console.error('Failed to delete user', err);
+      const errorMessage = err.response?.data?.message || 'Не удалось удалить пользователя';
+      setError(errorMessage);
     }
   };
 
@@ -1786,6 +1809,7 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
                   usersLoading={usersLoading}
                   onBlockClick={handleBlockClick}
                   onUnblockClick={handleUnblockClick}
+                  onDeleteClick={handleDeleteUserClick}
                 />
               )}
               {activeTab === 'support' && (
@@ -1871,6 +1895,23 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
           }}
           onSave={handleTopicSave}
           topic={selectedTopic}
+        />
+      )}
+
+      {deleteUserModalOpen && (
+        <ConfirmModal
+          isOpen={deleteUserModalOpen}
+          onClose={() => {
+            setDeleteUserModalOpen(false);
+            setSelectedUserId(null);
+            setSelectedUserName('');
+          }}
+          onConfirm={handleDeleteUserConfirm}
+          title="Удаление пользователя"
+          message={`Вы уверены, что хотите удалить пользователя "${selectedUserName}"? Все его темы и идеи будут перенесены на Deleted User (anonym@ideaflow.by). Это действие нельзя отменить.`}
+          confirmText="Удалить"
+          cancelText="Отмена"
+          confirmButtonClass="danger"
         />
       )}
 
