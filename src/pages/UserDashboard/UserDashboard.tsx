@@ -111,6 +111,11 @@ const UserDashboard: React.FC = () => {
     topicsCount: 0,
     rating: 0,
   });
+  const [platformStats, setPlatformStats] = useState({
+    totalTopics: 0,
+    totalIdeas: 0,
+    totalComments: 0,
+  });
   const navigate = useNavigate();
   const location = useLocation();
   const activeTab = getActiveTabByPath(location.pathname);
@@ -148,6 +153,7 @@ const UserDashboard: React.FC = () => {
     fetchTopics();
     fetchFavoriteTopics();
     fetchStatistics();
+    fetchPlatformStatistics();
   }, []);
 
   useEffect(() => {
@@ -243,6 +249,20 @@ const UserDashboard: React.FC = () => {
       });
     } catch (err: any) {
       console.error('Failed to fetch statistics:', err);
+    }
+  };
+
+  const fetchPlatformStatistics = async () => {
+    try {
+      const response = await topicAPI.getPlatformStatistics();
+      const data = response.data;
+      setPlatformStats({
+        totalTopics: data.totalTopics ?? 0,
+        totalIdeas: data.totalIdeas ?? 0,
+        totalComments: data.totalComments ?? 0,
+      });
+    } catch (err: any) {
+      console.error('Failed to fetch platform statistics:', err);
     }
   };
 
@@ -387,9 +407,9 @@ const UserDashboard: React.FC = () => {
                   
                 </div>
                 <div className="stats-row">
-                  <div className="stat-item"><span className="stat-val">{topics.length}</span><span className="stat-lab">Темы</span></div>
-                  <div className="stat-item"><span className="stat-val">{stats.ideasCount}</span><span className="stat-lab">Идеи</span></div>
-                  <div className="stat-item"><span className="stat-val">{stats.commentsCount}</span><span className="stat-lab">Мнения</span></div>
+                  <div className="stat-item"><span className="stat-val">{platformStats.totalTopics}</span><span className="stat-lab">Темы</span></div>
+                  <div className="stat-item"><span className="stat-val">{platformStats.totalIdeas}</span><span className="stat-lab">Идеи</span></div>
+                  <div className="stat-item"><span className="stat-val">{platformStats.totalComments}</span><span className="stat-lab">Мнения</span></div>
                 </div>
                 <div className="card-title report-card-title-secondary"><h3>Топ-3 темы</h3></div>
                 <div className="top-ideas-list">

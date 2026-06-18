@@ -66,7 +66,7 @@ const AnalysisPage: React.FC = () => {
     { id: 'support', label: 'Поддержка', path: '/dashboard?tab=support' },
     { id: 'topics', label: 'Темы', path: '/dashboard?tab=topics' },
     { id: 'ideas', label: 'Идеи', path: '/dashboard?tab=ideas' },
-    { id: 'ideaflow', label: 'IdeaFlow', path: '/dashboard?tab=ideaflow' },
+    { id: 'ideaflow', label: 'Главная', path: '/dashboard?tab=ideaflow' },
   ];
 
   useEffect(() => {

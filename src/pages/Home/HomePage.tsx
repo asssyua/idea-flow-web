@@ -7,6 +7,7 @@ import './HomePage.css';
 
 const HomePage: React.FC = () => {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
 
   const handleGetStarted = () => {
@@ -26,11 +27,22 @@ const HomePage: React.FC = () => {
             <i className="fas fa-layer-group" style={{ color: 'var(--primary)' }}></i>
             IdeaFlow
           </div>
-          <div className="nav-links">
-            <a onClick={() => setIsLoginModalOpen(true)} style={{ cursor: 'pointer' }}>Темы</a>
-            <button 
-              className="login-btn" 
-              onClick={() => setIsLoginModalOpen(true)}
+          <button
+            type="button"
+            className={`burger-btn ${menuOpen ? 'open' : ''}`}
+            aria-label="Меню"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((v) => !v)}
+          >
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+          <div className={`nav-links ${menuOpen ? 'open' : ''}`}>
+            <a onClick={() => { setIsLoginModalOpen(true); setMenuOpen(false); }} style={{ cursor: 'pointer' }}>Темы</a>
+            <button
+              className="login-btn"
+              onClick={() => { setIsLoginModalOpen(true); setMenuOpen(false); }}
             >
               Войти
             </button>

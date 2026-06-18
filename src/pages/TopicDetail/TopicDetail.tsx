@@ -602,15 +602,9 @@ const TopicDetail: React.FC = () => {
             <div className="card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
               <h3>Добавить идею</h3>
               <button
-                type="button"
+                type="submit"
+                form="add-idea-form"
                 className="btn btn-primary"
-                onClick={() => {
-                  const form = document.querySelector('.add-idea-form') as HTMLFormElement;
-                  if (form) {
-                    form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
-                    handleCreateIdea({ preventDefault: () => {} } as React.FormEvent);
-                  }
-                }}
                 disabled={!newIdeaTitle.trim() || newIdeaTitle.trim().length < 15 || isSubmitting}
               >
                 {isSubmitting ? 'Добавление...' : 'Добавить идею'}

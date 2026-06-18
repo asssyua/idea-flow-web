@@ -70,6 +70,7 @@ export const adminAPI = {
   getUserById: (id: string) => api.get(`/admin/users/${id}`),
   blockUser: (id: string, data: any) => api.patch(`/admin/users/${id}/block`, data),
   unblockUser: (id: string) => api.patch(`/admin/users/${id}/unblock`),
+  deleteUser: (id: string) => api.delete(`/admin/users/${id}`),
   getAllSupportMessages: () => api.get('/admin/support-messages'),
   markSupportMessageAsRead: (id: string) => api.patch(`/admin/support-messages/${id}/read`),
   sendSupportMessage: (data: any) => api.post('/admin/support-message', data),
@@ -83,6 +84,7 @@ export const topicAPI = {
     return api.get(`/topics${params}`);
   },
   getPublicTopics: () => api.get('/topics/public'),
+  getPlatformStatistics: () => api.get('/topics/platform-statistics'),
   getTopicById: (id: string) => api.get(`/topics/${id}`),
   getFavoriteTopics: () => api.get('/topics/favorites'),
   isTopicFavorite: (id: string) => api.get(`/topics/${id}/favorite`),

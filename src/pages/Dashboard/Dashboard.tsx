@@ -16,6 +16,32 @@ import { AdminTab, AdminUser, Comment, Idea, SupportMessage, Topic, UserProfile 
 import './Dashboard.css';
 import '../TopicDetail/TopicDetail.css';
 
+const getTopicStatusLabel = (status: string): string => {
+  switch (status.toLowerCase()) {
+    case 'approved':
+      return 'Одобрена';
+    case 'pending':
+      return 'На рассмотрении';
+    case 'rejected':
+      return 'Отклонена';
+    default:
+      return status;
+  }
+};
+
+const getUserStatusLabel = (status: string): string => {
+  switch (status.toLowerCase()) {
+    case 'active':
+      return 'Активный';
+    case 'blocked':
+      return 'Заблокирован';
+    case 'pending':
+      return 'Ожидает подтверждения';
+    default:
+      return status;
+  }
+};
+
 const Dashboard: React.FC = () => {
   const [user, setUser] = useState<UserProfile | null>(null);
 
@@ -45,6 +71,7 @@ const Dashboard: React.FC = () => {
   const [deleteTopicModalOpen, setDeleteTopicModalOpen] = useState(false);
   const [deleteIdeaModalOpen, setDeleteIdeaModalOpen] = useState(false);
   const [deleteCommentModalOpen, setDeleteCommentModalOpen] = useState(false);
+  const [deleteUserModalOpen, setDeleteUserModalOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [selectedUserName, setSelectedUserName] = useState('');
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
@@ -74,16 +101,21 @@ const Dashboard: React.FC = () => {
   const [adminFavoritesLoading, setAdminFavoritesLoading] = useState(false);
   const [adminTopicsPreview, setAdminTopicsPreview] = useState<Topic[]>([]);
   const [adminTopicsPreviewLoading, setAdminTopicsPreviewLoading] = useState(false);
+  const [adminMenuOpen, setAdminMenuOpen] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    setAdminMenuOpen(false);
+  }, [activeTab, location.pathname]);
 
   const getAdminTabs = () => [
     { id: 'users' as AdminTab, label: 'Пользователи' },
     { id: 'support' as AdminTab, label: 'Поддержка' },
     { id: 'topics' as AdminTab, label: 'Темы' },
     { id: 'ideas' as AdminTab, label: 'Идеи' },
-    { id: 'ideaflow' as AdminTab, label: 'IdeaFlow' },
+    { id: 'ideaflow' as AdminTab, label: 'Главная' },
   ];
 
   const isValidAdminTab = (value: string | null): value is AdminTab => {
@@ -292,7 +324,11 @@ const Dashboard: React.FC = () => {
     setTopicsLoading(true);
     try {
       const response = await topicAPI.getAllTopics();
-      setTopics(response.data);
+      const data = response.data;
+      setTopics(data);
+      setSelectedTopicForFlow((prev) =>
+        prev ? data.find((t: Topic) => t.id === prev.id) ?? prev : null
+      );
       setError('');
     } catch (err: any) {
       console.error('Failed to load topics', err);
@@ -479,6 +515,28 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const handleDeleteUserClick = (id: string, userName: string) => {
+    setSelectedUserId(id);
+    setSelectedUserName(userName);
+    setDeleteUserModalOpen(true);
+  };
+
+  const handleDeleteUserConfirm = async () => {
+    if (!selectedUserId) return;
+
+    try {
+      await adminAPI.deleteUser(selectedUserId);
+      await loadUsers();
+      setDeleteUserModalOpen(false);
+      setSelectedUserId(null);
+      setSelectedUserName('');
+    } catch (err: any) {
+      console.error('Failed to delete user', err);
+      const errorMessage = err.response?.data?.message || 'Не удалось удалить пользователя';
+      setError(errorMessage);
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await authAPI.logout();
@@ -501,10 +559,16 @@ const Dashboard: React.FC = () => {
   const handleDeleteIdeaConfirm = async () => {
     if (!ideaToDelete) return;
 
+    const deletedTopicId = ideaToDelete.topicId;
+
     try {
       await ideaAPI.deleteIdea(ideaToDelete.id);
       await loadIdeas();
       await loadComments();
+      await loadTopics();
+      if (deletedTopicId && selectedTopicForFlow?.id === deletedTopicId) {
+        await fetchFlowIdeas(deletedTopicId);
+      }
       setDeleteIdeaModalOpen(false);
       setIdeaToDelete(null);
     } catch (err: any) {
@@ -703,7 +767,7 @@ const Dashboard: React.FC = () => {
                   </td>
                   <td>
                     <span className={`status-badge status-${topic.status.toLowerCase()}`}>
-                      {topic.status}
+                      {getTopicStatusLabel(topic.status)}
                     </span>
                   </td>
                   <td>
@@ -1686,7 +1750,19 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
             IdeaFlow Admin
           </div>
 
-          <div className="admin-nav">
+          <button
+            type="button"
+            className={`burger-btn ${adminMenuOpen ? 'open' : ''}`}
+            aria-label="Меню"
+            aria-expanded={adminMenuOpen}
+            onClick={() => setAdminMenuOpen((v) => !v)}
+          >
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+
+          <div className={`admin-nav ${adminMenuOpen ? 'open' : ''}`}>
             {getAdminTabs().map((tab) => (
               <a
                 key={tab.id}
@@ -1733,6 +1809,7 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
                   usersLoading={usersLoading}
                   onBlockClick={handleBlockClick}
                   onUnblockClick={handleUnblockClick}
+                  onDeleteClick={handleDeleteUserClick}
                 />
               )}
               {activeTab === 'support' && (
@@ -1764,7 +1841,7 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
                 <div className="info-item">
                   <span className="info-label">Статус аккаунта:</span>
                   <span className={`status-badge status-${user.status.toLowerCase()}`}>
-                    {user.status}
+                    {getUserStatusLabel(user.status)}
                   </span>
                 </div>
               </div>
@@ -1818,6 +1895,23 @@ const handleFlowCreateIdea = async (e: React.FormEvent) => {
           }}
           onSave={handleTopicSave}
           topic={selectedTopic}
+        />
+      )}
+
+      {deleteUserModalOpen && (
+        <ConfirmModal
+          isOpen={deleteUserModalOpen}
+          onClose={() => {
+            setDeleteUserModalOpen(false);
+            setSelectedUserId(null);
+            setSelectedUserName('');
+          }}
+          onConfirm={handleDeleteUserConfirm}
+          title="Удаление пользователя"
+          message={`Вы уверены, что хотите удалить пользователя "${selectedUserName}"? Все его темы и идеи будут перенесены на Deleted User (anonym@ideaflow.by). Это действие нельзя отменить.`}
+          confirmText="Удалить"
+          cancelText="Отмена"
+          confirmButtonClass="danger"
         />
       )}
 

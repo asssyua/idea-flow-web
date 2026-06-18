@@ -14,6 +14,11 @@ const Header: React.FC = () => {
   const location = useLocation();
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -116,7 +121,18 @@ const Header: React.FC = () => {
             <i className="fas fa-layer-group" style={{ color: 'var(--primary)' }}></i>
             IdeaFlow
           </div>
-          <nav className="nav-links">
+          <button
+            type="button"
+            className={`burger-btn ${menuOpen ? 'open' : ''}`}
+            aria-label="Меню"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((v) => !v)}
+          >
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+          <nav className={`nav-links ${menuOpen ? 'open' : ''}`}>
             <a
               className={isActive(homePath) ? 'active' : ''}
               onClick={() => navigate(homePath)}

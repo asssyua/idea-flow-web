@@ -90,6 +90,7 @@
 .stats-table-wrapper {
   max-height: 400px;
   overflow-y: auto;
+  overflow-x: auto;
 }
 
 .stats-table {
@@ -243,6 +244,32 @@
 .error-container h3 {
   color: var(--error);
   margin-bottom: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  .analysis-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .analysis-header p {
+    font-size: 0.95rem;
+  }
+
+  .stats-card-header {
+    padding: 1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .stats-table th,
+  .stats-table td {
+    padding: 0.6rem 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  .stats-table {
+    min-width: 480px;
+  }
 }
 
 .analysis-footer {
